@@ -1,0 +1,22 @@
+{# portal/templates/portal/dashboards_home.html #}
+{% extends "portal/layout.html" %}
+{% block title %}Dashboards{% endblock %}
+
+{% block content %}
+<div class="home-card">
+    <h3>Dashboards</h3>
+    <p class="desc">Select an application to view its SSRS reports.</p>
+</div>
+
+<div class="cards">
+    {% for app in apps %}
+    <div class="card">
+        <div class="card-title">{{ app.name }}</div>
+        <div class="card-desc">{{ app.description }}</div>
+        <div class="card-actions">
+            <a class="btn" href="{% url 'app_dashboards' app.slug %}">Open</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

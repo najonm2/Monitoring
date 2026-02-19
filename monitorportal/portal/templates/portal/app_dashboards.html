@@ -1,0 +1,66 @@
+﻿{# portal/templates/portal/app_dashboards.html #}
+{% extends "portal/layout.html" %}
+{% block title %}{{ app.name }}{% endblock %}
+
+{% block content %}
+
+<!-- HERO HEADER (ENV/UAT removed) -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">APPLICATION DASHBOARDS</div>
+        <h1 class="app-title">{{ app.name }}</h1>
+
+        {% if app.description %}
+        <div class="app-subtitle">{{ app.description }}</div>
+        {% else %}
+        <div class="app-subtitle">SSRS monitoring dashboards and operational reports</div>
+        {% endif %}
+    </div>
+
+    <div class="app-stats">
+        <div class="stat">
+            <div class="stat-label">TOTAL REPORTS</div>
+            <div class="stat-value">{{ reports|length }}</div>
+        </div>
+    </div>
+</section>
+
+<!-- REPORT GRID -->
+<section class="report-grid" id="reportGrid">
+    {% for r in reports %}
+    <article class="report-tile">
+        <div class="tile-head">
+            <div class="tile-icon">
+                {% if "fail" in r.name|lower %}⛔
+                {% elif "error" in r.name|lower %}⚠️
+                {% elif "long" in r.name|lower %}⏱️
+                {% else %}📈
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="tile-title">{{ r.name }}</div>
+                <div class="tile-desc">{{ r.description|default:"SSRS monitoring report" }}</div>
+            </div>
+        </div>
+
+        <div class="tile-actions">
+            {# VIEW button: portal-native route if defined, else fallback to report_view #}
+            {% if r.portal_url_name %}
+            <a class="btn secondary" href="{% url r.portal_url_name %}">VIEW</a>
+            {% else %}
+            <a class="btn secondary" href="{% url 'report_view' app.slug r.slug %}">VIEW</a>
+            {% endif %}
+
+            {# SSRS button #}
+            {% if r.ssrs_url %}
+            <a class="btn" href="{{ r.ssrs_url }}" target="_blank" rel="noopener">OPEN SSRS</a>
+            {% else %}
+            <span class="badge-muted">SSRS LINK NOT SET</span>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</section>
+
+{% endblock %}

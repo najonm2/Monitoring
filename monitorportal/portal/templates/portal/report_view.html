@@ -1,0 +1,25 @@
+﻿{# portal/templates/portal/report_view.html #}
+{% extends "portal/layout.html" %}
+{% block title %}{{ report.name }}{% endblock %}
+
+{% block content %}
+<div class="home-card">
+    <h3>{{ report.name }}</h3>
+    <p class="desc">{{ app.name }}</p>
+
+    <div class="card-actions">
+        <a class="btn secondary" href="{% url 'app_dashboards' app.slug %}">← Back</a>
+
+        {% if report.ssrs_url %}
+        <a class="btn" href="{{ report.ssrs_url }}" target="_blank" rel="noopener">Open in SSRS</a>
+        {% else %}
+        <span class="muted">SSRS Link Not Setup</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="info-box">
+    This report cannot be embedded due to SSRS security settings.<br><br>
+    Use <b>Open in SSRS</b> above to view the report.
+</div>
+{% endblock %}

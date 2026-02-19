@@ -1,0 +1,70 @@
+{# portal/templates/portal/layout.html #}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}DataPlanet{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'portal/style_v3.css' %}">
+</head>
+
+<body>
+    <!-- HEADER -->
+    <header class="top-header">
+        <div class="top-inner">
+            <div class="brand">
+                <div class="brand-title">DWBI-PASE</div>
+                <div class="brand-subtitle">Monitoring Portal</div>
+            </div>
+
+            <div class="header-title">PASE JOB MONITORING DASHBOARD</div>
+
+            <div class="header-right">
+                <div class="user-chip" title="Signed in user">
+                    <span class="dot"></span>
+                    <span class="user-text">
+                        {% if request.user.is_authenticated %}
+                        {{ request.user.username }}
+                        {% else %}
+                        Guest
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="header-badge">LUMEN</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAV BAR -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a class="nav-pill {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
+                <span class="pill-icon">🏠</span>
+                <span class="pill-text">HOME</span>
+            </a>
+
+            {% for app in nav_apps %}
+            {% with app_path='/dashboards/'|add:app.slug|add:'/' %}
+            <a class="nav-pill {% if app_path in request.path %}active{% endif %}" href="{% url 'app_dashboards' app.slug %}">
+                <span class="pill-icon">📊</span>
+                <span class="pill-text">{{ app.name|upper }}</span>
+            </a>
+            {% endwith %}
+            {% endfor %}
+        </div>
+    </nav>
+
+    <!-- CONTENT -->
+    <main class="content">
+        <div class="content-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        © {% now "Y" %} Lumen. All rights reserved.
+    </footer>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{# portal/templates/portal/home.html #}
+{% extends "portal/layout.html" %}
+{% block title %}Home - PASE JOB MONITORING DASH BOAD{% endblock %}
+
+{% block content %}
+<div class="home-card">
+    <h2>Hi {{ user_display|default:"Guest" }}</h2>
+    <h3>Welcome to PASE Job Monitoring tool</h3>
+
+    <p class="desc">
+        This portal provides centralized access to Informatica PowerCenter monitoring dashboards (SSRS).
+    </p>
+
+    <h4>Key Features:</h4>
+    <ul>
+        <li>Centralized access to all SSRS monitoring dashboards</li>
+        <li>Single portal for P1 job monitoring</li>
+        <li>Future: AI summaries + anomaly alerts + prediction</li>
+    </ul>
+</div>
+{% endblock %}

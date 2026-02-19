@@ -1,0 +1,119 @@
+﻿{# portal/templates/portal/level3_failed_job_status.html #}
+{% extends "portal/layout.html" %}
+
+{% block title %}LVL3 Failed Job Status{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">LVL3 JOB STATUS</div>
+        <h1 class="app-title">Failed / Pending / Running Jobs</h1>
+        <div class="app-subtitle">
+            Informatica Monitoring Dashboard – Live Job Status Overview
+        </div>
+    </div>
+
+    <div class="app-stats">
+        <div class="stat">
+            <div class="stat-label">TOTAL FAILED JOBS</div>
+            <div class="stat-value">{{ summary.TOTAL_FAILED_JOBS|default:0 }}</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">COMPLETED JOBS</div>
+            <div class="stat-value">{{ summary.COMPLETED_JOBS|default:0 }}</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">PENDING JOBS</div>
+            <div class="stat-value">{{ summary.PENDING_FAILED_JOBS|default:0 }}</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">RUNNING JOBS</div>
+            <div class="stat-value">{{ summary.RUNNING_JOBS|default:0 }}</div>
+        </div>
+    </div>
+</section>
+
+
+<!-- FAILED SESSIONS TABLE -->
+<section class="report-section">
+    <h2 class="section-title">FAILED SESSIONS (TODAY)</h2>
+
+    <div class="table-container">
+        <table class="table table-failed">
+            <thead>
+                <tr>
+                    <th>GRID</th>
+                    <th>FOLDER</th>
+                    <th>WORKFLOW</th>
+                    <th>SESSION</th>
+                    <th>START</th>
+                    <th>END</th>
+                    <th>STATUS</th>
+                    <th>DAYS FAILING</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in failed %}
+                <tr class="{% if row.PREV_FAILURE == 'Y' %}fail-row{% endif %}">
+                    <td>{{ row.GRID_NAME }}</td>
+                    <td>{{ row.SUBJECT_AREA }}</td>
+                    <td class="wrap">{{ row.WORKFLOW_NAME }}</td>
+                    <td class="wrap">{{ row.SESSION_NAME }}</td>
+                    <td>{{ row.START_TIME }}</td>
+                    <td>{{ row.END_TIME }}</td>
+                    <td>{{ row.STATUS }}</td>
+                    <td>{{ row.FAILDED_DAYS_COUNT }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8">No failed jobs today.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+
+<!-- LONG RUNNING JOBS -->
+<section class="report-section">
+    <h2 class="section-title">ACTION REQUIRED – JOBS RUNNING ≥ 24 HOURS</h2>
+
+    <div class="table-container">
+        <table class="table table-long">
+            <thead>
+                <tr>
+                    <th>HOURS</th>
+                    <th>GRID</th>
+                    <th>FOLDER</th>
+                    <th>WORKFLOW</th>
+                    <th>SESSION</th>
+                    <th>START</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in long_running %}
+                <tr>
+                    <td>{{ row.CURRENT_RUN_DURATION_IN_HOURS }}</td>
+                    <td>{{ row.GRID_NAME }}</td>
+                    <td>{{ row.SUBJECT_AREA }}</td>
+                    <td class="wrap">{{ row.WORKFLOW_NAME }}</td>
+                    <td class="wrap">{{ row.SESSION_NAME }}</td>
+                    <td>{{ row.START_TIME }}</td>
+                    <td>{{ row.STATUS }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7">No long-running jobs.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}
