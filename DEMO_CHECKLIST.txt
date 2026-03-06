@@ -1,0 +1,182 @@
+# DEMO READINESS CHECKLIST
+# For Manager Demo - March 5, 2026
+
+========================================
+✅ PRE-DEMO CHECKLIST
+========================================
+
+## 1. START THE SERVER
+□ Stop any running instances:
+  Stop-Process -Name python -Force -ErrorAction SilentlyContinue
+
+□ Start fresh server:
+  cd C:\Users\ab64033\source\repos\infa_monitor_portal\monitorportal
+  python manage.py runserver
+
+□ Open browser to: http://127.0.0.1:8000/
+
+========================================
+🎯 DEMO FLOW SUGGESTIONS
+========================================
+
+## Opening (30 seconds)
+"This is our unified Monitoring Portal that consolidates SSRS reports and real-time job status across all our data platforms."
+
+## Feature 1: Dashboard Home (1 min)
+□ Show clean navigation tabs
+□ Highlight 4 applications: Level3, MDM, ERP, ADF
+□ Show solid blue styling (professional theme)
+
+## Feature 2: Level3 Application (2-3 mins)
+□ Click "Level3 Application" card
+□ Show Job Status Insights at top:
+  - Total jobs today
+  - Succeeded/Failed/Running counts
+  - Color-coded status cards
+□ Show 4 SSRS Reports with View/SSRS buttons
+□ Click one report to show data table
+□ Highlight "Application" column grouping
+
+## Feature 3: Level3 BI Report ⭐ (3-4 mins)
+□ Click "LEVEL3 BI REPORT" tab in main menu
+□ Show BI Feed Data table:
+  ✨ SLA Application names
+  ✨ Priority levels (1, 2, 3)
+  ✨ Start time (MT) - fixed from configuration
+  ✨ Actual completion times
+  ✨ Target SLA (MT) - fixed from configuration
+  ✨ SLA Met/Miss in MINUTES
+  ✨ Met/Miss indicator with color coding (Green ✅/Red ❌)
+□ Scroll down to show CAPEX Details section
+□ Explain: "All data pulled from ICSM Oracle database in real-time"
+
+## Feature 4: Other Applications (1-2 mins)
+□ Click back to Applications
+□ Show MDM Application (1 report)
+□ Show ERP Application (1 report)
+□ Show ADF Application (2 reports - newly integrated)
+
+## Feature 5: Technical Highlights (1 min)
+□ "Built with Django 6.0 and Oracle integration"
+□ "Responsive design - works on tablets/phones"
+□ "Real-time SLA tracking with configurable targets"
+□ "Integrates with existing SSRS infrastructure"
+
+========================================
+🎤 KEY TALKING POINTS
+========================================
+
+1. ✅ CONSOLIDATION
+   "Previously, users had to navigate to 5+ different SSRS URLs. 
+    Now it's all in one portal."
+
+2. ✅ REAL-TIME INSIGHTS
+   "Job status insights refresh automatically - no need to 
+    run reports manually."
+
+3. ✅ SLA TRACKING
+   "Level3 BI Report shows SLA compliance in minutes with 
+    clear Met/Miss indicators. Configuration-based, so easy 
+    to adjust targets."
+
+4. ✅ PROFESSIONAL UI
+   "Modern, clean interface with consistent blue theme. 
+    Color-coded status makes issues easy to spot."
+
+5. ✅ EXTENSIBLE
+   "Easy to add new applications and reports - just update 
+    the registry. ADF just added with 2 reports + Databricks 
+    integration ready."
+
+========================================
+⚠️ POTENTIAL QUESTIONS & ANSWERS
+========================================
+
+Q: "Can we add more applications?"
+A: "Yes! Just add to ssrs_registry.py. Takes 5 minutes."
+
+Q: "Where does the data come from?"
+A: "Oracle databases: INFA_PCREPO (Level3), MAPDQPRD (ERP/MDM), 
+    ICSM (BI/ADF). Plus SSRS for existing reports."
+
+Q: "Can we customize SLA targets?"
+A: "Absolutely. They're in APP_SLA_CONFIG in bi_service.py. 
+    Just update the times and target_next_day flag."
+
+Q: "What about Databricks integration?"
+A: "Framework is ready. We have the client code and ODBC setup 
+    guide. Just needs DSN configuration to go live."
+
+Q: "Is this secure?"
+A: "Yes - uses existing Oracle credentials, Windows authentication, 
+    and SSRS permissions. Same security model as current tools."
+
+Q: "Can we export data?"
+A: "SSRS reports have native export (PDF, Excel, CSV). 
+    Portal tables can be enhanced with export buttons if needed."
+
+========================================
+🚨 TROUBLESHOOTING (Just in Case)
+========================================
+
+Issue: "Port 8000 already in use"
+Fix: Stop-Process -Name python -Force
+
+Issue: "Oracle connection error"
+Fix: Verify VPN is connected
+
+Issue: "SSRS reports not loading"
+Fix: Check SSRS server is accessible: http://usidcvssrs0005
+
+Issue: "BI Report shows no data"
+Fix: Check ICSM.app_control_status table has recent data
+
+========================================
+💡 FUTURE ENHANCEMENTS (If Asked)
+========================================
+
+1. Dashboard widgets with charts/graphs
+2. Email alerts for failed jobs
+3. Export to Excel functionality
+4. Historical trend analysis
+5. Custom user preferences/favorites
+6. Mobile app version
+7. Databricks live queries (once DSN configured)
+8. Real-time job monitoring with auto-refresh
+
+========================================
+📊 DEMO STATS TO MENTION
+========================================
+
+Applications:        4 (Level3, MDM, ERP, ADF)
+SSRS Reports:        8 total
+Live Data Sources:   3 Oracle DBs + 1 Databricks (ready)
+SLA Apps Tracked:    33 applications in Level3
+Development Time:    ~2 weeks
+Technology Stack:    Django 6.0, Python 3.12, Oracle, SSRS
+
+========================================
+✨ DEMO TIPS
+========================================
+
+1. ✅ REHEARSE ONCE before the actual demo
+2. ✅ Have browser window open and ready
+3. ✅ Close unnecessary tabs/windows
+4. ✅ Increase browser zoom to 110-125% for visibility
+5. ✅ Turn off notifications during demo
+6. ✅ Have VPN connected if required
+7. ✅ Test one SSRS report link before demo
+8. ✅ Keep this checklist open in another window
+
+========================================
+🎬 CLOSING STATEMENT
+========================================
+
+"This portal provides a single pane of glass for all our 
+monitoring needs. It's already saving time and making it 
+easier to track SLA compliance. We can easily extend it 
+with more applications and features as needed."
+
+========================================
+GOOD LUCK! 🚀
+========================================

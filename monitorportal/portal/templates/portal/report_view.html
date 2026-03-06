@@ -1,25 +1,570 @@
-﻿{# portal/templates/portal/report_view.html #}
+﻿{# portal/templates/portal/report_view.html - Professional API-Driven Version #}
 {% extends "portal/layout.html" %}
-{% block title %}{{ report.name }}{% endblock %}
+
+{% block title %}{{ report.name }} - {{ app.name }}{% endblock %}
 
 {% block content %}
-<div class="home-card">
-    <h3>{{ report.name }}</h3>
-    <p class="desc">{{ app.name }}</p>
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-    <div class="card-actions">
-        <a class="btn secondary" href="{% url 'app_dashboards' app.slug %}">← Back</a>
+<!-- jQuery and DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+<!-- Report Header -->
+<div class="report-header">
+    <div>
+        <div class="app-kicker">{{ app.name|upper }} / REPORTS</div>
+        <h1 class="app-title" style="font-size: 28px;">{{ report.name }}</h1>
+        <p class="app-subtitle" style="margin-top: 8px;">{{ report.description|default:"Monitor and analyze operational data in real-time" }}</p>
+    </div>
+    <div class="header-actions">
+        <button id="refreshBtn" class="btn btn-primary">
+            <span id="refreshIcon">🔄</span> Refresh Data
+        </button>
         {% if report.ssrs_url %}
-        <a class="btn" href="{{ report.ssrs_url }}" target="_blank" rel="noopener">Open in SSRS</a>
-        {% else %}
-        <span class="muted">SSRS Link Not Setup</span>
+        <a href="{{ report.ssrs_url }}" target="_blank" class="btn btn-secondary">
+            📊 Open SSRS Report
+        </a>
         {% endif %}
     </div>
 </div>
 
-<div class="info-box">
-    This report cannot be embedded due to SSRS security settings.<br><br>
-    Use <b>Open in SSRS</b> above to view the report.
+<!-- Loading State -->
+<div id="loadingState" class="card">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p style="color: var(--gray-600); font-weight: 600;">Loading data from Oracle database...</p>
+    </div>
 </div>
+
+<!-- Error State -->
+<div id="errorState" class="card" style="display: none;">
+    <div class="alert alert-error">
+        <strong style="font-size: 16px;">⚠️ Error Loading Data</strong>
+        <p id="errorMessage" style="margin: 8px 0 16px 0;"></p>
+        <button class="btn btn-primary" onclick="loadReportData()">🔄 Try Again</button>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div id="summaryContainer" style="display: none; margin-bottom: 24px;">
+    <div id="summaryCards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;"></div>
+</div>
+
+<!-- Data Table -->
+<div id="dataContainer" class="card" style="display: none;">
+    <div class="card-header">
+        <h5>
+            📊 Query Results
+            <span id="recordCount">0 records</span>
+        </h5>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+            <span id="timestamp" class="timestamp"></span>
+            <span id="dataSource" class="badge" style="font-size: 11px;"></span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table" id="dataTable">
+                <thead class="table-header">
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- No Data State -->
+<div id="noDataState" class="card" style="display: none;">
+    <div class="alert alert-info">
+        <strong>ℹ️ No Records Found</strong>
+        <p style="margin: 8px 0 0 0;">There are no records matching the query criteria at this time.</p>
+    </div>
+</div>
+
+<!-- Error Details Modal -->
+<div id="errorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; overflow: auto;">
+    <div style="background: white; max-width: 900px; margin: 40px auto; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; color: #dc2626; font-size: 18px;">🔍 Full Error Details</h3>
+            <button onclick="closeErrorModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+        </div>
+        <div style="padding: 20px;">
+            <div style="background: #fee; border-left: 4px solid #dc2626; padding: 16px; border-radius: 4px; margin-bottom: 16px;">
+                <strong style="color: #991b1b; display: block; margin-bottom: 8px;">Session Information:</strong>
+                <div id="errorModalSessionInfo" style="color: #6b7280; font-size: 14px;"></div>
+            </div>
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 16px;">
+                <strong style="color: #374151; display: block; margin-bottom: 8px;">Complete Error Message:</strong>
+                <pre id="errorModalContent" style="white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 13px; color: #1f2937; font-family: 'Courier New', monospace; max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+        <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; text-align: right;">
+            <button onclick="closeErrorModal()" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Back Button -->
+<div class="mt-4">
+    <a href="{% url 'app_dashboards' app.slug %}" class="btn btn-secondary">
+        ← Back to {{ app.name }} Dashboard
+    </a>
+</div>
+
+<style>
+    /* Additional inline styles for report view */
+    .breadcrumb {
+        font-size: 13px;
+        color: var(--gray-500);
+        margin-top: 8px;
+    }
+    
+    .breadcrumb a {
+        color: var(--lumen-primary);
+        font-weight: 600;
+    }
+    
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    
+    #refreshBtn.spinning #refreshIcon {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+    }
+    
+    .summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-sm);
+        text-align: center;
+    }
+    
+    .summary-label {
+        font-size: 12px;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .summary-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--lumen-primary);
+        line-height: 1;
+    }
+    
+    /* Truncate long text with tooltips */
+    .truncate {
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: help;
+    }
+    
+    /* Table Scrolling */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #dataTable {
+        width: 100% !important;
+    }
+    
+    #dataTable td,
+    #dataTable th {
+        white-space: nowrap;
+        padding: 10px 14px;
+    }
+    
+    /* DataTables custom styling */
+    .dataTables_wrapper .dataTables_filter input {
+        border: 2px solid var(--lumen-primary);
+        border-radius: 6px;
+        padding: 8px 16px;
+        margin-left: 8px;
+        font-size: 14px;
+        width: 300px;
+    }
+    
+    .dataTables_wrapper .dataTables_length select {
+        border: 1px solid var(--gray-300);
+        border-radius: 4px;
+        padding: 6px 12px;
+        margin: 0 8px;
+    }
+    
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        padding-top: 16px;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 6px 12px;
+        margin: 0 2px;
+        border-radius: 4px;
+        border: 1px solid var(--gray-300);
+        background: white;
+        color: var(--gray-700);
+        cursor: pointer;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: var(--lumen-primary);
+        color: white;
+        border-color: var(--lumen-primary);
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: var(--lumen-primary);
+        color: white;
+        border-color: var(--lumen-primary);
+    }
+    
+    .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 8px 8px 0 0;
+        margin: -16px -16px 16px -16px;
+    }
+    
+    .bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: #f9fafb;
+        border-radius: 0 0 8px 8px;
+        margin: 16px -16px -16px -16px;
+    }
+</style>
+
+<script>
+    const API_URL = "{% url 'api_report_data' app.slug report.slug %}";
+    
+    // Column configuration for different report types
+    const COLUMN_CONFIG = {
+        'level3_failed': {
+            columns: ['grid_name', 'workflow_name', 'session_name', 'status', 'start_time', 'end_time'],
+            headers: ['Grid Name', 'Workflow', 'Session', 'Status', 'Start Time', 'End Time']
+        },
+        'level3_error': {
+            columns: ['grid_name', 'workflow_name', 'session_name', 'status', 'start_time', 'end_time', 'error_message'],
+            headers: ['Grid Name', 'Workflow', 'Session', 'Status', 'Start Time', 'End Time', 'Error Message']
+        },
+        'level3_long_running': {
+            columns: ['grid_name', 'workflow_name', 'session_name', 'start_time', 'current_duration_min', 'avg_duration_min'],
+            headers: ['Grid Name', 'Workflow', 'Session', 'Start Time', 'Current Duration (min)', 'Avg Duration (min)']
+        },
+        'level3_all_jobs': {
+            columns: ['status', 'session_name', 'workflow_name', 'folder', 'sess_start_time', 'sess_end_time', 'duration_in_mins'],
+            headers: ['Status', 'Session', 'Workflow', 'Folder', 'Start Time', 'End Time', 'Duration']
+        },
+        'mdm_job_status': {
+            columns: ['asset_name', 'start_time', 'end_time', 'status'],
+            headers: ['Asset Name', 'Start Time', 'End Time', 'Status']
+        },
+        'erp_job_status': {
+            columns: ['asset_name', 'subtask_asset_name', 'location', 'start_time_pst', 'end_time_pst', 'status'],
+            headers: ['Asset Name', 'Subtask Asset', 'Location', 'Start Time (PST)', 'End Time (PST)', 'Status']
+        },
+        'adf_run_status': {
+            columns: ['job_name', 'resource_type', 'start_time', 'end_time', 'job_status', 'error_message'],
+            headers: ['Job Name', 'Resource Type', 'Start Time', 'End Time', 'Status', 'Error Message']
+        },
+        'adf_failed_jobs': {
+            columns: ['job_name', 'resource_type', 'start_time', 'end_time', 'job_status', 'error_message'],
+            headers: ['Job Name', 'Resource Type', 'Start Time', 'End Time', 'Status', 'Error Message']
+        }
+    };
+    
+    function showLoading() {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('summaryContainer').style.display = 'none';
+        document.getElementById('dataContainer').style.display = 'none';
+        document.getElementById('noDataState').style.display = 'none';
+    }
+    
+    function showError(message) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('errorMessage').textContent = message;
+    }
+    
+    function showData() {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('dataContainer').style.display = 'block';
+    }
+    
+    function showNoData() {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('noDataState').style.display = 'block';
+    }
+    
+    function formatStatus(status) {
+        const statusLower = (status || '').toLowerCase();
+        let className = 'status-badge';
+        
+        if (statusLower.includes('fail')) className += ' status-failed';
+        else if (statusLower.includes('succeed')) className += ' status-succeeded';
+        else if (statusLower.includes('running')) className += ' status-running';
+        else if (statusLower.includes('stop')) className += ' status-stopped';
+        
+        return `<span class="${className}">${status || 'N/A'}</span>`;
+    }
+    
+    function formatValue(key, value) {
+        if (!value && value !== 0) return 'N/A';
+        
+        if (key === 'status' || key === 'job_status') {
+            return formatStatus(value);
+        }
+        
+        if (key.includes('time') && value !== 'N/A') {
+            return value;
+        }
+        
+        if (key === 'running_hours') {
+            return `${value} hrs`;
+        }
+        
+        if (key === 'current_duration_min' || key === 'avg_duration_min') {
+            return `${value} min`;
+        }
+        
+        if (key === 'error_message') {
+            const msg = String(value);
+            if (msg.length > 80) {
+                const preview = msg.substring(0, 80);
+                const uniqueId = 'err_' + Math.random().toString(36).substr(2, 9);
+                return `
+                    <div>
+                        <div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">${preview}...</div>
+                        <button 
+                            class="btn btn-sm" 
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 12px; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;"
+                            onclick="showErrorDetails('${uniqueId}')"
+                            data-error-id="${uniqueId}"
+                            data-full-error="${msg.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                        >
+                            🤖 View Full Details
+                        </button>
+                    </div>
+                `;
+            }
+            return `<div style="color: #6b7280; font-size: 13px;">${msg}</div>`;
+        }
+        
+        return value;
+    }
+    
+    function renderSummary(summary) {
+        const container = document.getElementById('summaryCards');
+        container.innerHTML = '';
+        
+        for (const [key, value] of Object.entries(summary)) {
+            const card = document.createElement('div');
+            card.className = 'col-md-3';
+            card.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-label">${key.replace(/_/g, ' ')}</div>
+                    <div class="summary-value">${value}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+        
+        document.getElementById('summaryContainer').style.display = 'block';
+    }
+    
+    function detectReportType(reportSlug) {
+        if (reportSlug.includes('failed-job-status')) return 'level3_failed';
+        if (reportSlug.includes('failed-with-error')) return 'level3_error';
+        if (reportSlug.includes('long-running')) return 'level3_long_running';
+        if (reportSlug.includes('all-jobs-status')) return 'level3_all_jobs';
+        if (reportSlug.includes('mdm')) return 'mdm_job_status';
+        if (reportSlug.includes('erp')) return 'erp_job_status';
+        return 'level3_failed';
+    }
+    
+    let dataTableInstance = null;
+    
+    function renderTable(data, reportType) {
+        const config = COLUMN_CONFIG[reportType] || COLUMN_CONFIG['level3_failed'];
+        const tableHeader = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
+        
+        // Destroy existing DataTable if it exists
+        if (dataTableInstance) {
+            dataTableInstance.destroy();
+            dataTableInstance = null;
+        }
+        
+        tableHeader.innerHTML = '';
+        tableBody.innerHTML = '';
+        
+        config.headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            tableHeader.appendChild(th);
+        });
+        
+        data.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.dataset.rowIndex = idx;
+            tr.dataset.rowData = JSON.stringify(row);
+            
+            config.columns.forEach(col => {
+                const td = document.createElement('td');
+                td.innerHTML = formatValue(col, row[col]);
+                tr.appendChild(td);
+            });
+            
+            tableBody.appendChild(tr);
+        });
+        
+        // Initialize DataTables with search and pagination
+        setTimeout(() => {
+            dataTableInstance = $('#dataTable').DataTable({
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                order: [[0, 'asc']], // Sort by status
+                columnDefs: [
+                    { orderable: true, targets: '_all' },
+                    { width: '120px', targets: 0 },  // Status
+                    { width: '200px', targets: 1 },  // Session
+                    { width: '200px', targets: 2 },  // Workflow
+                    { width: '150px', targets: 3 }   // Folder
+                ],
+                language: {
+                    search: "🔍 Search jobs:",
+                    lengthMenu: "Show _MENU_ jobs per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ jobs",
+                    infoEmpty: "No jobs found",
+                    infoFiltered: "(filtered from _MAX_ total jobs)",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next →",
+                        previous: "← Prev"
+                    }
+                },
+                dom: '<"top"lf>rt<"bottom"ip><"clear">'
+            });
+        }, 100);
+    }
+    
+    // Modal functions for error details
+    function showErrorDetails(errorId) {
+        const button = document.querySelector(`[data-error-id="${errorId}"]`);
+        if (!button) return;
+        
+        const row = button.closest('tr');
+        const rowData = JSON.parse(row.dataset.rowData);
+        const fullError = button.getAttribute('data-full-error');
+        
+        // Build session info
+        let sessionInfo = '';
+        if (rowData.grid_name) sessionInfo += `<strong>Grid:</strong> ${rowData.grid_name}<br>`;
+        if (rowData.workflow_name) sessionInfo += `<strong>Workflow:</strong> ${rowData.workflow_name}<br>`;
+        if (rowData.session_name) sessionInfo += `<strong>Session:</strong> ${rowData.session_name}<br>`;
+        if (rowData.start_time) sessionInfo += `<strong>Start Time:</strong> ${rowData.start_time}<br>`;
+        if (rowData.status) sessionInfo += `<strong>Status:</strong> ${rowData.status}`;
+        
+        document.getElementById('errorModalSessionInfo').innerHTML = sessionInfo;
+        document.getElementById('errorModalContent').textContent = fullError;
+        document.getElementById('errorModal').style.display = 'block';
+    }
+    
+    function closeErrorModal() {
+        document.getElementById('errorModal').style.display = 'none';
+    }
+    
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeErrorModal();
+    });
+    
+    // Close modal on outside click
+    document.getElementById('errorModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeErrorModal();
+    });
+    
+    async function loadReportData() {
+        showLoading();
+        
+        const refreshBtn = document.getElementById('refreshBtn');
+        refreshBtn.classList.add('spinning');
+        refreshBtn.disabled = true;
+        
+        try {
+            const response = await fetch(API_URL);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Unknown error occurred');
+            }
+            
+            if (result.summary) {
+                renderSummary(result.summary);
+            }
+            
+            if (result.data && result.data.length > 0) {
+                const reportType = detectReportType(result.report_slug);
+                renderTable(result.data, reportType);
+                
+                document.getElementById('recordCount').textContent = `${result.data.length} records`;
+                document.getElementById('timestamp').textContent = `Updated: ${result.timestamp}`;
+                
+                // Show data source
+                const dataSourceBadge = document.getElementById('dataSource');
+                if (result.source === 'oracle_database') {
+                    dataSourceBadge.textContent = '✓ Oracle Database';
+                    dataSourceBadge.className = 'badge status-succeeded';
+                } else {
+                    dataSourceBadge.textContent = '⚠ Mock Data';
+                    dataSourceBadge.className = 'badge status-stopped';
+                }
+                
+                showData();
+            } else {
+                showNoData();
+            }
+            
+        } catch (error) {
+            console.error('Error loading report data:', error);
+            showError(error.message);
+        } finally {
+            refreshBtn.classList.remove('spinning');
+            refreshBtn.disabled = false;
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadReportData);
+    document.getElementById('refreshBtn').addEventListener('click', loadReportData);
+</script>
 {% endblock %}

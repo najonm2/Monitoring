@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}DataPlanet{% endblock %}</title>
+    <title>{% block title %}PASE Monitoring Portal{% endblock %}</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'portal/style_v3.css' %}">
+    <link rel="stylesheet" href="{% static 'portal/professional_lumen.css' %}">
 </head>
 
 <body>
@@ -14,8 +14,11 @@
     <header class="top-header">
         <div class="top-inner">
             <div class="brand">
-                <div class="brand-title">DWBI-PASE</div>
-                <div class="brand-subtitle">Monitoring Portal</div>
+                <div class="brand-logo">L</div>
+                <div class="brand-info">
+                    <div class="brand-title">DWBI-PASE</div>
+                    <div class="brand-subtitle">Monitoring Portal</div>
+                </div>
             </div>
 
             <div class="header-title">PASE JOB MONITORING DASHBOARD</div>
@@ -31,7 +34,7 @@
                         {% endif %}
                     </span>
                 </div>
-                <div class="header-badge">LUMEN</div>
+                <img src="{% static 'portal/logo_lumen.jpg' %}" alt="LUMEN Logo" class="logo">
             </div>
         </div>
     </header>
@@ -46,12 +49,29 @@
 
             {% for app in nav_apps %}
             {% with app_path='/dashboards/'|add:app.slug|add:'/' %}
+            {% if app.slug == 'mdm' %}
+            <a class="nav-pill {% if app_path in request.path or '/reports/mdm/' in request.path %}active{% endif %}" href="{% url 'app_dashboards_mdm' %}">
+                <span class="pill-icon">📊</span>
+                <span class="pill-text">{{ app.name|upper }}</span>
+            </a>
+            {% elif app.slug == 'erp' %}
+            <a class="nav-pill {% if app_path in request.path or '/reports/erp/' in request.path %}active{% endif %}" href="{% url 'app_dashboards_erp' %}">
+                <span class="pill-icon">📊</span>
+                <span class="pill-text">{{ app.name|upper }}</span>
+            </a>
+            {% else %}
             <a class="nav-pill {% if app_path in request.path %}active{% endif %}" href="{% url 'app_dashboards' app.slug %}">
                 <span class="pill-icon">📊</span>
                 <span class="pill-text">{{ app.name|upper }}</span>
             </a>
+            {% endif %}
             {% endwith %}
             {% endfor %}
+
+            <a class="nav-pill {% if request.path == '/level3-bi/' %}active{% endif %}" href="{% url 'level3_bi_report' %}">
+                <span class="pill-icon">📈</span>
+                <span class="pill-text">LEVEL3 BI REPORT</span>
+            </a>
         </div>
     </nav>
 
@@ -60,6 +80,9 @@
         <div class="content-container">
             {% block content %}{% endblock %}
         </div>
+        
+        <!-- INFO GUIDELINES (can be overridden per page) -->
+        {% block info_guidelines %}{% endblock %}
     </main>
 
     <!-- FOOTER -->

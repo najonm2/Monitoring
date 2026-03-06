@@ -52,15 +52,176 @@
             <a class="btn secondary" href="{% url 'report_view' app.slug r.slug %}">VIEW</a>
             {% endif %}
 
-            {# SSRS button #}
+            {# SSRS button - only show if URL is set #}
             {% if r.ssrs_url %}
             <a class="btn" href="{{ r.ssrs_url }}" target="_blank" rel="noopener">OPEN SSRS</a>
-            {% else %}
-            <span class="badge-muted">SSRS LINK NOT SET</span>
             {% endif %}
         </div>
     </article>
     {% endfor %}
 </section>
 
+<!-- TODAY'S JOB STATUS (Only for Level3) -->
+{% if today_stats %}
+<section style="margin-top: 50px; margin-bottom: 40px;">
+    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 25px 35px; border-radius: 10px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);">
+        <h2 style="margin: 0 0 8px 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px;">📊 Today's Job Status Overview</h2>
+        <div style="font-size: 1rem; opacity: 0.9; font-weight: 400;">Real-time from REP_DW_ADMIN.OPB_TASK_INST_RUN | Updated: {{ today_stats.date|date:"M d, Y" }}</div>
+    </div>
+
+    <!-- TODAY'S STATUS CARD -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px 30px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <span style="display: inline-block; padding: 6px 14px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px;">🔴 LIVE</span>
+                <h3 style="margin: 0; font-size: 1.5rem; font-weight: 600;">{{ today_stats.date|date:"l, F d, Y" }}</h3>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 4px;">Total Jobs Today</div>
+                <div style="font-size: 2.5rem; font-weight: 700;">{{ today_stats.total|default:0 }}</div>
+            </div>
+        </div>
+        
+        <!-- Main Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-bottom: 2px solid #f3f4f6;">
+            <div style="text-align: center; padding: 30px 20px; background: #f0fdf4; border-right: 1px solid #e5e7eb;">
+                <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #10b981;">✓</div>
+                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #10b981;">{{ today_stats.succeeded|default:0 }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Succeeded</div>
+            </div>
+            
+            <div style="text-align: center; padding: 30px 20px; background: #fef2f2; border-right: 1px solid #e5e7eb;">
+                <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #ef4444;">✗</div>
+                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #ef4444;">{{ today_stats.failed|default:0 }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Failed</div>
+            </div>
+            
+            <div style="text-align: center; padding: 30px 20px; background: #eff6ff; border-right: 1px solid #e5e7eb;">
+                <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #3b82f6;">▶</div>
+                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #3b82f6;">{{ today_stats.running|default:0 }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Running</div>
+            </div>
+            
+            <div style="text-align: center; padding: 30px 20px; background: #fefce8;">
+                <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #eab308;">⏸</div>
+                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #eab308;">{{ today_stats.stopped|default:0 }}</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Stopped</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7-DAY JOB INSIGHTS BANNER (Only for Level3) -->
+<section style="margin-bottom: 50px;">
+    <a href="{% url 'report_view' app.slug 'lvl3-7day-insights' %}" style="text-decoration: none; display: block; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
+       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 30px rgba(102, 126, 234, 0.4)';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(102, 126, 234, 0.3)';">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 50px; border-radius: 16px; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden;">
+            <!-- Background Pattern -->
+            <div style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; opacity: 0.1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
+            
+            <!-- Content -->
+            <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <span style="font-size: 3rem;">📈</span>
+                        <div>
+                            <h2 style="margin: 0; font-size: 2.5rem; font-weight: 700; letter-spacing: -0.5px;">7-Day Job Insights</h2>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 20px; margin-top: 20px;">
+                        <div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px;">View Complete Trends</div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">✔️ Success Rates</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px;">Analyze Performance</div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">📉 Daily Breakdown</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 12px 20px; border-radius: 8px; backdrop-filter: blur(10px);">
+                            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 4px;">Track History</div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">🕒 7 Days Data</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; padding-left: 40px;">
+                    <div style="background: white; color: #667eea; padding: 18px 40px; border-radius: 12px; font-size: 1.3rem; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 10px;">
+                        VIEW INSIGHTS ➡️
+                    </div>
+                </div>
+            </div>
+        </div>
+    </a>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block info_guidelines %}
+<section class="info-guidelines">
+    <div class="info-header">
+        <span class="info-icon">ℹ️</span>
+        <span>Report Information</span>
+    </div>
+    <div class="info-content">
+        {% if app.slug == 'level3' %}
+        <div class="info-item">
+            <span class="info-label">Data Source:</span>
+            <span class="info-value" style="word-wrap: break-word; overflow-wrap: break-word;">REP_DW_ADMIN.OPB_TASK_INST_RUN table (Level3 workflow execution data)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Update Frequency:</span>
+            <span class="info-value" style="word-wrap: break-word; overflow-wrap: break-word;">Real-time from Oracle database - Refreshes on page load</span>
+        </div>
+        {% elif app.slug == 'mdm' %}
+        <div class="info-item">
+            <span class="info-label">Data Source:</span>
+            <span class="info-value">ICSM.app_control_status table (MDM pipeline execution tracking)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Time Zone:</span>
+            <span class="info-value">MST (Mountain Standard Time, GMT-7) - Timestamps converted from UTC</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">CAPEX SLA:</span>
+            <span class="info-value">3 hours (180 minutes) - Negative values in duration indicate SLA miss</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Update Frequency:</span>
+            <span class="info-value">Real-time from Oracle database - Live monitoring of pipeline status</span>
+        </div>
+        {% elif app.slug == 'erp' %}
+        <div class="info-item">
+            <span class="info-label">Data Source:</span>
+            <span class="info-value">ERP operational database - Workflow and job execution metadata</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Time Zone:</span>
+            <span class="info-value">Asia/Kolkata (IST) - Indian Standard Time for all timestamps</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">SLA Monitoring:</span>
+            <span class="info-value">Application-specific SLA thresholds - Tracked per workflow type</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Update Frequency:</span>
+            <span class="info-value">Real-time database queries - Reflects current operational state</span>
+        </div>
+        {% else %}
+        <div class="info-item">
+            <span class="info-label">Data Source:</span>
+            <span class="info-value">Oracle database - Application-specific operational tables</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Time Zone:</span>
+            <span class="info-value">Asia/Kolkata (IST) - Indian Standard Time</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Update Frequency:</span>
+            <span class="info-value">Real-time from database - Live operational monitoring</span>
+        </div>
+        {% endif %}
+    </div>
+</section>
 {% endblock %}

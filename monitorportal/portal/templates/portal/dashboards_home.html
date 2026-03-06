@@ -1,20 +1,34 @@
 {# portal/templates/portal/dashboards_home.html #}
 {% extends "portal/layout.html" %}
-{% block title %}Dashboards{% endblock %}
+{% block title %}Applications Dashboard{% endblock %}
 
 {% block content %}
 <div class="home-card">
-    <h3>Dashboards</h3>
-    <p class="desc">Select an application to view its SSRS reports.</p>
+    <h3>📊 Application Dashboards</h3>
+    <p class="desc">Select an application to view real-time monitoring reports and operational data from Oracle databases</p>
 </div>
 
 <div class="cards">
     {% for app in apps %}
-    <div class="card">
-        <div class="card-title">{{ app.name }}</div>
-        <div class="card-desc">{{ app.description }}</div>
-        <div class="card-actions">
-            <a class="btn" href="{% url 'app_dashboards' app.slug %}">Open</a>
+    <div class="report-tile">
+        <div class="tile-head">
+            <div class="tile-icon">
+                {% if "level3" in app.slug|lower %}📈
+                {% elif "mdm" in app.slug|lower %}🗂️
+                {% elif "erp" in app.slug|lower %}💼
+                {% elif "adf" in app.slug|lower %}🔄
+                {% else %}📊
+                {% endif %}
+            </div>
+            <div>
+                <div class="tile-title">{{ app.name }}</div>
+                <div class="tile-desc">{{ app.description|default:"Monitor and analyze job status, failures, and performance metrics" }}</div>
+            </div>
+        </div>
+        <div class="tile-actions">
+            <a class="btn btn-primary" href="{% url 'app_dashboards' app.slug %}">
+                View Reports →
+            </a>
         </div>
     </div>
     {% endfor %}

@@ -8,12 +8,22 @@ import oracledb
 # ---------------------------------------------------------
 # HARD-CODED ORACLE CONNECTION CONFIG
 # ---------------------------------------------------------
+# Level3 Application Database (Informatica Repository)
 DB_CONFIG = {
     "host": "azeus2loraipcp2.corp.intranet",
     "port": 1521,
     "service": "infr01p_app",
     "user": "icsm_appl",
     "password": "icsm_appl_infprd"
+}
+
+# MDM, ERP, ADF Applications Database (IICS CDI / Metadata Framework)
+MAPDQPRD_DB_CONFIG = {
+    "host": "RACORAP32-SCAN.CORP.INTRANET",
+    "port": 1521,
+    "service": "SVC_IDG01P",
+    "user": "mapdqprd",
+    "password": "2026NewIDMC"
 }
 
 
@@ -72,11 +82,35 @@ def fetch_all(sql: str, params: dict | None = None) -> list[dict]:
     """
     Returns all rows as a list of {column: value} dicts.
     Column names are converted to lowercase.
+    Configured to handle LONG and CLOB fields up to 10MB.
     """
     with oracle_cursor() as cur:
+        # Configure cursor to handle large LONG and CLOB fields
+        cur.arraysize = 100
+        # Set large output size for LONG columns (10MB limit)
+        cur.setoutputsize(10000000)
+        
         cur.execute(sql, params or {})
+        
+        # Get column info and check for LONG types
         cols = [c[0].lower() for c in cur.description]
-        return [dict(zip(cols, row)) for row in cur.fetchall()]
+        
+        # Fetch all rows and convert LOB objects to strings
+        rows = []
+        for row in cur.fetchall():
+            row_dict = {}
+            for col_name, value in zip(cols, row):
+                # Handle CLOB/BLOB objects by reading them  
+                if hasattr(value, 'read'):
+                    try:
+                        row_dict[col_name] = value.read()
+                    except:
+                        row_dict[col_name] = str(value)
+                else:
+                    row_dict[col_name] = value
+            rows.append(row_dict)
+        
+        return rows
 
 
 def fetch_kv(sql: str) -> dict:
@@ -91,3 +125,61 @@ def fetch_kv(sql: str) -> dict:
         key = str(r.get("metric_key", "")).strip()
         out[key] = r.get("metric_value", 0)
     return out
+
+
+# ---------------------------------------------------------
+# MAPDQPRD DATABASE CONNECTION (MDM, ERP, ADF)
+# ---------------------------------------------------------
+def get_mapdqprd_conn() -> oracledb.Connection:
+    """
+    Creates and returns a new Oracle DB connection to MAPDQPRD database
+    Used for MDM, ERP, and ADF applications
+    """
+    dsn = oracledb.makedsn(
+        MAPDQPRD_DB_CONFIG["host"],
+        MAPDQPRD_DB_CONFIG["port"],
+        service_name=MAPDQPRD_DB_CONFIG["service"]
+    )
+
+    conn = oracledb.connect(
+        user=MAPDQPRD_DB_CONFIG["user"],
+        password=MAPDQPRD_DB_CONFIG["password"],
+        dsn=dsn
+    )
+    return conn
+
+
+@contextmanager
+def mapdqprd_cursor():
+    """
+    Context manager for MAPDQPRD database
+    Usage:
+        with mapdqprd_cursor() as cur:
+            cur.execute("select * from MAPDQPRD.IICS_CDI_RUN_INFO")
+            rows = cur.fetchall()
+    """
+    conn = get_mapdqprd_conn()
+    cur = conn.cursor()
+    try:
+        yield cur
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def fetch_all_mapdqprd(sql: str, params: dict | None = None) -> list[dict]:
+    """
+    Returns all rows from MAPDQPRD database as a list of {column: value} dicts.
+    Column names are converted to lowercase.
+    Used for MDM, ERP, and ADF queries.
+    """
+    with mapdqprd_cursor() as cur:
+        cur.execute(sql, params or {})
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]

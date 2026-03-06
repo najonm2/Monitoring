@@ -54,6 +54,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "portal.middleware.DevRemoteUserMiddleware",  # DEV ONLY: Simulates SSO for local testing
+    "django.contrib.auth.middleware.RemoteUserMiddleware",  # SSO CUID capture
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -85,6 +87,27 @@ TEMPLATES = [
 WSGI_APPLICATION = "monitorportal.wsgi.application"
 
 # -----------------------------------------------------------------------------
+# CACHING (Performance Optimization)
+# -----------------------------------------------------------------------------
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'infa-monitor-cache',
+        'TIMEOUT': 120,  # Default cache timeout in seconds (2 minutes)
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,  # Maximum number of cache entries
+        }
+    }
+}
+
+# Cache middleware (optional - for whole page caching)
+# MIDDLEWARE = [
+#     'django.middleware.cache.UpdateCacheMiddleware',  # Must be first
+#     ...existing middleware...
+#     'django.middleware.cache.FetchFromCacheMiddleware',  # Must be last
+# ]
+
+# -----------------------------------------------------------------------------
 # DATABASE (SQLite for dev)
 # -----------------------------------------------------------------------------
 DATABASES = {
@@ -102,6 +125,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# -----------------------------------------------------------------------------
+# AUTHENTICATION BACKENDS (SSO Support)
+# -----------------------------------------------------------------------------
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.RemoteUserBackend',  # SSO via REMOTE_USER header
+    'django.contrib.auth.backends.ModelBackend',  # Fallback to database users
 ]
 
 # -----------------------------------------------------------------------------

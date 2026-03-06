@@ -1,0 +1,109 @@
+# YOUR DATABRICKS DSN CONFIGURATION
+# Use these EXACT values when configuring the DSN
+
+========================================
+STEP-BY-STEP CONFIGURATION
+========================================
+
+1. Open ODBC Administrator:
+   Press Windows + R, type: odbcad32.exe
+
+2. Go to "System DSN" tab
+
+3. Click "Add..."
+
+4. Select "Simba Spark ODBC Driver"
+   (If you don't see it, install the driver first)
+
+5. Click "Finish"
+
+========================================
+CONFIGURATION VALUES
+========================================
+
+Tab: General
+------------
+Data Source Name:    DataBricks_For_DBX_APP_64B_PRD
+Description:         Databricks Production - ADF Monitoring
+
+
+Tab: Connection
+---------------
+Host:                adb-1065907739045250.10.azuredatabricks.net
+Port:                443
+Database:            default
+                     (or leave blank)
+
+
+Authentication Section:
+-----------------------
+Mechanism:           User Name and Password
+User Name:           token
+                     (literally type the word "token")
+Password:            [Your Personal Access Token]
+                     (Get from Databricks → User Settings → Access Tokens)
+
+
+Thrift Transport:    HTTP
+
+HTTP Path:           sql/protocolv1/o/1065907739045250/0610-154229-o905dcku
+
+
+Tab: SSL Options
+-----------------
+☑ Enable SSL
+☑ Allow Self-Signed Certificates (if needed)
+☑ Allow Host Name CN Mismatch (if needed)
+
+
+Tab: Advanced Options
+----------------------
+Rows Fetched Per Block:  100000
+Socket Timeout:          60
+(Leave other defaults)
+
+========================================
+GET YOUR PERSONAL ACCESS TOKEN
+========================================
+
+1. Log into Databricks workspace
+2. Click your profile icon (top right)
+3. Select "User Settings"
+4. Go to "Access tokens" tab
+5. Click "Generate new token"
+6. Name: Portal_ODBC_Access
+7. Expiration: 90 days
+8. Click "Generate"
+9. COPY THE TOKEN (you can only see it once!)
+10. Paste it in the Password field above
+
+========================================
+TEST CONNECTION
+========================================
+
+After entering all values:
+1. Click "Test" button in DSN configuration
+2. Should show: "Connection Successful"
+3. Click "OK" to save
+
+Then verify with PowerShell:
+powershell -ExecutionPolicy Bypass -File "C:\Users\ab64033\source\repos\infa_monitor_portal\check_databricks_setup.ps1"
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Error: "Network timeout"
+→ Ensure you're connected to VPN
+→ Check port 443 is not blocked
+
+Error: "Authentication failed"
+→ Generate a new Personal Access Token
+→ Ensure User Name is exactly "token"
+→ Verify token hasn't expired
+
+Error: "SSL certificate verification failed"
+→ Enable "Allow Self-Signed Certificates"
+→ Enable "Allow Host Name CN Mismatch"
+
+========================================

@@ -1,21 +1,88 @@
 {# portal/templates/portal/home.html #}
 {% extends "portal/layout.html" %}
-{% block title %}Home - PASE JOB MONITORING DASH BOAD{% endblock %}
+{% block title %}Home - PASE Job Monitoring Dashboard{% endblock %}
 
 {% block content %}
-<div class="home-card">
-    <h2>Hi {{ user_display|default:"Guest" }}</h2>
-    <h3>Welcome to PASE Job Monitoring tool</h3>
+<!-- Welcome Hero Card -->
+<div class="card" style="padding: 48px; text-align: center; margin-bottom: 32px;">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h2 style="font-size: 42px; font-weight: 800; color: var(--lumen-primary); margin-bottom: 16px; letter-spacing: -0.5px;">
+            Welcome to PASE Job Monitoring Portal
+        </h2>
+        <p style="font-size: 18px; color: var(--gray-600); line-height: 1.7; margin-bottom: 24px;">
+            Centralized real-time monitoring for Informatica PowerCenter jobs with instant access to operational reports and Oracle database insights
+        </p>
+        <div style="display: flex; gap: 16px; justify-content: center; margin-top: 32px;">
+            <a href="{% url 'dashboards' %}" class="btn btn-primary" style="padding: 14px 32px; font-size: 16px;">
+                📊 View All Applications
+            </a>
+        </div>
+    </div>
+</div>
 
-    <p class="desc">
-        This portal provides centralized access to Informatica PowerCenter monitoring dashboards (SSRS).
-    </p>
+<!-- Features Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <div class="card" style="padding: 24px;">
+        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
+            📈
+        </div>
+        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
+            Real-Time Monitoring
+        </h4>
+        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
+            Monitor failed jobs, long-running sessions, and job status across Level3, MDM, ERP, and ADF applications in real-time
+        </p>
+    </div>
+    
+    <div class="card" style="padding: 24px;">
+        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
+            🗄️
+        </div>
+        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
+            Oracle Database Integration
+        </h4>
+        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
+            Direct queries to INFA_PCREPO and MAPDQPRD databases with automatic fallback and data validation
+        </p>
+    </div>
+    
+    <div class="card" style="padding: 24px;">
+        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
+            🎯
+        </div>
+        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
+            Centralized Dashboard
+        </h4>
+        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
+            Single portal for all monitoring needs with easy navigation, SSRS report integration, and professional data views
+        </p>
+    </div>
+</div>
 
-    <h4>Key Features:</h4>
-    <ul>
-        <li>Centralized access to all SSRS monitoring dashboards</li>
-        <li>Single portal for P1 job monitoring</li>
-        <li>Future: AI summaries + anomaly alerts + prediction</li>
-    </ul>
+<!-- Quick Stats -->
+<div class="card">
+    <div class="card-header">
+        <h5 style="margin: 0; font-size: 20px; font-weight: 700;">🚀 Platform Capabilities</h5>
+    </div>
+    <div style="padding: 32px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px;">
+            <div style="text-align: center;">
+                <div style="font-size: 48px; font-weight: 800; color: var(--lumen-primary); margin-bottom: 8px;">4</div>
+                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Active Applications</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; font-weight: 800; color: var(--success); margin-bottom: 8px;">8</div>
+                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monitoring Reports</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; font-weight: 800; color: var(--info); margin-bottom: 8px;">2</div>
+                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Oracle Databases</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; font-weight: 800; color: var(--warning); margin-bottom: 8px;">24/7</div>
+                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Live Monitoring</div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

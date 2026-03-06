@@ -1,0 +1,357 @@
+{# portal/templates/portal/mdm_job_status.html #}
+{% extends "portal/layout.html" %}
+
+{% block title %}MDM Job Status with AI Insights{% endblock %}
+
+{% block content %}
+
+<!-- FLASH MESSAGES -->
+{% if flash_messages %}
+<div class="flash-messages">
+    {% for msg in flash_messages %}
+    <div class="flash-message flash-{{ msg.type }}">
+        <span class="flash-icon">
+            {% if msg.type == 'error' %}🚨
+            {% elif msg.type == 'warning' %}⚠️
+            {% elif msg.type == 'success' %}✅
+            {% else %}ℹ️{% endif %}
+        </span>
+        <span class="flash-text">{{ msg.message }}</span>
+        <button class="flash-close" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- PAGE HEADER -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">MDM JOB STATUS WITH AI INSIGHTS</div>
+        <h1 class="app-title">MDM Application Jobs</h1>
+        <div class="app-subtitle">
+            Informatica MDM Jobs with AI-Powered Success/Failure Analysis
+        </div>
+    </div>
+
+    {% if mdm_insights.success %}
+    <div class="app-stats">
+        <div class="stat">
+            <div class="stat-label">TOTAL JOBS</div>
+            <div class="stat-value">
+                {{ mdm_insights.total_jobs|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">FAILED</div>
+            <div class="stat-value {% if mdm_insights.failed_count > 0 %}stat-critical{% endif %}">
+                {{ mdm_insights.failed_count|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">SUCCEEDED</div>
+            <div class="stat-value stat-success">
+                {{ mdm_insights.succeeded_count|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">RUNNING</div>
+            <div class="stat-value stat-warning">
+                {{ mdm_insights.running_count|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">SUCCESS RATE</div>
+            <div class="stat-value {% if mdm_insights.success_rate < 80 %}stat-critical{% elif mdm_insights.success_rate < 95 %}stat-warning{% else %}stat-success{% endif %}">
+                {{ mdm_insights.success_rate|floatformat:1 }}%
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<!-- AI INSIGHTS SUMMARY -->
+{% if mdm_insights.success %}
+<section class="report-section">
+    <h2 class="section-title">🤖 AI INSIGHTS SUMMARY</h2>
+    
+    <div class="ai-summary-grid">
+        <div class="insight-card {% if mdm_insights.failed_count > 0 %}insight-critical{% else %}insight-success{% endif %}">
+            <div class="insight-icon">
+                {% if mdm_insights.failed_count > 0 %}🚨{% else %}✅{% endif %}
+            </div>
+            <div class="insight-content">
+                <h3>Job Status</h3>
+                <p>
+                    {% if mdm_insights.failed_count > 0 %}
+                        <strong>{{ mdm_insights.failed_count }}</strong> job(s) have failed and require attention.
+                    {% else %}
+                        All jobs are running successfully! No failures detected.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card insight-info">
+            <div class="insight-icon">📊</div>
+            <div class="insight-content">
+                <h3>Performance Metrics</h3>
+                <p>
+                    Success Rate: <strong>{{ mdm_insights.success_rate|floatformat:1 }}%</strong><br>
+                    Failure Rate: <strong>{{ mdm_insights.fail_rate|floatformat:1 }}%</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card {% if mdm_insights.running_count > 0 %}insight-warning{% else %}insight-info{% endif %}">
+            <div class="insight-icon">⏱️</div>
+            <div class="insight-content">
+                <h3>Active Jobs</h3>
+                <p>
+                    <strong>{{ mdm_insights.running_count }}</strong> job(s) currently running.
+                    {% if mdm_insights.not_started_count > 0 %}
+                    <br><strong>{{ mdm_insights.not_started_count }}</strong> job(s) not started.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- FAILED JOBS -->
+{% if mdm_insights.failed_jobs %}
+<section class="report-section">
+    <h2 class="section-title">❌ FAILED JOBS</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME</th>
+                    <th>END TIME</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in mdm_insights.failed_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.asset_name }}</td>
+                    <td><span class="badge badge-status-failed">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- SUCCEEDED JOBS -->
+{% if mdm_insights.succeeded_jobs %}
+<section class="report-section">
+    <h2 class="section-title">✅ SUCCESSFULLY COMPLETED JOBS</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME</th>
+                    <th>END TIME</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in mdm_insights.succeeded_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.asset_name }}</td>
+                    <td><span class="badge badge-status-success">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- RUNNING JOBS -->
+{% if mdm_insights.running_jobs %}
+<section class="report-section">
+    <h2 class="section-title">⏱️ CURRENTLY RUNNING JOBS</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME</th>
+                    <th>END TIME</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in mdm_insights.running_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.asset_name }}</td>
+                    <td><span class="badge badge-status-running">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time|default:"In Progress" }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- NO DATA -->
+{% if not mdm_insights.success or mdm_insights.total_jobs == 0 %}
+<section class="report-section">
+    <div class="no-data">
+        <div class="no-data-icon">📊</div>
+        <div class="no-data-text">No MDM job data available</div>
+    </div>
+</section>
+{% endif %}
+
+<!-- REPORT INFORMATION -->
+<section class="report-section">
+    <h2 class="section-title">📋 Report Information</h2>
+    
+    <div style="background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <!-- Data Source -->
+            <div style="padding: 16px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--lumen-primary);">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <span style="font-size: 24px;">🗄️</span>
+                    <div>
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">Data Source</div>
+                        <div style="font-size: 14px; color: #6b7280;">MAPDQPRD.IICS_CDI_RUN_INFO</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Update Frequency -->
+            <div style="padding: 16px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--lumen-primary);">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <span style="font-size: 24px;">🔄</span>
+                    <div>
+                        <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">Update Frequency</div>
+                        <div style="font-size: 14px; color: #6b7280;">Real-time (Live Data)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.ai-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.insight-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    border-left: 4px solid #ddd;
+}
+
+.insight-card.insight-critical {
+    border-left-color: #DC3545;
+    background: #FFF5F5;
+}
+
+.insight-card.insight-success {
+    border-left-color: #28A745;
+    background: #F0FFF4;
+}
+
+.insight-card.insight-warning {
+    border-left-color: #FFC107;
+    background: #FFFBF0;
+}
+
+.insight-card.insight-info {
+    border-left-color: #1E90FF;
+    background: #F0F8FF;
+}
+
+.insight-icon {
+    font-size: 32px;
+}
+
+.insight-content h3 {
+    margin: 0 0 var(--space-sm);
+    color: #333;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.insight-content p {
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
+}
+
+.stat-success {
+    color: #28A745 !important;
+}
+
+/* Enhanced Success Badge Highlighting */
+.badge-status-success {
+    background: linear-gradient(135deg, #28A745 0%, #20C997 100%) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 6px 14px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border: 2px solid #20C997 !important;
+}
+
+.badge-status-success:hover {
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Highlight entire success row */
+.table tbody tr:has(.badge-status-success) {
+    background-color: #F0FFF4 !important;
+}
+
+.table tbody tr:has(.badge-status-success):hover {
+    background-color: #E8F8EC !important;
+}
+</style>
+
+{% endblock %}
