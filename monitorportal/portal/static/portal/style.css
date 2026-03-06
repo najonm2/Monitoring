@@ -1,0 +1,74 @@
+﻿/* ===== ORANGE MENU BAR (CLEAN, NON-CLUMSY) ===== */
+
+.menu-bar {
+    background: linear-gradient(90deg, #d96b00 0%, #f08a1a 55%, #d96b00 100%);
+    box-shadow: 0 2px 10px rgba(0,0,0,.10);
+}
+
+    /* Full-width row, items evenly spaced, no wrapping */
+    .menu-bar .nav-wrap {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly; /* ✅ equal spacing across full width */
+        gap: 12px;
+        padding: 10px 16px;
+        flex-wrap: nowrap; /* ✅ stop wrapping */
+        overflow-x: auto; /* ✅ if screen small, scroll instead of clumping */
+        -webkit-overflow-scrolling: touch;
+    }
+
+        /* Hide scrollbar but keep scroll (optional) */
+        .menu-bar .nav-wrap::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .menu-bar .nav-wrap::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.35);
+            border-radius: 10px;
+        }
+
+    /* Bright, aligned, single line */
+    .menu-bar .menu-item {
+        flex: 0 0 auto; /* ✅ do not shrink weirdly */
+        white-space: nowrap; /* ✅ keep text in one line */
+        text-transform: uppercase; /* ✅ CAPITAL LETTERS */
+
+        color: #fff !important;
+        font-weight: 900;
+        font-size: 13px; /* slightly smaller for long names */
+        letter-spacing: 0.7px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        text-decoration: none;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.24);
+        transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+
+        /* Hover */
+        .menu-bar .menu-item:hover {
+            background: rgba(255,255,255,0.22);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0,0,0,.16);
+        }
+
+        /* Active highlight */
+        .menu-bar .menu-item.active {
+            background: #ffffff;
+            color: #b35400 !important;
+            border-color: rgba(255,255,255,0.75);
+            box-shadow: 0 4px 14px rgba(0,0,0,.12);
+        }
+
+/* Small screens: reduce padding slightly */
+@media (max-width: 600px) {
+    .menu-bar .nav-wrap {
+        padding: 8px 10px;
+    }
+
+    .menu-bar .menu-item {
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+}

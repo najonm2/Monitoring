@@ -1,0 +1,687 @@
+{# portal/templates/portal/erp_job_status.html #}
+{% extends "portal/layout.html" %}
+{% load custom_filters %}
+
+{% block title %}ERP Job Status - Last 8 Runs Tracker{% endblock %}
+
+{% block content %}
+
+<!-- FLASH MESSAGES -->
+{% if flash_messages %}
+<div class="flash-messages">
+    {% for msg in flash_messages %}
+    <div class="flash-message flash-{{ msg.type }}">
+        <span class="flash-icon">
+            {% if msg.type == 'error' %}🚨
+            {% elif msg.type == 'warning' %}⏱️
+            {% elif msg.type == 'success' %}✅
+            {% else %}ℹ️{% endif %}
+        </span>
+        <span class="flash-text">{{ msg.message }}</span>
+        <button class="flash-close" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- PAGE HEADER -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">ERP APPLICATION - RUNS EVERY 4 HOURS</div>
+        <h1 class="app-title">ERP Job Status Tracker</h1>
+        <div class="app-subtitle">
+            📅 Schedule: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 | AI-Powered Run Analysis
+        </div>
+    </div>
+
+    {% if erp_data.success and erp_data.current_run %}
+    <div class="app-stats">
+        <div class="stat">
+            <div class="stat-label">CURRENT RUN - TOTAL</div>
+            <div class="stat-value">
+                {{ erp_data.current_run.total_jobs|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">COMPLETED</div>
+            <div class="stat-value stat-success">
+                {{ erp_data.current_run.completed|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">RUNNING</div>
+            <div class="stat-value stat-warning">
+                {{ erp_data.current_run.running|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">FAILED</div>
+            <div class="stat-value {% if erp_data.current_run.failed > 0 %}stat-critical{% endif %}">
+                {{ erp_data.current_run.failed|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">SUCCESS RATE</div>
+            <div class="stat-value {% if erp_data.current_run.success_rate < 80 %}stat-critical{% elif erp_data.current_run.success_rate < 95 %}stat-warning{% else %}stat-success{% endif %}">
+                {{ erp_data.current_run.success_rate|floatformat:1 }}%
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<!-- LAST 8 RUNS SUMMARY -->
+{% if erp_data.success and erp_data.last_8_runs %}
+<section class="report-section">
+    <h2 class="section-title">📊 LAST 8 RUNS STATUS - AI INSIGHTS</h2>
+    
+    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <span style="font-size: 28px;">🤖</span>
+            <div>
+                <h3 style="margin: 0; font-size: 18px; color: #333;">AI Analysis</h3>
+                <p style="margin: 0; color: #666; font-size: 14px;">Tracking {{ erp_data.last_8_runs|length }} most recent ERP runs (every 4 hours)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table" style="font-size: 14px;">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">#</th>
+                    <th>RUN TIME (MST)</th>
+                    <th>END TIME (MST)</th>
+                    <th style="text-align: center;">DURATION</th>
+                    <th style="text-align: center;">TOTAL JOBS</th>
+                    <th style="text-align: center;">✅ SUCCEEDED</th>
+                    <th style="text-align: center;">⏱️ RUNNING</th>
+                    <th style="text-align: center;">❌ FAILED</th>
+                    <th style="text-align: center;">⏸️ SUSPENDED</th>
+                    <th style="text-align: center;">SUCCESS %</th>
+                    <th style="text-align: center;">STATUS</th>
+                    <th style="text-align: center;">SLA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in erp_data.last_8_runs %}
+                <tr {% if forloop.first %}style="background: #FFFBF0; font-weight: 600;"{% endif %}>
+                    <td style="text-align: center;">
+                        {% if forloop.first %}
+                            <span style="background: #FFC107; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">LATEST</span>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </td>
+                    <td style="font-weight: 500;">{{ run.run_label }}</td>
+                    <td style="font-weight: 400; font-size: 12px; color: #666;">
+                        {{ run.end_time|default:"Running..." }}
+                    </td>
+                    <td style="text-align: center; font-weight: 500;">
+                        {% if run.duration_minutes %}
+                            <span style="color: #333;">{{ run.duration_minutes|format_duration }}</span>
+                        {% else %}
+                            <span style="color: #999;">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-weight: 600;">{{ run.total_jobs }}</td>
+                    <td style="text-align: center;">
+                        <span style="color: #28A745; font-weight: 600;">{{ run.succeeded }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.running > 0 %}
+                            <span style="color: #FFC107; font-weight: 600;">{{ run.running }}</span>
+                        {% else %}
+                            <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.failed > 0 %}
+                            <span style="color: #DC3545; font-weight: 600;">{{ run.failed }}</span>
+                        {% else %}
+                            <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.suspended > 0 %}
+                            <span style="color: #FF8C00; font-weight: 600;">{{ run.suspended }}</span>
+                        {% else %}
+                            <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 600; color: {% if run.success_rate >= 95 %}#28A745{% elif run.success_rate >= 80 %}#FFC107{% else %}#DC3545{% endif%};">
+                            {{ run.success_rate|floatformat:1 }}%
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.run_status == 'FAILED' %}
+                            <span class="badge badge-status-failed">FAILED</span>
+                        {% elif run.run_status == 'RUNNING' %}
+                            <span class="badge badge-status-running">RUNNING</span>
+                        {% elif run.run_status == 'SUCCESS' %}
+                            <span class="badge badge-status-success">SUCCESS</span>
+                        {% elif run.run_status == 'SUSPENDED' %}
+                            <span class="badge badge-status-suspended">SUSPENDED</span>
+                        {% else %}
+                            <span class="badge badge-status-warning">{{ run.run_status|default:"UNKNOWN" }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.sla_status == 'MET' %}
+                            <span class="badge" style="background: #28A745; color: white; font-size: 11px; padding: 3px 8px;">
+                                ✓ MET<br><span style="font-size: 9px;">({{ run.sla_met_by|floatformat:0 }}m early)</span>
+                            </span>
+                        {% elif run.sla_status == 'MISSED' %}
+                            <span class="badge" style="background: #DC3545; color: white; font-size: 11px; padding: 3px 8px;">
+                                ✗ MISSED<br><span style="font-size: 9px;">({{ run.sla_met_by|floatformat:0 }}m over)</span>
+                            </span>
+                        {% elif run.sla_status == 'IN PROGRESS' %}
+                            <span class="badge" style="background: #FFC107; color: white; font-size: 11px; padding: 3px 8px;">
+                                ⏱️ IN PROGRESS
+                            </span>
+                        {% else %}
+                            <span style="color: #999;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- CURRENT RUN DETAILS -->
+{% if erp_data.success and erp_data.current_run %}
+<section class="report-section">
+    <h2 class="section-title">🔍 CURRENT RUN - DETAILED JOB STATUS</h2>
+    
+    <!-- Current Run AI Insights -->
+    <div class="ai-summary-grid">
+        <div class="insight-card {% if erp_data.current_run.failed > 0 %}insight-critical{% else %}insight-success{% endif %}">
+            <div class="insight-icon">
+                {% if erp_data.current_run.failed > 0 %}🚨{% else %}✅{% endif %}
+            </div>
+            <div class="insight-content">
+                <h3>Current Run Status</h3>
+                <p>
+                    {% if erp_data.current_run.failed > 0 %}
+                        <strong>{{ erp_data.current_run.failed }}</strong> job(s) have failed in current run.
+                    {% else %}
+                        All jobs are running successfully! No failures detected.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card insight-info">
+            <div class="insight-icon">📊</div>
+            <div class="insight-content">
+                <h3>Performance Metrics</h3>
+                <p>
+                    Completed: <strong>{{ erp_data.current_run.completed }}</strong> / {{ erp_data.current_run.total_jobs }}<br>
+                    Success Rate: <strong>{{ erp_data.current_run.success_rate|floatformat:1 }}%</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="insight-card {% if erp_data.current_run.running > 0 %}insight-warning{% else %}insight-info{% endif %}">
+            <div class="insight-icon">⏱️</div>
+            <div class="insight-content">
+                <h3>Active Jobs</h3>
+                <p>
+                    <strong>{{ erp_data.current_run.running }}</strong> job(s) currently running.
+                    {% if erp_data.current_run.suspended > 0 %}
+                    <br><strong>{{ erp_data.current_run.suspended }}</strong> job(s) suspended.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ALL JOBS IN CURRENT RUN - DETAILED BREAKDOWN -->
+{% if erp_data.current_run.jobs %}
+<section class="report-section">
+    <h2 class="section-title">📊 CURRENT RUN - ALL JOBS BREAKDOWN</h2>
+    
+    <!-- Search and Filter Controls -->
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <!-- Search Box -->
+            <div style="flex: 1; min-width: 300px;">
+                <input 
+                    type="text" 
+                    id="jobSearchBox" 
+                    placeholder="🔍 Search by job/workflow name..." 
+                    style="width: 100%; padding: 10px 15px; border: 2px solid #dee2e6; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;"
+                    onkeyup="filterJobsTable()"
+                    onfocus="this.style.borderColor='#007bff'"
+                    onblur="this.style.borderColor='#dee2e6'"
+                />
+            </div>
+            
+            <!-- Status Filter Buttons -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button onclick="filterByStatus('ALL')" class="status-filter-btn active" data-status="ALL" style="padding: 8px 16px; border: 2px solid #007bff; background: #007bff; color: white; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                    ALL
+                </button>
+                <button onclick="filterByStatus('RUNNING')" class="status-filter-btn" data-status="RUNNING" style="padding: 8px 16px; border: 2px solid #FFC107; background: white; color: #FFC107; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                    ⏱️ RUNNING
+                </button>
+                <button onclick="filterByStatus('SUCCESS')" class="status-filter-btn" data-status="SUCCESS" style="padding: 8px 16px; border: 2px solid #28A745; background: white; color: #28A745; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                    ✅ SUCCESS
+                </button>
+                <button onclick="filterByStatus('FAILED')" class="status-filter-btn" data-status="FAILED" style="padding: 8px 16px; border: 2px solid #DC3545; background: white; color: #DC3545; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                    ❌ FAILED
+                </button>
+            </div>
+        </div>
+        
+        <!-- Job Count Display -->
+        <div style="margin-top: 12px; font-size: 14px; color: #495057; font-weight: 500;">
+            <span id="jobCountDisplay">Showing all {{ erp_data.current_run.total_jobs }} jobs</span>
+            <span style="color: #6c757d; margin-left: 10px;">
+                (🟢 {{ erp_data.current_run.completed }} Success | 
+                 🟡 {{ erp_data.current_run.running }} Running | 
+                 🔴 {{ erp_data.current_run.failed }} Failed)
+            </span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table" id="jobsBreakdownTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th style="min-width: 300px;">JOB/WORKFLOW NAME</th>
+                    <th>SUBTASKS</th>
+                    <th>START TIME (MST)</th>
+                    <th>DURATION</th>
+                    <th>STATUS</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in erp_data.current_run.jobs %}
+                <tr class="job-row" data-job-name="{{ job.asset_name|lower }}" data-status="{{ job.status|upper }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap" style="font-family: monospace; font-size: 12px;">{{ job.asset_name }}</td>
+                    <td style="text-align: center; font-weight: bold;">
+                        {{ job.subtask_count }}
+                    </td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap" style="font-weight: bold;">
+                        {% if job.status == 'RUNNING' %}
+                            {{ job.duration_minutes|format_duration }} ⏱️
+                        {% elif job.end_time == 'Running...' %}
+                            {{ job.duration_minutes|format_duration }} ⏱️
+                        {% else %}
+                            {{ job.duration_minutes|format_duration }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.status == 'SUCCESS' %}
+                            <span class="badge" style="background: #28A745; color: white;">✅ {{ job.status }}</span>
+                        {% elif job.status == 'RUNNING' %}
+                            <span class="badge" style="background: #FFC107; color: black;">⏱️ {{ job.status }}</span>
+                        {% elif job.status == 'FAILED' %}
+                            <span class="badge" style="background: #DC3545; color: white;">❌ {{ job.status }}</span>
+                        {% elif job.status == 'SUSPENDED' %}
+                            <span class="badge" style="background: #6C757D; color: white;">⏸️ {{ job.status }}</span>
+                        {% else %}
+                            <span class="badge" style="background: #868E96; color: white;">{{ job.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 11px;">{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- FAILED JOBS IN CURRENT RUN -->
+{% if erp_data.current_run.failed_jobs %}
+<section class="report-section">
+    <h2 class="section-title">❌ FAILED JOBS - CURRENT RUN</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME (MST)</th>
+                    <th>END TIME (MST)</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in erp_data.current_run.failed_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
+                    <td><span class="badge badge-status-failed">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- RUNNING JOBS IN CURRENT RUN -->
+{% if erp_data.current_run.running_jobs %}
+<section class="report-section">
+    <h2 class="section-title">⏱️ RUNNING JOBS - CURRENT RUN</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME (MST)</th>
+                    <th>END TIME (MST)</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in erp_data.current_run.running_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
+                    <td><span class="badge badge-status-running">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time|default:"In Progress" }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- SUCCEEDED JOBS IN CURRENT RUN -->
+{% if erp_data.current_run.succeeded_jobs %}
+<section class="report-section">
+    <h2 class="section-title">✅ SUCCESSFULLY COMPLETED - CURRENT RUN</h2>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ASSET NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME (MST)</th>
+                    <th>END TIME (MST)</th>
+                    <th>LOCATION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in erp_data.current_run.succeeded_jobs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
+                    <td><span class="badge badge-status-success">{{ job.status }}</span></td>
+                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.end_time }}</td>
+                    <td>{{ job.location }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<!-- NO DATA -->
+{% if not erp_data.success or not erp_data.last_8_runs %}
+<section class="report-section">
+    <div class="no-data">
+        <div class="no-data-icon">📊</div>
+        <div class="no-data-text">No ERP job data available</div>
+    </div>
+</section>
+{% endif %}
+
+<style>
+.ai-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.insight-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    border-left: 4px solid #ddd;
+}
+
+.insight-card.insight-critical {
+    border-left-color: #DC3545;
+    background: #FFF5F5;
+}
+
+.insight-card.insight-success {
+    border-left-color: #28A745;
+    background: #F0FFF4;
+}
+
+.insight-card.insight-warning {
+    border-left-color: #FFC107;
+    background: #FFFBF0;
+}
+
+.insight-card.insight-info {
+    border-left-color: #1E90FF;
+    background: #F0F8FF;
+}
+
+.insight-icon {
+    font-size: 32px;
+}
+
+.insight-content h3 {
+    margin: 0 0 var(--space-sm);
+    color: #333;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.insight-content p {
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
+}
+
+.stat-success {
+    color: #28A745 !important;
+}
+
+/* Enhanced Success Badge (matching MDM style) */
+.badge-status-success {
+    background: linear-gradient(135deg, #28A745 0%, #20C997 100%) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 6px 14px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border: 2px solid #20C997 !important;
+}
+
+.badge-status-success:hover {
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.5) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Highlight entire success row */
+.table tbody tr:has(.badge-status-success) {
+    background-color: #F0FFF4 !important;
+}
+
+.table tbody tr:has(.badge-status-success):hover {
+    background-color: #E8F8EC !important;
+}
+
+/* Badge for Partial Success */
+.badge-status-warning {
+    background: linear-gradient(135deg, #FFC107 0%, #FFB300 100%) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.3) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 11px !important;
+}
+
+/* Badge for Suspended Status */
+.badge-status-suspended {
+    background: linear-gradient(135deg, #6C757D 0%, #5A6268 100%) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-size: 11px !important;
+}
+</style>
+
+<script>
+// Global variable to track current status filter
+let currentStatusFilter = 'ALL';
+
+/**
+ * Filter jobs table by search text and status
+ */
+function filterJobsTable() {
+    const searchText = document.getElementById('jobSearchBox').value.toLowerCase();
+    const table = document.getElementById('jobsBreakdownTable');
+    const rows = table.getElementsByClassName('job-row');
+    
+    let visibleCount = 0;
+    let totalCount = rows.length;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const jobName = rows[i].getAttribute('data-job-name');
+        const status = rows[i].getAttribute('data-status');
+        
+        // Check if row matches both search text and status filter
+        const matchesSearch = jobName.includes(searchText);
+        const matchesStatus = (currentStatusFilter === 'ALL') || (status === currentStatusFilter);
+        
+        if (matchesSearch && matchesStatus) {
+            rows[i].style.display = '';
+            visibleCount++;
+        } else {
+            rows[i].style.display = 'none';
+        }
+    }
+    
+    // Update job count display
+    updateJobCount(visibleCount, totalCount);
+}
+
+/**
+ * Filter jobs by status
+ */
+function filterByStatus(status) {
+    currentStatusFilter = status;
+    
+    // Update button styles
+    const buttons = document.querySelectorAll('.status-filter-btn');
+    buttons.forEach(btn => {
+        const btnStatus = btn.getAttribute('data-status');
+        if (btnStatus === status) {
+            // Active style
+            if (status === 'ALL') {
+                btn.style.background = '#007bff';
+                btn.style.color = 'white';
+            } else if (status === 'RUNNING') {
+                btn.style.background = '#FFC107';
+                btn.style.color = 'black';
+            } else if (status === 'SUCCESS') {
+                btn.style.background = '#28A745';
+                btn.style.color = 'white';
+            } else if (status === 'FAILED') {
+                btn.style.background = '#DC3545';
+                btn.style.color = 'white';
+            }
+        } else {
+            // Inactive style
+            btn.style.background = 'white';
+            if (btnStatus === 'ALL') {
+                btn.style.color = '#007bff';
+            } else if (btnStatus === 'RUNNING') {
+                btn.style.color = '#FFC107';
+            } else if (btnStatus === 'SUCCESS') {
+                btn.style.color = '#28A745';
+            } else if (btnStatus === 'FAILED') {
+                btn.style.color = '#DC3545';
+            }
+        }
+    });
+    
+    // Apply filter
+    filterJobsTable();
+}
+
+/**
+ * Update job count display
+ */
+function updateJobCount(visible, total) {
+    const display = document.getElementById('jobCountDisplay');
+    if (visible === total) {
+        display.innerHTML = `Showing all <strong>${total}</strong> jobs`;
+    } else {
+        display.innerHTML = `Showing <strong>${visible}</strong> of <strong>${total}</strong> jobs`;
+    }
+}
+
+/**
+ * Add hover effects to filter buttons
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('.status-filter-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            if (!this.style.background || this.style.background === 'white') {
+                this.style.transform = 'scale(1.05)';
+            }
+        });
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+</script>
+
+{% endblock %}

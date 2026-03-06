@@ -1,0 +1,2643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PASE Monitor Portal - Technical Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+            color: #333;
+            background: white;
+        }
+        h1 {
+            color: #FF8C00;
+            border-bottom: 4px solid #FF8C00;
+            padding-bottom: 12px;
+            font-size: 32pt;
+            margin-top: 0;
+        }
+        h2 {
+            color: #4169E1;
+            margin-top: 35px;
+            font-size: 20pt;
+            border-bottom: 3px solid #4169E1;
+            padding-bottom: 8px;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #FF8C00;
+            margin-top: 25px;
+            font-size: 16pt;
+            page-break-after: avoid;
+        }
+        h4 {
+            color: #4169E1;
+            margin-top: 18px;
+            font-size: 13pt;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            border-left: 4px solid #FF8C00;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            overflow-x: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .output-block {
+            background-color: #E8F5E9;
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            margin: 15px 0;
+        }
+        .info-box {
+            background-color: #E3F2FD;
+            border-left: 4px solid #4169E1;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background-color: #FFF3E0;
+            border-left: 4px solid #F59E0B;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background-color: #E8F5E9;
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        th {
+            background: linear-gradient(135deg, #FF8C00, #4169E1);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 10pt;
+            vertical-align: top;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .diagram {
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            text-align: center;
+        }
+        .header-info {
+            text-align: right;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 11pt;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 10pt;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            border: 2px solid #ddd;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .file-path {
+            color: #666;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 9pt;
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        @media print {
+            body { padding: 0.5in; }
+            h2 { page-break-before: always; }
+            .code-block, .info-box, table { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-info">
+    <strong>PASE Monitor Portal</strong><br>
+    Technical Documentation - How It Works<br>
+    Version 1.0.0<br>
+    March 2, 2026
+</div>
+
+<h1>PASE Monitor Portal</h1>
+<p style="font-size: 16pt; color: #666; font-style: italic; margin-bottom: 30px;">
+    Complete Technical Documentation - Architecture, Implementation & Data Flow
+</p>
+
+<div class="toc">
+    <h2 style="color: #FF8C00;">Table of Contents</h2>
+    <ul>
+        <li><strong>1.</strong> System Overview & Architecture</li>
+        <li><strong>2.</strong> Technology Stack Explained</li>
+        <li><strong>3.</strong> Database Architecture & Connections</li>
+        <li><strong>4.</strong> Request-Response Flow (Complete Journey)</li>
+        <li><strong>5.</strong> Code Structure & File Organization</li>
+        <li><strong>6.</strong> Database Query Implementation</li>
+        <li><strong>7.</strong> REST API Architecture</li>
+        <li><strong>8.</strong> Frontend Implementation</li>
+        <li><strong>9.</strong> User Interface Design System</li>
+        <li><strong>10.</strong> Data Flow - Step by Step</li>
+        <li><strong>11.</strong> Error Handling & Resilience</li>
+        <li><strong>12.</strong> Configuration & Settings</li>
+        <li><strong>13.</strong> Security Implementation</li>
+        <li><strong>14.</strong> Adding New Applications (Tutorial)</li>
+    </ul>
+</div>
+
+<!-- Section 1 -->
+<h2>1. System Overview & Architecture</h2>
+
+<h3>1.1 What Is the PASE Monitor Portal?</h3>
+
+<p>The PASE Monitor Portal is a web-based application that consolidates Informatica job monitoring data from multiple Oracle databases into a single, unified dashboard. It provides real-time visibility into job statuses, failures, and performance metrics across four distinct applications.</p>
+
+<div class="success-box">
+    <strong>Key Concept:</strong> Instead of manually querying multiple databases and running complex SQL statements, users simply open a web browser, click on an application, and instantly see formatted, up-to-date monitoring data.
+</div>
+
+<h3>1.2 High-Level Architecture</h3>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                        USER'S BROWSER                           │
+│  (Chrome, Edge, Firefox - http://localhost:8000)               │
+│                                                                 │
+│  [HTML Page] ──→ [JavaScript] ──→ [Fetch API Call]           │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTP Request (JSON)
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    DJANGO WEB APPLICATION                        │
+│                  (Python on localhost:8000)                      │
+│                                                                  │
+│  ┌───────────────┐    ┌──────────────┐    ┌─────────────────┐ │
+│  │  URL Router   │───→│  API Views   │───→│  Service Layer  │ │
+│  │  (urls.py)    │    │(api_views.py)│    │(level3_service) │ │
+│  └───────────────┘    └──────────────┘    └────────┬────────┘ │
+│                                                      │          │
+│                                          ┌───────────▼────────┐ │
+│                                          │  Oracle Client     │ │
+│                                          │(oracle_client.py)  │ │
+│                                          └───────────┬────────┘ │
+└──────────────────────────────────────────────────────┼──────────┘
+                                                       │ SQL Query
+                           ┌───────────────────────────┼────────────┐
+                           ▼                           ▼            │
+                  ┌─────────────────┐      ┌──────────────────┐   │
+                  │ Oracle DB #1    │      │ Oracle DB #2     │   │
+                  │ INFA_PCREPO     │      │ MAPDQPRD         │   │
+                  │ (Level3)        │      │ (MDM/ERP/ADF)    │   │
+                  │ 10.120.190.4    │      │ RACORAP32-SCAN   │   │
+                  └─────────────────┘      └──────────────────┘   │
+                                                                   │
+                  Returns Data (Rows) ◄─────────────────────────┘
+</div>
+
+<h3>1.3 Technology Stack - What Each Component Does</h3>
+
+<table>
+    <tr>
+        <th>Technology</th>
+        <th>Version</th>
+        <th>Purpose</th>
+        <th>Why We Use It</th>
+    </tr>
+    <tr>
+        <td><strong>Django</strong></td>
+        <td>6.0</td>
+        <td>Web Framework</td>
+        <td>Handles HTTP requests, routing, templates, security. Industry-standard Python framework.</td>
+    </tr>
+    <tr>
+        <td><strong>Python</strong></td>
+        <td>3.8+</td>
+        <td>Programming Language</td>
+        <td>Backend logic, database queries, API responses. Easy to maintain and extend.</td>
+    </tr>
+    <tr>
+        <td><strong>python-oracledb</strong></td>
+        <td>2.0+</td>
+        <td>Database Driver</td>
+        <td>Connects to Oracle databases, executes SQL queries. Official Oracle driver.</td>
+    </tr>
+    <tr>
+        <td><strong>SQLite3</strong></td>
+        <td>Built-in</td>
+        <td>Metadata Storage</td>
+        <td>Stores application definitions, report configurations (not job data).</td>
+    </tr>
+    <tr>
+        <td><strong>HTML5/CSS3</strong></td>
+        <td>Latest</td>
+        <td>User Interface</td>
+        <td>Creates the visual layout and styling users see in browser.</td>
+    </tr>
+    <tr>
+        <td><strong>JavaScript</strong></td>
+        <td>ES6</td>
+        <td>Frontend Logic</td>
+        <td>Fetches data from API, builds tables dynamically, handles user interactions.</td>
+    </tr>
+</table>
+
+<!-- Section 2 -->
+<h2>2. Technology Stack Explained</h2>
+
+<h3>2.1 Django Framework - The Foundation</h3>
+
+<p><strong>What is Django?</strong> Django is a Python web framework that follows the "Model-View-Template" (MVT) pattern. It handles all the complex parts of web development automatically.</p>
+
+<h4>Django Provides:</h4>
+<ul>
+    <li><strong>URL Routing:</strong> Maps URLs like <code>/api/reports/level3/...</code> to Python functions</li>
+    <li><strong>Template Engine:</strong> Combines HTML with data to create dynamic pages</li>
+    <li><strong>ORM (Object-Relational Mapping):</strong> Works with databases using Python objects (we use for SQLite metadata)</li>
+    <li><strong>Security:</strong> Protection against SQL injection, XSS attacks, CSRF attacks</li>
+    <li><strong>Admin Interface:</strong> Built-in admin panel at <code>/admin/</code></li>
+</ul>
+
+<div class="info-box">
+    <strong>Why Django?</strong>
+    <ul>
+        <li>✅ Battle-tested by huge companies (Instagram, Pinterest, Mozilla)</li>
+        <li>✅ "Batteries included" - has everything we need built-in</li>
+        <li>✅ Excellent documentation and community support</li>
+        <li>✅ Security features enabled by default</li>
+        <li>✅ Easy to maintain and scale</li>
+    </ul>
+</div>
+
+<h3>2.2 Python - The Programming Language</h3>
+
+<p>Python is the language in which Django is written. All our backend code (database connections, queries, API logic) is in Python.</p>
+
+<h4>Why Python for This Project:</h4>
+<ul>
+    <li><strong>Readable:</strong> Python code reads almost like English, making it maintainable</li>
+    <li><strong>Rich Libraries:</strong> Excellent database drivers, web frameworks, data processing tools</li>
+    <li><strong>Fast Development:</strong> Can build features quickly with less code</li>
+    <li><strong>Enterprise-Ready:</strong> Used by major corporations for critical systems</li>
+</ul>
+
+<h3>2.3 python-oracledb - Database Driver</h3>
+
+<p>This is the official Oracle database driver for Python. It allows our Python code to connect to Oracle databases and execute SQL queries.</p>
+
+<div class="code-block">
+# Example: How python-oracledb works
+import oracledb
+
+# 1. Create connection
+connection = oracledb.connect(
+    user='username',
+    password='password',
+    host='10.120.190.4',
+    port=1521,
+    service_name='infr01p_app'
+)
+
+# 2. Create cursor (prepares to run queries)
+cursor = connection.cursor()
+
+# 3. Execute SQL query
+cursor.execute("SELECT workflow_name FROM REP_SESS_LOG WHERE instance_name = 'IDG01P'")
+
+# 4. Fetch results
+rows = cursor.fetchall()  # Returns list of tuples
+
+# 5. Close connection
+cursor.close()
+connection.close()
+</div>
+
+<h3>2.4 REST API Architecture</h3>
+
+<p><strong>What is a REST API?</strong> REST (Representational State Transfer) is a way for programs to communicate over HTTP using standard methods (GET, POST, PUT, DELETE). Our portal uses REST API for data exchange.</p>
+
+<h4>How Our API Works:</h4>
+
+<div class="diagram">
+Browser JavaScript makes request:
+    GET http://localhost:8000/api/reports/level3/lvl3-failed-with-error/
+                    ↓
+Django receives request, calls api_views.py
+                    ↓
+api_views.py calls level3_service.get_level3_failed_with_error()
+                    ↓
+Service executes SQL query on Oracle database
+                    ↓
+Service returns Python list of dictionaries:
+    [{'workflow_name': 'WF_Daily_Load', 'status': 'Failed', ...}, ...]
+                    ↓
+api_views.py converts to JSON and sends response:
+    {"data": [...], "source": "oracle", "count": 10}
+                    ↓
+Browser JavaScript receives JSON, builds HTML table
+</div>
+
+<!-- Section 3 -->
+<h2>3. Database Architecture & Connections</h2>
+
+<h3>3.1 Two Oracle Databases</h3>
+
+<p>The portal connects to TWO separate Oracle databases, each serving different applications:</p>
+
+<table>
+    <tr>
+        <th>Database</th>
+        <th>Connection Details</th>
+        <th>Applications</th>
+        <th>Main Tables</th>
+    </tr>
+    <tr>
+        <td><strong>Database 1:<br>INFA_PCREPO</strong></td>
+        <td>
+            <strong>Host:</strong> 10.120.190.4<br>
+            <strong>Port:</strong> 1521<br>
+            <strong>Service:</strong> infr01p_app<br>
+            <strong>User:</strong> icsm_appl
+        </td>
+        <td>Level3</td>
+        <td>
+            • REP_SESS_LOG<br>
+            • REP_WFLOW_RUN<br>
+            • REP_TASK_INST_RUN
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Database 2:<br>MAPDQPRD</strong></td>
+        <td>
+            <strong>Host:</strong> RACORAP32-SCAN.CORP.INTRANET<br>
+            <strong>Port:</strong> 1521<br>
+            <strong>Service:</strong> SVC_IDG01P<br>
+            <strong>User:</strong> mapdqprd
+        </td>
+        <td>MDM<br>ERP<br>ADF</td>
+        <td>
+            • IICS_CDI_RUN_INFO<br>
+            • IICS_MAPP_RUN_INFO
+        </td>
+    </tr>
+</table>
+
+<h3>3.2 Database Connection Implementation</h3>
+
+<p><strong>File:</strong> <span class="file-path">monitorportal/portal/db/oracle_client.py</span></p>
+
+<p>This file contains all database connection logic. It has two main functions:</p>
+
+<h4>Function 1: fetch_all() - For Level3 Database</h4>
+
+<div class="code-block">
+import oracledb
+
+# Configuration for Level3 database
+DB_CONFIG = {
+    'user': 'icsm_appl',
+    'password': 'your_password',
+    'host': '10.120.190.4',
+    'port': 1521,
+    'service_name': 'infr01p_app'
+}
+
+def fetch_all(query, params=None):
+    """
+    Executes a SQL query on Level3 database and returns results.
+    
+    Args:
+        query (str): SQL query to execute
+        params (dict): Optional parameters for the query
+        
+    Returns:
+        list: List of dictionaries, each representing a row
+    """
+    connection = None
+    try:
+        # Create TNS-style connection string
+        dsn = f"{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['service_name']}"
+        
+        # Connect to database
+        connection = oracledb.connect(
+            user=DB_CONFIG['user'],
+            password=DB_CONFIG['password'],
+            dsn=dsn
+        )
+        
+        # Create cursor
+        cursor = connection.cursor()
+        
+        # Execute query
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+        
+        # Get column names
+        columns = [col[0] for col in cursor.description]
+        
+        # Fetch all rows
+        rows = cursor.fetchall()
+        
+        # Convert to list of dictionaries
+        result = []
+        for row in rows:
+            result.append(dict(zip(columns, row)))
+        
+        return result
+        
+    except Exception as e:
+        print(f"Database error: {e}")
+        raise
+        
+    finally:
+        # Always close connection
+        if connection:
+            connection.close()
+</div>
+
+<h4>Function 2: fetch_all_mapdqprd() - For MDM/ERP/ADF Database</h4>
+
+<div class="code-block">
+# Configuration for MAPDQPRD database
+MAPDQPRD_DB_CONFIG = {
+    'user': 'mapdqprd',
+    'password': 'your_password',
+    'host': 'RACORAP32-SCAN.CORP.INTRANET',
+    'port': 1521,
+    'service_name': 'SVC_IDG01P'
+}
+
+def fetch_all_mapdqprd(query, params=None):
+    """
+    Executes a SQL query on MAPDQPRD database and returns results.
+    Same logic as fetch_all() but uses MAPDQPRD_DB_CONFIG.
+    """
+    # Implementation identical to fetch_all() 
+    # but uses MAPDQPRD_DB_CONFIG instead of DB_CONFIG
+    ...
+</div>
+
+<div class="info-box">
+    <strong>Why Two Functions?</strong><br>
+    Each database requires different credentials and connection details. Having separate functions makes the code clearer and easier to maintain. We know exactly which function to call based on which application we're querying.
+</div>
+
+<h3>3.3 How Connection Works (Technical Details)</h3>
+
+<h4>Step-by-Step Connection Process:</h4>
+
+<ol>
+    <li><strong>DNS Resolution:</strong> Python resolves hostname (e.g., RACORAP32-SCAN) to IP address</li>
+    <li><strong>TCP Connection:</strong> Opens TCP socket to Oracle server on port 1521</li>
+    <li><strong>Oracle Protocol Handshake:</strong> python-oracledb sends connection request with service name</li>
+    <li><strong>Authentication:</strong> Oracle validates username and password</li>
+    <li><strong>Session Established:</strong> Connection object returned, ready to execute queries</li>
+</ol>
+
+<div class="diagram">
+Python Application (oracle_client.py)
+        │
+        │ 1. oracledb.connect(...)
+        ▼
+┌───────────────────────────────────────┐
+│   Oracle Listener (Port 1521)        │
+│   on RACORAP32-SCAN                   │
+└───────────┬───────────────────────────┘
+            │ 2. Routes to service
+            ▼
+┌───────────────────────────────────────┐
+│   Oracle Database Instance            │
+│   Service Name: SVC_IDG01P            │
+│   Database: MAPDQPRD                  │
+└───────────┬───────────────────────────┘
+            │ 3. Validates credentials
+            │ 4. Returns session ID
+            ▼
+    Connection Established ✓
+</div>
+
+<!-- Section 4 -->
+<h2>4. Request-Response Flow (Complete Journey)</h2>
+
+<h3>4.1 The Complete Journey: From Click to Data Display</h3>
+
+<p>Let's follow what happens when a user clicks "VIEW" on the "Level3 Failed with Error" report:</p>
+
+<h4>Step 1: User Action</h4>
+<div class="code-block">
+User opens browser: http://localhost:8000
+    → Clicks "Level3 Application"
+    → Clicks "VIEW" on "Failed with Error" report
+</div>
+
+<h4>Step 2: Django Serves HTML Page</h4>
+<div class="code-block">
+URL: http://localhost:8000/dashboards/level3/lvl3-failed-with-error/
+
+Django routing (monitorportal/urls.py):
+    path('dashboards/&lt;app_id&gt;/&lt;report_id&gt;/', dashboard_view)
+              ↓
+Calls: portal.views.dashboard_view(request, app_id='level3', report_id='lvl3-failed-with-error')
+              ↓
+Renders: portal/templates/portal/dashboard_view.html
+              ↓
+Browser receives HTML page with JavaScript
+</div>
+
+<h4>Step 3: JavaScript Executes on Page Load</h4>
+<div class="code-block">
+// In dashboard_view.html template
+window.onload = function() {
+    loadDashboardData();  // Automatically called when page loads
+}
+
+function loadDashboardData() {
+    // Show loading spinner
+    document.getElementById('loading').style.display = 'block';
+    
+    // Make API call
+    const apiUrl = '/api/reports/level3/lvl3-failed-with-error/';
+    
+    fetch(apiUrl)  // Step 4 happens here →
+        .then(response => response.json())
+        .then(data => {
+            renderTable(data);  // Step 6 happens here →
+        });
+}
+</div>
+
+<h4>Step 4: API Request Sent</h4>
+<div class="code-block">
+JavaScript Fetch API sends HTTP GET request:
+    GET http://localhost:8000/api/reports/level3/lvl3-failed-with-error/
+    
+Request Headers:
+    Accept: application/json
+    User-Agent: Mozilla/5.0 (Windows...)
+    
+Django receives request...
+</div>
+
+<h4>Step 5: Django Processes API Request</h4>
+
+<p><strong>File:</strong> <span class="file-path">monitorportal/portal/api_views.py</span></p>
+
+<div class="code-block">
+# Django URL routing
+path('api/reports/&lt;app_id&gt;/&lt;report_id&gt;/', api_report_data)
+           ↓
+# api_views.py
+def api_report_data(request, app_id, report_id):
+    """Handles API requests for report data"""
+    
+    # app_id = 'level3'
+    # report_id = 'lvl3-failed-with-error'
+    
+    try:
+        if app_id == 'level3':
+            if report_id == 'lvl3-failed-with-error':
+                # Call service layer →
+                from portal.services.level3_service import get_level3_failed_with_error
+                data = get_level3_failed_with_error()
+                
+        # Convert to JSON
+        return JsonResponse({
+            'data': data,
+            'source': 'oracle',
+            'count': len(data)
+        })
+        
+    except Exception as e:
+        # Error handling
+        return JsonResponse({
+            'error': str(e),
+            'data': []
+        }, status=500)
+</div>
+
+<h4>Step 6: Service Layer Executes Query</h4>
+
+<p><strong>File:</strong> <span class="file-path">monitorportal/portal/services/level3_service.py</span></p>
+
+<div class="code-block">
+from portal.db.oracle_client import fetch_all
+from portal.sql.level3_queries import LEVEL3_FAILED_WITH_ERROR_QUERY
+
+def get_level3_failed_with_error():
+    """
+    Retrieves Level3 failed jobs with error messages.
+    Returns list of dictionaries with job details.
+    """
+    try:
+        # Execute query on Oracle database
+        result = fetch_all(LEVEL3_FAILED_WITH_ERROR_QUERY)
+        
+        # Result is list of dictionaries:
+        # [
+        #   {'workflow_name': 'WF_Daily_Load', 
+        #    'session_name': 'SQ_Extract_Data',
+        #    'error_message': 'ORA-01234: table not found',
+        #    'start_time': datetime(2026, 3, 2, 10, 30),
+        #    ...},
+        #   {...}
+        # ]
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error fetching Level3 failed jobs: {e}")
+        # Return empty list on error
+        return []
+</div>
+
+<h4>Step 7: Query Executes on Oracle Database</h4>
+
+<p><strong>File:</strong> <span class="file-path">monitorportal/portal/sql/level3_queries.py</span></p>
+
+<div class="code-block">
+LEVEL3_FAILED_WITH_ERROR_QUERY = """
+WITH error_sessions AS (
+    SELECT DISTINCT workflow_run_id
+    FROM REP_SESS_LOG
+    WHERE instance_name = 'IDG01P'
+    AND end_time >= SYSDATE - 1
+    AND UPPER(task_name) LIKE '%ERROR%'
+)
+SELECT 
+    w.workflow_name,
+    s.session_name,
+    s.start_time,
+    s.end_time,
+    ROUND((s.end_time - s.start_time) * 24 * 60, 2) as duration_minutes,
+    LISTAGG(t.task_name, ', ') WITHIN GROUP (ORDER BY t.task_name) as error_message
+FROM REP_WFLOW_RUN w
+JOIN REP_SESS_LOG s ON w.workflow_run_id = s.workflow_run_id
+JOIN REP_TASK_INST_RUN t ON s.workflow_run_id = t.workflow_run_id
+WHERE w.workflow_run_id IN (SELECT workflow_run_id FROM error_sessions)
+AND s.instance_name = 'IDG01P'
+AND s.end_time >= SYSDATE - 1
+GROUP BY w.workflow_name, s.session_name, s.start_time, s.end_time
+ORDER BY s.start_time DESC
+"""
+
+# When fetch_all() executes this query:
+# 1. Oracle parses SQL
+# 2. Executes CTE (error_sessions)
+# 3. Joins tables
+# 4. Aggregates error messages
+# 5. Returns rows to Python
+</div>
+
+<div class="output-block">
+Oracle Returns (example):
+10 rows returned in 2.3 seconds
+
+Row 1: {
+    'WORKFLOW_NAME': 'WF_DailyLoad_Customer',
+    'SESSION_NAME': 'SQ_Extract_Customer_Data',
+    'START_TIME': 2026-03-02 08:15:23,
+    'END_TIME': 2026-03-02 08:45:12,
+    'DURATION_MINUTES': 29.82,
+    'ERROR_MESSAGE': 'ERROR_HANDLER_WF, ERROR_LOG_SESSION'
+}
+...
+</div>
+
+<h4>Step 8: Data Flows Back Through Layers</h4>
+
+<div class="diagram">
+Oracle Database
+    │ Returns: List of rows
+    ▼
+oracle_client.fetch_all()
+    │ Converts to: List of dictionaries
+    ▼
+level3_service.get_level3_failed_with_error()
+    │ Returns: List of dictionaries
+    ▼
+api_views.api_report_data()
+    │ Wraps in: {'data': [...], 'source': 'oracle', 'count': 10}
+    │ Converts to: JSON string
+    ▼
+HTTP Response sent to browser
+</div>
+
+<div class="code-block">
+HTTP Response:
+Status: 200 OK
+Content-Type: application/json
+
+{
+    "data": [
+        {
+            "WORKFLOW_NAME": "WF_DailyLoad_Customer",
+            "SESSION_NAME": "SQ_Extract_Customer_Data",
+            "START_TIME": "2026-03-02T08:15:23",
+            "END_TIME": "2026-03-02T08:45:12",
+            "DURATION_MINUTES": 29.82,
+            "ERROR_MESSAGE": "ERROR_HANDLER_WF, ERROR_LOG_SESSION"
+        },
+        ... 9 more records ...
+    ],
+    "source": "oracle",
+    "count": 10
+}
+</div>
+
+<h4>Step 9: JavaScript Receives and Processes Response</h4>
+
+<div class="code-block">
+// Back in dashboard_view.html JavaScript
+fetch(apiUrl)
+    .then(response => response.json())  // Parse JSON
+    .then(data => {
+        // data = {data: [...], source: 'oracle', count: 10}
+        
+        console.log(`Loaded ${data.count} records from ${data.source}`);
+        
+        // Hide loading spinner
+        document.getElementById('loading').style.display = 'none';
+        
+        // Build and display table
+        renderTable(data.data);
+    });
+</div>
+
+<h4>Step 10: JavaScript Builds HTML Table</h4>
+
+<div class="code-block">
+function renderTable(records) {
+    const tableBody = document.getElementById('data-table-body');
+    tableBody.innerHTML = '';  // Clear existing content
+    
+    records.forEach(record => {
+        // Create table row
+        const row = document.createElement('tr');
+        
+        // Add cells
+        row.innerHTML = `
+            &lt;td&gt;${record.WORKFLOW_NAME}&lt;/td&gt;
+            &lt;td&gt;${record.SESSION_NAME}&lt;/td&gt;
+            &lt;td&gt;${record.START_TIME}&lt;/td&gt;
+            &lt;td&gt;${record.END_TIME}&lt;/td&gt;
+            &lt;td&gt;${record.DURATION_MINUTES}&lt;/td&gt;
+            &lt;td&gt;&lt;span class="badge badge-error"&gt;${record.ERROR_MESSAGE}&lt;/span&gt;&lt;/td&gt;
+        `;
+        
+        // Add row to table
+        tableBody.appendChild(row);
+    });
+    
+    // Update statistics
+    document.getElementById('total-count').textContent = records.length;
+}
+</div>
+
+<h4>Step 11: User Sees Results</h4>
+
+<div class="success-box">
+<strong>Result:</strong> User sees a formatted table with 10 failed jobs, including:
+<ul>
+    <li>Workflow and session names</li>
+    <li>Start and end times</li>
+    <li>Duration in minutes</li>
+    <li>Error messages (color-coded red badges)</li>
+    <li>Total count displayed</li>
+</ul>
+
+<strong>Total Time:</strong> Typically 2-3 seconds from click to display
+</div>
+
+<h3>4.2 Summary: The Complete Flow</h3>
+
+<div class="diagram">
+User Click
+    ↓
+HTML Page Loads
+    ↓
+JavaScript Executes
+    ↓
+API Call (GET /api/reports/...)
+    ↓
+Django Routes Request → api_views.py
+    ↓
+api_views calls → level3_service.py
+    ↓
+Service calls → oracle_client.py
+    ↓
+oracle_client executes SQL → Oracle Database
+    ↓
+Database returns rows
+    ↓
+oracle_client converts to dictionaries
+    ↓
+Service returns data
+    ↓
+api_views wraps in JSON
+    ↓
+HTTP Response sent
+    ↓
+JavaScript receives JSON
+    ↓
+JavaScript builds HTML table
+    ↓
+User sees data ✓
+</div>
+
+<!-- Section 5 -->
+<h2>5. Code Structure & File Organization</h2>
+
+<h3>5.1 Project Directory Structure</h3>
+
+<div class="code-block">
+infa_monitor_portal/
+├── monitorportal/                 # Main Django project directory
+│   ├── manage.py                  # Django management script (run server, migrations, etc.)
+│   ├── db.sqlite3                 # SQLite database (metadata only)
+│   │
+│   ├── monitorportal/             # Project configuration
+│   │   ├── __init__.py
+│   │   ├── settings.py            # ⭐ Django settings (database, security, apps)
+│   │   ├── urls.py                # ⭐ Root URL routing
+│   │   ├── wsgi.py                # Production server entry point
+│   │   └── asgi.py                # Async server entry point
+│   │
+│   └── portal/                    # Main application
+│       ├── __init__.py
+│       ├── admin.py               # Django admin configuration
+│       ├── apps.py                # App configuration
+│       ├── models.py              # ⭐ Database models (Application, Report)
+│       ├── views.py               # ⭐ View functions (render HTML pages)
+│       ├── api_views.py           # ⭐ API endpoints (return JSON data)
+│       ├── urls.py                # ⭐ App-level URL routing
+│       ├── context_processors.py  # Template context (adds variables to all templates)
+│       ├── ssrs_registry.py       # ⭐ Application/Report registry
+│       │
+│       ├── db/                    # Database layer
+│       │   └── oracle_client.py   # ⭐⭐⭐ Oracle database connections
+│       │
+│       ├── services/              # Business logic layer
+│       │   └── level3_service.py  # ⭐⭐⭐ Service functions (queries)
+│       │
+│       ├── sql/                   # SQL queries
+│       │   └── level3_queries.py  # ⭐⭐⭐ SQL query definitions
+│       │
+│       ├── static/portal/         # Static files (CSS, JS, images)
+│       │   └── professional_lumen.css  # ⭐⭐⭐ All styling
+│       │
+│       ├── templates/portal/      # HTML templates
+│       │   ├── layout.html        # ⭐ Base template (header, nav)
+│       │   ├── home.html          # ⭐ Homepage
+│       │   ├── dashboards_home.html  # ⭐ Application selector
+│       │   ├── dashboard_view.html   # ⭐⭐⭐ Main data display page
+│       │   └── ...
+│       │
+│       ├── templatetags/          # Custom template filters
+│       │   └── custom_filters.py  # Helper functions for templates
+│       │
+│       └── migrations/            # Database migrations
+│           ├── 0001_initial.py
+│           └── ...
+│
+├── README.md                      # Main documentation
+├── QUICK_START.md                 # Setup guide
+├── DEPLOYMENT.md                  # Production deployment
+├── PROJECT_SUMMARY.md             # Executive summary
+├── CHANGELOG.md                   # Development history
+└── requirements.txt               # Python dependencies
+</div>
+
+<h3>5.2 Key Files Explained</h3>
+
+<table>
+    <tr>
+        <th>File</th>
+        <th>Purpose</th>
+        <th>Key Contents</th>
+    </tr>
+    <tr>
+        <td><strong>settings.py</strong></td>
+        <td>Django configuration</td>
+        <td>
+            • Database settings<br>
+            • Security keys<br>
+            • Installed apps<br>
+            • Middleware<br>
+            • Static files config
+        </td>
+    </tr>
+    <tr>
+        <td><strong>urls.py</strong></td>
+        <td>URL routing</td>
+        <td>
+            • Maps URLs to views<br>
+            • /api/ routes<br>
+            • /dashboards/ routes<br>
+            • Admin routes
+        </td>
+    </tr>
+    <tr>
+        <td><strong>models.py</strong></td>
+        <td>Data models</td>
+        <td>
+            • Application model<br>
+            • Report model<br>
+            (Only for metadata,<br>
+            not job data)
+        </td>
+    </tr>
+    <tr>
+        <td><strong>views.py</strong></td>
+        <td>Page rendering</td>
+        <td>
+            • home(request)<br>
+            • dashboards_home(request)<br>
+            • dashboard_view(request, app_id, report_id)
+        </td>
+    </tr>
+    <tr>
+        <td><strong>api_views.py</strong></td>
+        <td>API endpoints</td>
+        <td>
+            • api_report_data()<br>
+            • Routes requests to services<br>
+            • Returns JSON responses
+        </td>
+    </tr>
+    <tr>
+        <td><strong>oracle_client.py</strong></td>
+        <td>Database connections</td>
+        <td>
+            • DB_CONFIG<br>
+            • MAPDQPRD_DB_CONFIG<br>
+            • fetch_all()<br>
+            • fetch_all_mapdqprd()
+        </td>
+    </tr>
+    <tr>
+        <td><strong>level3_service.py</strong></td>
+        <td>Business logic</td>
+        <td>
+            • get_level3_failed_with_error()<br>
+            • get_level3_long_running()<br>
+            • get_mdm_job_status()<br>
+            • get_erp_job_status()
+        </td>
+    </tr>
+    <tr>
+        <td><strong>level3_queries.py</strong></td>
+        <td>SQL definitions</td>
+        <td>
+            • LEVEL3_FAILED_WITH_ERROR_QUERY<br>
+            • LEVEL3_LONG_RUNNING_QUERY<br>
+            • MDM_JOB_STATUS_QUERY<br>
+            • ERP_JOB_STATUS_QUERY
+        </td>
+    </tr>
+    <tr>
+        <td><strong>dashboard_view.html</strong></td>
+        <td>Main display page</td>
+        <td>
+            • HTML structure<br>
+            • JavaScript for API calls<br>
+            • Table rendering logic<br>
+            • Loading spinner
+        </td>
+    </tr>
+    <tr>
+        <td><strong>professional_lumen.css</strong></td>
+        <td>All styling</td>
+        <td>
+            • Color scheme<br>
+            • Layout styles<br>
+            • Responsive design<br>
+            • Animations
+        </td>
+    </tr>
+</table>
+
+<!-- Section 6 -->
+<h2>6. Database Query Implementation</h2>
+
+<h3>6.1 Level3 Failed Jobs with Error - Detailed Breakdown</h3>
+
+<p>This is one of the most complex queries. Let's understand it step by step.</p>
+
+<h4>The Query:</h4>
+
+<div class="code-block">
+-- Step 1: Find all workflow runs that had errors (CTE)
+WITH error_sessions AS (
+    SELECT DISTINCT workflow_run_id
+    FROM REP_SESS_LOG
+    WHERE instance_name = 'IDG01P'          -- Our instance
+    AND end_time >= SYSDATE - 1             -- Last 24 hours
+    AND UPPER(task_name) LIKE '%ERROR%'     -- Task name contains "ERROR"
+)
+-- Step 2: Get details for those workflows
+SELECT 
+    w.workflow_name,                         -- Workflow name
+    s.session_name,                          -- Session name
+    s.start_time,                            -- When it started
+    s.end_time,                              -- When it ended
+    ROUND((s.end_time - s.start_time) * 24 * 60, 2) as duration_minutes,  -- Duration
+    LISTAGG(t.task_name, ', ') WITHIN GROUP (ORDER BY t.task_name) as error_message  -- All error tasks
+FROM REP_WFLOW_RUN w                         -- Workflow run table
+JOIN REP_SESS_LOG s ON w.workflow_run_id = s.workflow_run_id  -- Join sessions
+JOIN REP_TASK_INST_RUN t ON s.workflow_run_id = t.workflow_run_id  -- Join tasks
+WHERE w.workflow_run_id IN (SELECT workflow_run_id FROM error_sessions)  -- Only error workflows
+AND s.instance_name = 'IDG01P'
+AND s.end_time >= SYSDATE - 1
+GROUP BY w.workflow_name, s.session_name, s.start_time, s.end_time
+ORDER BY s.start_time DESC                   -- Most recent first
+</div>
+
+<h4>Query Execution Steps:</h4>
+
+<ol>
+    <li><strong>CTE (Common Table Expression):</strong> Finds all workflow_run_ids that have tasks with "ERROR" in the name
+        <ul>
+            <li>Scans REP_SESS_LOG table</li>
+            <li>Filters by instance (IDG01P) and time (last 24 hours)</li>
+            <li>Finds task_names containing "ERROR"</li>
+            <li>Returns distinct workflow_run_ids</li>
+        </ul>
+    </li>
+    <li><strong>Main Query:</strong> Joins three tables to get complete information
+        <ul>
+            <li><strong>REP_WFLOW_RUN:</strong> Workflow execution records</li>
+            <li><strong>REP_SESS_LOG:</strong> Session execution logs</li>
+            <li><strong>REP_TASK_INST_RUN:</strong> Individual task runs</li>
+        </ul>
+    </li>
+    <li><strong>LISTAGG Function:</strong> Aggregates multiple error task names into single comma-separated string</li>
+    <li><strong>Duration Calculation:</strong> Converts timestamp difference to minutes</li>
+    <li><strong>Filtering:</strong> Only includes workflows from error_sessions CTE</li>
+    <li><strong>Grouping:</strong> Groups by workflow and session to aggregate error messages</li>
+    <li><strong>Sorting:</strong> Orders by start_time descending (newest first)</li>
+</ol>
+
+<h4>Example Output:</h4>
+
+<div class="output-block">
+WORKFLOW_NAME          | SESSION_NAME           | START_TIME          | END_TIME            | DURATION | ERROR_MESSAGE
+-----------------------|------------------------|---------------------|---------------------|----------|---------------------------
+WF_DailyLoad_Customer  | SQ_Extract_Customer    | 2026-03-02 08:15:23 | 2026-03-02 08:45:12 | 29.82    | ERROR_HANDLER_WF, ERROR_LOG
+WF_ETL_Sales_Data      | SQ_Transform_Sales     | 2026-03-02 07:30:15 | 2026-03-02 07:45:30 | 15.25    | ERROR_EMAIL_NOTIFICATION
+WF_Master_Data_Load    | SQ_Load_MDM            | 2026-03-02 06:00:00 | 2026-03-02 06:55:42 | 55.70    | ERROR_HANDLER_WF
+...
+</div>
+
+<h3>6.2 Level3 Long Running Sessions - Performance Comparison</h3>
+
+<p>This query identifies sessions running longer than usual by comparing to historical averages.</p>
+
+<div class="code-block">
+SELECT 
+    s.workflow_name,
+    s.session_name,
+    s.start_time,
+    s.end_time,
+    ROUND((s.end_time - s.start_time) * 24 * 60, 2) as duration_minutes,
+    
+    -- Calculate 7-day average duration for this session
+    ROUND(AVG(CASE 
+        WHEN hist.end_time - hist.start_time > 0 
+        THEN (hist.end_time - hist.start_time) * 24 * 60 
+        ELSE NULL 
+    END) OVER (PARTITION BY s.session_name), 2) as avg_duration_minutes,
+    
+    -- Compare current to average
+    ROUND(
+        ((s.end_time - s.start_time) * 24 * 60) / 
+        NULLIF(AVG(CASE 
+            WHEN hist.end_time - hist.start_time > 0 
+            THEN (hist.end_time - hist.start_time) * 24 * 60 
+            ELSE NULL 
+        END) OVER (PARTITION BY s.session_name), 0) * 100, 
+    2) as percent_of_average
+
+FROM REP_SESS_LOG s
+LEFT JOIN REP_SESS_LOG hist 
+    ON s.session_name = hist.session_name
+    AND hist.start_time >= SYSDATE - 7    -- Last 7 days
+    AND hist.start_time < SYSDATE - 1     -- Exclude today
+    AND hist.end_time > hist.start_time   -- Valid durations only
+
+WHERE s.instance_name = 'IDG01P'
+AND s.start_time >= SYSDATE - 1           -- Today's runs
+AND s.end_time > s.start_time             -- Completed sessions
+
+-- Only show sessions running longer than 150% of average
+HAVING duration_minutes > (avg_duration_minutes * 1.5)
+
+ORDER BY percent_of_average DESC          -- Worst offenders first
+</div>
+
+<h4>Logic Explanation:</h4>
+
+<ul>
+    <li><strong>Self-Join:</strong> Joins REP_SESS_LOG to itself to compare current runs with historical runs</li>
+    <li><strong>Window Function:</strong> AVG(...) OVER (PARTITION BY ...) calculates average for each session name</li>
+    <li><strong>7-Day Window:</strong> Only considers runs from past 7 days for average calculation</li>
+    <li><strong>150% Threshold:</strong> Flags sessions running >1.5x their normal time</li>
+    <li><strong>Percentage Calculation:</strong> Shows how much longer than average (e.g., 200% = twice as long)</li>
+</ul>
+
+<h3>6.3 MDM Job Status - Asset Monitoring</h3>
+
+<div class="code-block">
+SELECT 
+    asset_name,
+    run_status_desc,
+    TO_CHAR(run_start_ts, 'YYYY-MM-DD HH24:MI:SS') as start_time,
+    TO_CHAR(run_end_ts, 'YYYY-MM-DD HH24:MI:SS') as end_time,
+    ROUND((run_end_ts - run_start_ts) * 24 * 60, 2) as duration_minutes,
+    error_msg
+FROM IICS_CDI_RUN_INFO
+WHERE asset_name IN (
+    'Asset_Customer_Master',
+    'Asset_Product_Hierarchy',
+    'Asset_Supplier_Data',
+    -- ... 14 more specific assets ...
+)
+AND run_start_ts >= SYSDATE - 1           -- Last 24 hours
+ORDER BY run_start_ts DESC
+</div>
+
+<h4>Key Points:</h4>
+
+<ul>
+    <li><strong>Specific Assets:</strong> Monitors exactly 17 critical MDM assets (hardcoded list)</li>
+    <li><strong>Status Types:</strong> RUNNING, SUCCESS, FAILED, WARNING</li>
+    <li><strong>TO_CHAR Function:</strong> Formats timestamps to readable strings</li>
+    <li><strong>Error Messages:</strong> Includes error_msg column for failed runs</li>
+    <li><strong>Last 24 Hours:</strong> Shows recent activity only</li>
+</ul>
+
+<h3>6.4 ERP Job Status - Location-Based Filtering</h3>
+
+<div class="code-block">
+SELECT 
+    asset_name,
+    asset_location,
+    run_status_desc,
+    -- Convert to PST timezone
+    TO_CHAR(run_start_ts AT TIME ZONE 'America/Los_Angeles', 'YYYY-MM-DD HH24:MI:SS') as start_time_pst,
+    TO_CHAR(run_end_ts AT TIME ZONE 'America/Los_Angeles', 'YYYY-MM-DD HH24:MI:SS') as end_time_pst,
+    ROUND((run_end_ts - run_start_ts) * 24 * 60, 2) as duration_minutes
+FROM IICS_CDI_RUN_INFO
+WHERE asset_location IN (
+    'Location_ERP_Finance',
+    'Location_ERP_Sales',
+    'Location_ERP_Inventory',
+    -- ... 4 more ERP locations ...
+)
+AND run_start_ts >= SYSDATE - 1
+ORDER BY run_start_ts DESC
+</div>
+
+<h4>Key Points:</h4>
+
+<ul>
+    <li><strong>Location Filtering:</strong> Only 7 specific ERP integration points</li>
+    <li><strong>Timezone Conversion:</strong> Displays times in PST (Pacific Standard Time)</li>
+    <li><strong>Status Types:</strong> CHILD_RUNNING, CHILD_SUSPENDED, SUCCESS</li>
+    <li><strong>Typical Volume:</strong> Returns ~139 jobs per query</li>
+</ul>
+
+<!-- Section 7 -->
+<h2>7. REST API Architecture</h2>
+
+<h3>7.1 API Endpoints - Complete List</h3>
+
+<table>
+    <tr>
+        <th>Endpoint URL</th>
+        <th>Application</th>
+        <th>Report</th>
+        <th>Service Function</th>
+    </tr>
+    <tr>
+        <td>/api/reports/level3/lvl3-failed-with-error/</td>
+        <td>Level3</td>
+        <td>Failed with Error</td>
+        <td>get_level3_failed_with_error()</td>
+    </tr>
+    <tr>
+        <td>/api/reports/level3/lvl3-long-running-sessions/</td>
+        <td>Level3</td>
+        <td>Long Running</td>
+        <td>get_level3_long_running()</td>
+    </tr>
+    <tr>
+        <td>/api/reports/mdm/mdm-job-status/</td>
+        <td>MDM</td>
+        <td>Job Status</td>
+        <td>get_mdm_job_status()</td>
+    </tr>
+    <tr>
+        <td>/api/reports/erp/erp-job-status-latest/</td>
+        <td>ERP</td>
+        <td>Job Status</td>
+        <td>get_erp_job_status()</td>
+    </tr>
+</table>
+
+<h3>7.2 API Request/Response Format</h3>
+
+<h4>Request Example:</h4>
+
+<div class="code-block">
+GET /api/reports/level3/lvl3-failed-with-error/ HTTP/1.1
+Host: localhost:8000
+Accept: application/json
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+</div>
+
+<h4>Success Response Example:</h4>
+
+<div class="code-block">
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 2845
+
+{
+    "data": [
+        {
+            "WORKFLOW_NAME": "WF_DailyLoad_Customer",
+            "SESSION_NAME": "SQ_Extract_Customer_Data",
+            "START_TIME": "2026-03-02T08:15:23",
+            "END_TIME": "2026-03-02T08:45:12",
+            "DURATION_MINUTES": 29.82,
+            "ERROR_MESSAGE": "ERROR_HANDLER_WF, ERROR_LOG_SESSION"
+        },
+        {
+            "WORKFLOW_NAME": "WF_ETL_Sales_Data",
+            "SESSION_NAME": "SQ_Transform_Sales",
+            "START_TIME": "2026-03-02T07:30:15",
+            "END_TIME": "2026-03-02T07:45:30",
+            "DURATION_MINUTES": 15.25,
+            "ERROR_MESSAGE": "ERROR_EMAIL_NOTIFICATION"
+        }
+        ... 8 more records ...
+    ],
+    "source": "oracle",
+    "count": 10
+}
+</div>
+
+<h4>Error Response Example:</h4>
+
+<div class="code-block">
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+
+{
+    "error": "ORA-12514: TNS:listener does not currently know of service requested",
+    "data": [],
+    "source": "error"
+}
+</div>
+
+<h3>7.3 API Implementation in api_views.py</h3>
+
+<div class="code-block">
+from django.http import JsonResponse
+from portal.services import level3_service
+
+def api_report_data(request, app_id, report_id):
+    """
+    Main API endpoint handler.
+    Routes requests to appropriate service functions.
+    
+    Args:
+        request: Django HttpRequest object
+        app_id: Application identifier (e.g., 'level3', 'mdm')
+        report_id: Report identifier (e.g., 'lvl3-failed-with-error')
+        
+    Returns:
+        JsonResponse with data or error
+    """
+    
+    try:
+        data = []
+        
+        # Route to appropriate service based on app_id and report_id
+        if app_id == 'level3':
+            if report_id == 'lvl3-failed-with-error':
+                data = level3_service.get_level3_failed_with_error()
+            elif report_id == 'lvl3-long-running-sessions':
+                data = level3_service.get_level3_long_running()
+            else:
+                return JsonResponse({
+                    'error': f'Unknown report: {report_id}',
+                    'data': []
+                }, status=404)
+                
+        elif app_id == 'mdm':
+            if report_id == 'mdm-job-status':
+                data = level3_service.get_mdm_job_status()
+            else:
+                return JsonResponse({
+                    'error': f'Unknown report: {report_id}',
+                    'data': []
+                }, status=404)
+                
+        elif app_id == 'erp':
+            if report_id == 'erp-job-status-latest':
+                data = level3_service.get_erp_job_status()
+            else:
+                return JsonResponse({
+                    'error': f'Unknown report: {report_id}',
+                    'data': []
+                }, status=404)
+        else:
+            return JsonResponse({
+                'error': f'Unknown application: {app_id}',
+                'data': []
+            }, status=404)
+        
+        # Return successful response
+        return JsonResponse({
+            'data': data,
+            'source': 'oracle',
+            'count': len(data),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        # Log error
+        print(f"API Error [{app_id}/{report_id}]: {str(e)}")
+        
+        # Return error response
+        return JsonResponse({
+            'error': str(e),
+            'data': [],
+            'source': 'error'
+        }, status=500)
+</div>
+
+<div class="info-box">
+    <strong>Why This Design?</strong>
+    <ul>
+        <li>✅ <strong>Single Endpoint:</strong> One URL pattern handles all reports</li>
+        <li>✅ <strong>Dynamic Routing:</strong> Uses app_id and report_id to route requests</li>
+        <li>✅ <strong>Centralized Error Handling:</strong> All errors caught and returned as JSON</li>
+        <li>✅ <strong>Consistent Format:</strong> All responses have same structure</li>
+        <li>✅ <strong>Easy to Extend:</strong> Adding new report just needs one elif block</li>
+    </ul>
+</div>
+
+<!-- Section 8 -->
+<h2>8. Frontend Implementation</h2>
+
+<h3>8.1 JavaScript Data Loading</h3>
+
+<p>The frontend uses vanilla JavaScript (no frameworks like React or Angular) for simplicity and performance.</p>
+
+<h4>Complete JavaScript Implementation:</h4>
+
+<div class="code-block">
+// File: dashboard_view.html (embedded JavaScript)
+
+// Global variables
+let currentData = [];
+let sortColumn = null;
+let sortDirection = 'asc';
+
+// Load data when page loads
+window.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+});
+
+/**
+ * Fetches data from API and renders table
+ */
+function loadDashboardData() {
+    // Show loading spinner
+    showLoading(true);
+    
+    // Get API endpoint from template variable
+    const apiUrl = "{{ report.api_endpoint }}";  // Django template variable
+    
+    console.log(`Fetching data from: ${apiUrl}`);
+    
+    // Make API call
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(responseData => {
+            console.log(`Received ${responseData.count} records from ${responseData.source}`);
+            
+            // Store data globally
+            currentData = responseData.data;
+            
+            // Render the table
+            renderTable(currentData);
+            
+            // Update statistics
+            updateStatistics(currentData);
+            
+            // Hide loading spinner
+            showLoading(false);
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            showError(`Failed to load data: ${error.message}`);
+            showLoading(false);
+        });
+}
+
+/**
+ * Builds HTML table from data array
+ */
+function renderTable(data) {
+    const tableBody = document.getElementById('data-table-body');
+    
+    if (!data || data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No data available</td></tr>';
+        return;
+    }
+    
+    // Clear existing rows
+    tableBody.innerHTML = '';
+    
+    // Get column configuration
+    const columns = getColumnConfig();
+    
+    // Create row for each record
+    data.forEach((record, index) => {
+        const row = document.createElement('tr');
+        row.className = index % 2 === 0 ? 'even-row' : 'odd-row';
+        
+        // Add cell for each column
+        columns.forEach(column => {
+            const cell = document.createElement('td');
+            const value = record[column.key] || '-';
+            
+            // Format cell based on column type
+            if (column.key.includes('TIME') || column.key.includes('DATE')) {
+                cell.textContent = formatDateTime(value);
+            } else if (column.key === 'RUN_STATUS_DESC' || column.key.includes('STATUS')) {
+                cell.innerHTML = formatStatus(value);
+            } else if (column.key.includes('DURATION')) {
+                cell.textContent = formatDuration(value);
+            } else {
+                cell.textContent = value;
+            }
+            
+            row.appendChild(cell);
+        });
+        
+        tableBody.appendChild(row);
+    });
+}
+
+/**
+ * Formats status values as colored badges
+ */
+function formatStatus(status) {
+    const statusLower = String(status).toLowerCase();
+    let badgeClass = 'badge-default';
+    
+    if (statusLower.includes('success') || statusLower.includes('completed')) {
+        badgeClass = 'badge-success';
+    } else if (statusLower.includes('fail') || statusLower.includes('error')) {
+        badgeClass = 'badge-error';
+    } else if (statusLower.includes('running') || statusLower.includes('progress')) {
+        badgeClass = 'badge-running';
+    } else if (statusLower.includes('warning') || statusLower.includes('suspended')) {
+        badgeClass = 'badge-warning';
+    }
+    
+    return `<span class="status-badge ${badgeClass}">${status}</span>`;
+}
+
+/**
+ * Formats datetime strings
+ */
+function formatDateTime(dateStr) {
+    if (!dateStr || dateStr === '-') return '-';
+    
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+/**
+ * Formats duration values
+ */
+function formatDuration(minutes) {
+    if (!minutes || isNaN(minutes)) return '-';
+    
+    const mins = Math.floor(minutes);
+    const secs = Math.round((minutes - mins) * 60);
+    
+    return `${mins}m ${secs}s`;
+}
+
+/**
+ * Updates dashboard statistics
+ */
+function updateStatistics(data) {
+    // Total count
+    document.getElementById('total-count').textContent = data.length;
+    
+    // Count by status
+    const failedCount = data.filter(r => 
+        String(r.RUN_STATUS_DESC || r.STATUS || '').toLowerCase().includes('fail')
+    ).length;
+    
+    const runningCount = data.filter(r => 
+        String(r.RUN_STATUS_DESC || r.STATUS || '').toLowerCase().includes('running')
+    ).length;
+    
+    const successCount = data.filter(r => 
+        String(r.RUN_STATUS_DESC || r.STATUS || '').toLowerCase().includes('success')
+    ).length;
+    
+    document.getElementById('failed-count').textContent = failedCount;
+    document.getElementById('running-count').textContent = runningCount;
+    document.getElementById('success-count').textContent = successCount;
+}
+
+/**
+ * Refresh button handler
+ */
+function refreshData() {
+    loadDashboardData();
+}
+
+/**
+ * Shows/hides loading spinner
+ */
+function showLoading(show) {
+    const spinner = document.getElementById('loading-spinner');
+    spinner.style.display = show ? 'block' : 'none';
+}
+
+/**
+ * Displays error message
+ */
+function showError(message) {
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+    
+    // Hide after 5 seconds
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 5000);
+}
+</div>
+
+<h3>8.2 HTML Structure</h3>
+
+<div class="code-block">
+&lt;!-- File: dashboard_view.html --&gt;
+{% extends "portal/layout.html" %}
+
+{% block content %}
+&lt;div class="dashboard-container"&gt;
+    
+    &lt;!-- Header Section --&gt;
+    &lt;div class="dashboard-header"&gt;
+        &lt;h1&gt;{{ report.name }}&lt;/h1&gt;
+        &lt;p&gt;{{ report.description }}&lt;/p&gt;
+        
+        &lt;button onclick="refreshData()" class="btn-primary"&gt;
+            🔄 Refresh
+        &lt;/button&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Statistics Cards --&gt;
+    &lt;div class="stats-container"&gt;
+        &lt;div class="stat-card"&gt;
+            &lt;div class="stat-value" id="total-count"&gt;0&lt;/div&gt;
+            &lt;div class="stat-label"&gt;Total Records&lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="stat-card"&gt;
+            &lt;div class="stat-value" id="failed-count" style="color: #EF4444;"&gt;0&lt;/div&gt;
+            &lt;div class="stat-label"&gt;Failed&lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="stat-card"&gt;
+            &lt;div class="stat-value" id="running-count" style="color: #3B82F6;"&gt;0&lt;/div&gt;
+            &lt;div class="stat-label"&gt;Running&lt;/div&gt;
+        &lt;/div&gt;
+        
+        &lt;div class="stat-card"&gt;
+            &lt;div class="stat-value" id="success-count" style="color: #10B981;"&gt;0&lt;/div&gt;
+            &lt;div class="stat-label"&gt;Success&lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Loading Spinner --&gt;
+    &lt;div id="loading-spinner" class="loading"&gt;
+        &lt;div class="spinner"&gt;&lt;/div&gt;
+        &lt;p&gt;Loading data...&lt;/p&gt;
+    &lt;/div&gt;
+    
+    &lt;!-- Error Message --&gt;
+    &lt;div id="error-message" class="error-message" style="display: none;"&gt;&lt;/div&gt;
+    
+    &lt;!-- Data Table --&gt;
+    &lt;div class="table-container"&gt;
+        &lt;table class="data-table"&gt;
+            &lt;thead&gt;
+                &lt;tr&gt;
+                    &lt;th&gt;Workflow Name&lt;/th&gt;
+                    &lt;th&gt;Session Name&lt;/th&gt;
+                    &lt;th&gt;Start Time&lt;/th&gt;
+                    &lt;th&gt;End Time&lt;/th&gt;
+                    &lt;th&gt;Duration&lt;/th&gt;
+                    &lt;th&gt;Status&lt;/th&gt;
+                    &lt;th&gt;Error Message&lt;/th&gt;
+                &lt;/tr&gt;
+            &lt;/thead&gt;
+            &lt;tbody id="data-table-body"&gt;
+                &lt;!-- Rows populated by JavaScript --&gt;
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    &lt;/div&gt;
+    
+&lt;/div&gt;
+
+&lt;script&gt;
+    // JavaScript code from section 8.1 goes here
+&lt;/script&gt;
+
+{% endblock %}
+</div>
+
+<!-- Section 9 -->
+<h2>9. User Interface Design System</h2>
+
+<h3>9.1 CSS Architecture</h3>
+
+<p><strong>File:</strong> <span class="file-path">portal/static/portal/professional_lumen.css</span> (874 lines)</p>
+
+<h4>CSS Structure:</h4>
+
+<div class="code-block">
+/* 1. CSS Variables (Custom Properties) */
+:root {
+    /* Colors */
+    --lumen-primary: #FF8C00;       /* Orange */
+    --lumen-accent: #4169E1;        /* Royal Blue */
+    
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    
+    /* Typography */
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 18px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+/* 2. Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background: #F9FAFB;
+}
+
+/* 3. Header Styles */
+.top-header {
+    background: #FF8C00;  /* Solid orange */
+    color: white;
+    padding: var(--space-md) var(--space-lg);
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* 4. Navigation Styles */
+.nav-bar {
+    background: linear-gradient(135deg, #1E90FF, #4169E1, #FFA500, #FF8C00);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 5. Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, #FF8C00, #4169E1);
+    color: white;
+    padding: var(--space-md) var(--space-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 6. Card Styles */
+.card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #FF8C00, #4169E1);
+    color: white;
+    padding: var(--space-lg);
+    font-weight: 700;
+}
+
+/* 7. Table Styles */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #FF8C00, #4169E1);
+    color: white;
+    padding: var(--space-md);
+    text-align: left;
+    font-weight: 600;
+}
+
+.table tbody td {
+    padding: var(--space-md);
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.table tbody tr:hover {
+    background: #F3F4F6;
+}
+
+/* 8. Status Badge Styles */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge-error {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.badge-warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.badge-running {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* 9. Responsive Design */
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+    
+    .nav-bar {
+        flex-direction: column;
+    }
+}
+</div>
+
+<h3>9.2 Color Scheme</h3>
+
+<table>
+    <tr>
+        <th>Element</th>
+        <th>Color</th>
+        <th>Hex Code</th>
+        <th>Purpose</th>
+    </tr>
+    <tr>
+        <td>Main Header</td>
+        <td style="background: #FF8C00; color: white;">Orange</td>
+        <td>#FF8C00</td>
+        <td>Solid background for top header</td>
+    </tr>
+    <tr>
+        <td>Navigation</td>
+        <td style="background: linear-gradient(90deg, #1E90FF, #FF8C00); color: white;">Blue→Orange</td>
+        <td>Gradient</td>
+        <td>Navigation bar background</td>
+    </tr>
+    <tr>
+        <td>Buttons</td>
+        <td style="background: linear-gradient(90deg, #FF8C00, #4169E1); color: white;">Orange→Blue</td>
+        <td>Gradient</td>
+        <td>Primary action buttons</td>
+    </tr>
+    <tr>
+        <td>Success</td>
+        <td style="background: #10B981; color: white;">Green</td>
+        <td>#10B981</td>
+        <td>Success status, completed jobs</td>
+    </tr>
+    <tr>
+        <td>Error</td>
+        <td style="background: #EF4444; color: white;">Red</td>
+        <td>#EF4444</td>
+        <td>Failed jobs, errors</td>
+    </tr>
+    <tr>
+        <td>Warning</td>
+        <td style="background: #F59E0B; color: white;">Amber</td>
+        <td>#F59E0B</td>
+        <td>Warnings, suspended jobs</td>
+    </tr>
+    <tr>
+        <td>Running</td>
+        <td style="background: #3B82F6; color: white;">Blue</td>
+        <td>#3B82F6</td>
+        <td>Jobs in progress</td>
+    </tr>
+</table>
+
+<!-- Section 10 -->
+<h2>10. Data Flow - Step by Step</h2>
+
+<h3>10.1 Complete Data Flow Diagram</h3>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         USER INTERACTION                                 │
+├─────────────────────────────────────────────────────────────────────────┤
+│  1. User clicks "VIEW" button on report                                 │
+│     URL: /dashboards/level3/lvl3-failed-with-error/                    │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      DJANGO VIEW LAYER (views.py)                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│  2. Django routes to dashboard_view(request, 'level3', 'lvl3-failed')  │
+│  3. Loads report configuration from ssrs_registry.py                    │
+│  4. Renders dashboard_view.html template                                │
+│  5. Sends HTML page to browser                                          │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    BROWSER RENDERS PAGE                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│  6. Browser displays HTML skeleton (header, loading spinner, table)     │
+│  7. JavaScript executes: window.onload = loadDashboardData()           │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      JAVASCRIPT FETCH API                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  8. fetch('/api/reports/level3/lvl3-failed-with-error/')               │
+│  9. HTTP GET request sent to Django                                     │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      DJANGO API LAYER (api_views.py)                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  10. Django routes to api_report_data('level3', 'lvl3-failed-with-error')│
+│  11. Identifies report and calls appropriate service function           │
+│  12. Calls: level3_service.get_level3_failed_with_error()              │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   SERVICE LAYER (level3_service.py)                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│  13. Gets SQL query from level3_queries.py                              │
+│  14. Calls: oracle_client.fetch_all(query)                             │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                  DATABASE LAYER (oracle_client.py)                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│  15. Creates connection to Oracle database                              │
+│      Host: 10.120.190.4:1521/infr01p_app                               │
+│  16. Executes SQL query                                                 │
+│  17. Fetches results                                                    │
+│  18. Converts rows to list of dictionaries                             │
+│  19. Closes connection                                                  │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       ORACLE DATABASE                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│  20. Parses SQL query                                                   │
+│  21. Executes CTE (error_sessions)                                      │
+│  22. Performs joins (REP_WFLOW_RUN, REP_SESS_LOG, REP_TASK_INST_RUN)  │
+│  23. Aggregates error messages with LISTAGG                            │
+│  24. Returns result set (10 rows)                                       │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      DATA RETURNS UP THE STACK                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│  oracle_client.py    →  [{'WORKFLOW_NAME': 'WF_...', ...}, ...]       │
+│  level3_service.py   →  Same list of dictionaries                       │
+│  api_views.py        →  {'data': [...], 'source': 'oracle', 'count': 10}│
+│  HTTP Response       →  JSON string                                     │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    JAVASCRIPT PROCESSES RESPONSE                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│  25. response.json() parses JSON                                        │
+│  26. Calls renderTable(data.data)                                       │
+│  27. Loops through records                                              │
+│  28. Creates &lt;tr&gt; and &lt;td&gt; elements                                     │
+│  29. Formats values (dates, status badges, durations)                   │
+│  30. Appends rows to table body                                         │
+│  31. Updates statistics (total, failed, running, success)              │
+│  32. Hides loading spinner                                              │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         USER SEES RESULTS                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ✓ Table populated with 10 failed jobs                                  │
+│  ✓ Color-coded status badges                                            │
+│  ✓ Formatted timestamps                                                 │
+│  ✓ Statistics updated                                                   │
+│  ✓ Total time: ~2-3 seconds                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- Section 11 -->
+<h2>11. Error Handling & Resilience</h2>
+
+<h3>11.1 Error Handling Strategy</h3>
+
+<p>The portal implements multiple layers of error handling to ensure graceful degradation:</p>
+
+<h4>Layer 1: Database Connection Errors</h4>
+
+<div class="code-block">
+# In oracle_client.py
+def fetch_all(query, params=None):
+    connection = None
+    try:
+        connection = oracledb.connect(...)
+        cursor = connection.cursor()
+        cursor.execute(query, params)
+        result = cursor.fetchall()
+        return result
+        
+    except oracledb.DatabaseError as e:
+        # Database-specific errors
+        error_obj, = e.args
+        print(f"Oracle Error {error_obj.code}: {error_obj.message}")
+        raise
+        
+    except Exception as e:
+        # General errors
+        print(f"Unexpected error: {str(e)}")
+        raise
+        
+    finally:
+        # Always close connection
+        if connection:
+            try:
+                connection.close()
+            except:
+                pass
+</div>
+
+<h4>Layer 2: Service Layer Errors</h4>
+
+<div class="code-block">
+# In level3_service.py
+def get_level3_failed_with_error():
+    try:
+        result = fetch_all(LEVEL3_FAILED_WITH_ERROR_QUERY)
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_level3_failed_with_error: {str(e)}")
+        # Return empty list instead of crashing
+        return []
+</div>
+
+<h4>Layer 3: API Layer Errors</h4>
+
+<div class="code-block">
+# In api_views.py
+def api_report_data(request, app_id, report_id):
+    try:
+        # Call service
+        data = level3_service.get_level3_failed_with_error()
+        
+        # Return success response
+        return JsonResponse({
+            'data': data,
+            'source': 'oracle',
+            'count': len(data)
+        })
+        
+    except Exception as e:
+        # Log error
+        logger.error(f"API Error: {str(e)}")
+        
+        # Return error response (HTTP 500)
+        return JsonResponse({
+            'error': str(e),
+            'data': [],
+            'source': 'error'
+        }, status=500)
+</div>
+
+<h4>Layer 4: Frontend Error Handling</h4>
+
+<div class="code-block">
+// In JavaScript
+fetch(apiUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            showError(data.error);
+        } else {
+            renderTable(data.data);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        showError(`Failed to load data: ${error.message}`);
+    });
+</div>
+
+<h3>11.2 Common Errors & Solutions</h3>
+
+<table>
+    <tr>
+        <th>Error</th>
+        <th>Cause</th>
+        <th>Detection</th>
+        <th>Resolution</th>
+    </tr>
+    <tr>
+        <td>ORA-12514</td>
+        <td>Service name not found</td>
+        <td>Connection attempt</td>
+        <td>Verify service name with tnsping<br>Check TNS configuration</td>
+    </tr>
+    <tr>
+        <td>ORA-01017</td>
+        <td>Invalid credentials</td>
+        <td>Authentication</td>
+        <td>Verify username/password<br>Check account status</td>
+    </tr>
+    <tr>
+        <td>ORA-12541</td>
+        <td>No listener</td>
+        <td>Network connection</td>
+        <td>Check VPN connection<br>Verify firewall rules</td>
+    </tr>
+    <tr>
+        <td>HTTP 500</td>
+        <td>API error</td>
+        <td>API response</td>
+        <td>Check Django logs<br>Verify database connectivity</td>
+    </tr>
+    <tr>
+        <td>JSON Parse Error</td>
+        <td>Invalid response</td>
+        <td>JavaScript parsing</td>
+        <td>Check API response format<br>Validate JSON structure</td>
+    </tr>
+    <tr>
+        <td>Connection Timeout</td>
+        <td>Network/query slow</td>
+        <td>Fetch timeout</td>
+        <td>Optimize SQL query<br>Check network latency</td>
+    </tr>
+</table>
+
+<!-- Section 12 -->
+<h2>12. Configuration & Settings</h2>
+
+<h3>12.1 Django Settings (settings.py)</h3>
+
+<div class="code-block">
+# monitorportal/settings.py
+
+# Security
+SECRET_KEY = 'your-secret-key-change-in-production'
+DEBUG = True  # Set to False in production
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']  # Add production domains
+
+# Installed Applications
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'portal',  # Our application
+]
+
+# Database (SQLite for metadata)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+# Static Files
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Timezone
+TIME_ZONE = 'America/Los_Angeles'
+USE_TZ = True
+</div>
+
+<h3>12.2 Database Configuration</h3>
+
+<div class="code-block">
+# portal/db/oracle_client.py
+
+# Level3 Database
+DB_CONFIG = {
+    'user': os.getenv('LEVEL3_DB_USER', 'icsm_appl'),
+    'password': os.getenv('LEVEL3_DB_PASSWORD', 'your_password'),
+    'host': os.getenv('LEVEL3_DB_HOST', '10.120.190.4'),
+    'port': int(os.getenv('LEVEL3_DB_PORT', 1521)),
+    'service_name': os.getenv('LEVEL3_DB_SERVICE', 'infr01p_app')
+}
+
+# MAPDQPRD Database
+MAPDQPRD_DB_CONFIG = {
+    'user': os.getenv('MAPDQPRD_DB_USER', 'mapdqprd'),
+    'password': os.getenv('MAPDQPRD_DB_PASSWORD', 'your_password'),
+    'host': os.getenv('MAPDQPRD_DB_HOST', 'RACORAP32-SCAN.CORP.INTRANET'),
+    'port': int(os.getenv('MAPDQPRD_DB_PORT', 1521)),
+    'service_name': os.getenv('MAPDQPRD_DB_SERVICE', 'SVC_IDG01P')
+}
+</div>
+
+<div class="warning-box">
+    <strong>⚠️ Security Best Practice:</strong><br>
+    Use environment variables for credentials in production. Never commit passwords to version control.
+    
+    <p>Create <code>.env</code> file:</p>
+    <div class="code-block">
+LEVEL3_DB_USER=username
+LEVEL3_DB_PASSWORD=password
+MAPDQPRD_DB_USER=username
+MAPDQPRD_DB_PASSWORD=password
+    </div>
+</div>
+
+<h3>12.3 Application Registry</h3>
+
+<p><strong>File:</strong> <span class="file-path">portal/ssrs_registry.py</span></p>
+
+<div class="code-block">
+# Defines all applications and their reports
+
+APPLICATIONS = [
+    {
+        'id': 'level3',
+        'name': 'Level3 Application',
+        'description': 'Informatica Level3 job monitoring',
+        'icon': '📊',
+        'reports': [
+            {
+                'id': 'lvl3-failed-with-error',
+                'name': 'Failed with Error',
+                'description': 'Jobs that failed with error messages',
+                'category': 'Monitoring',
+                'api_endpoint': '/api/reports/level3/lvl3-failed-with-error/',
+                'refresh_interval': 300000,  # 5 minutes
+                'columns': [
+                    'WORKFLOW_NAME',
+                    'SESSION_NAME',
+                    'START_TIME',
+                    'END_TIME',
+                    'DURATION_MINUTES',
+                    'ERROR_MESSAGE'
+                ]
+            },
+            {
+                'id': 'lvl3-long-running-sessions',
+                'name': 'Long Running Sessions',
+                'description': 'Sessions running longer than average',
+                'category': 'Performance',
+                'api_endpoint': '/api/reports/level3/lvl3-long-running-sessions/',
+                'refresh_interval': 300000,
+                'columns': [
+                    'WORKFLOW_NAME',
+                    'SESSION_NAME',
+                    'DURATION_MINUTES',
+                    'AVG_DURATION_MINUTES',
+                    'PERCENT_OF_AVERAGE'
+                ]
+            }
+        ]
+    },
+    {
+        'id': 'mdm',
+        'name': 'MDM Application',
+        'description': 'Master Data Management monitoring',
+        'icon': '🗄️',
+        'reports': [
+            {
+                'id': 'mdm-job-status',
+                'name': 'MDM Job Status',
+                'description': 'Status of MDM assets',
+                'category': 'Monitoring',
+                'api_endpoint': '/api/reports/mdm/mdm-job-status/',
+                'refresh_interval': 60000,  # 1 minute
+                'columns': [
+                    'ASSET_NAME',
+                    'RUN_STATUS_DESC',
+                    'START_TIME',
+                    'END_TIME',
+                    'DURATION_MINUTES'
+                ]
+            }
+        ]
+    },
+    # ... ERP, ADF applications ...
+]
+</div>
+
+<!-- Section 13 -->
+<h2>13. Security Implementation</h2>
+
+<h3>13.1 Security Features</h3>
+
+<h4>1. SQL Injection Prevention</h4>
+
+<div class="success-box">
+    <strong>✓ Protected:</strong> All queries use parameterized statements
+</div>
+
+<div class="code-block">
+# SAFE - Uses parameterized query
+query = "SELECT * FROM users WHERE username = :username"
+cursor.execute(query, {'username': user_input})
+
+# UNSAFE - Vulnerable to SQL injection (we don't do this!)
+query = f"SELECT * FROM users WHERE username = '{user_input}'"
+cursor.execute(query)
+</div>
+
+<h4>2. Cross-Site Scripting (XSS) Prevention</h4>
+
+<div class="success-box">
+    <strong>✓ Protected:</strong> Django templates auto-escape HTML
+</div>
+
+<div class="code-block">
+&lt;!-- Django automatically escapes variables --&gt;
+&lt;td&gt;{{ record.workflow_name }}&lt;/td&gt;
+
+&lt;!-- If workflow_name contains &lt;script&gt;alert('xss')&lt;/script&gt; --&gt;
+&lt;!-- Django outputs: &amp;lt;script&amp;gt;alert('xss')&amp;lt;/script&amp;gt; --&gt;
+&lt;!-- Browser displays as text, doesn't execute --&gt;
+</div>
+
+<h4>3. Cross-Site Request Forgery (CSRF) Protection</h4>
+
+<div class="success-box">
+    <strong>✓ Protected:</strong> Django CSRF middleware enabled
+</div>
+
+<div class="code-block">
+# settings.py
+MIDDLEWARE = [
+    ...
+    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF protection
+    ...
+]
+
+# In forms
+&lt;form method="post"&gt;
+    {% csrf_token %}  &lt;!-- Django adds secret token --&gt;
+    ...
+&lt;/form&gt;
+</div>
+
+<h4>4. Secure Database Credentials</h4>
+
+<div class="warning-box">
+    <strong>⚠️ Implementation:</strong>
+    <ul>
+        <li>Credentials stored in environment variables</li>
+        <li>Never committed to version control</li>
+        <li><code>.gitignore</code> excludes credential files</li>
+        <li>Production uses secure key management</li>
+    </ul>
+</div>
+
+<h4>5. Connection Security</h4>
+
+<ul>
+    <li><strong>Database Connections:</strong> Use encrypted Oracle connections (configurable)</li>
+    <li><strong>HTTPS:</strong> Recommended for production deployment</li>
+    <li><strong>VPN:</strong> Database access requires corporate VPN</li>
+</ul>
+
+<!-- Section 14 -->
+<h2>14. Adding New Applications (Tutorial)</h2>
+
+<h3>14.1 Step-by-Step Guide to Add New Report</h3>
+
+<p>Let's walk through adding a new report: "ADF Pipeline Status"</p>
+
+<h4>Step 1: Create SQL Query</h4>
+
+<p><strong>File:</strong> <span class="file-path">portal/sql/level3_queries.py</span></p>
+
+<div class="code-block">
+# Add to end of file
+
+ADF_PIPELINE_STATUS_QUERY = """
+SELECT 
+    pipeline_name,
+    run_id,
+    status,
+    start_time,
+    end_time,
+    ROUND((end_time - start_time) * 24 * 60, 2) as duration_minutes,
+    error_message
+FROM ADF_PIPELINE_RUNS
+WHERE start_time >= SYSDATE - 1
+ORDER BY start_time DESC
+"""
+</div>
+
+<h4>Step 2: Create Service Function</h4>
+
+<p><strong>File:</strong> <span class="file-path">portal/services/level3_service.py</span></p>
+
+<div class="code-block">
+# Add new function
+
+def get_adf_pipeline_status():
+    """
+    Retrieves ADF pipeline run status for last 24 hours.
+    
+    Returns:
+        list: List of dictionaries with pipeline run information
+    """
+    from portal.sql.level3_queries import ADF_PIPELINE_STATUS_QUERY
+    from portal.db.oracle_client import fetch_all_mapdqprd
+    
+    try:
+        result = fetch_all_mapdqprd(ADF_PIPELINE_STATUS_QUERY)
+        print(f"Retrieved {len(result)} ADF pipeline runs")
+        return result
+        
+    except Exception as e:
+        print(f"Error fetching ADF pipeline status: {str(e)}")
+        return []
+</div>
+
+<h4>Step 3: Add API Endpoint</h4>
+
+<p><strong>File:</strong> <span class="file-path">portal/api_views.py</span></p>
+
+<div class="code-block">
+# In api_report_data function, add new elif block
+
+def api_report_data(request, app_id, report_id):
+    try:
+        data = []
+        
+        # ... existing if/elif blocks ...
+        
+        elif app_id == 'adf':
+            if report_id == 'adf-pipeline-status':
+                from portal.services.level3_service import get_adf_pipeline_status
+                data = get_adf_pipeline_status()
+            else:
+                return JsonResponse({
+                    'error': f'Unknown report: {report_id}',
+                    'data': []
+                }, status=404)
+        
+        # ... rest of function ...
+</div>
+
+<h4>Step 4: Register in Application Registry</h4>
+
+<p><strong>File:</strong> <span class="file-path">portal/ssrs_registry.py</span></p>
+
+<div class="code-block">
+# Add to APPLICATIONS list
+
+APPLICATIONS = [
+    # ... existing applications ...
+    
+    {
+        'id': 'adf',
+        'name': 'ADF Application',
+        'description': 'Azure Data Factory pipeline monitoring',
+        'icon': '☁️',
+        'reports': [
+            {
+                'id': 'adf-pipeline-status',
+                'name': 'Pipeline Status',
+                'description': 'ADF pipeline run status and errors',
+                'category': 'Monitoring',
+                'api_endpoint': '/api/reports/adf/adf-pipeline-status/',
+                'refresh_interval': 60000,  # 1 minute
+                'columns': [
+                    'PIPELINE_NAME',
+                    'RUN_ID',
+                    'STATUS',
+                    'START_TIME',
+                    'END_TIME',
+                    'DURATION_MINUTES',
+                    'ERROR_MESSAGE'
+                ]
+            }
+        ]
+    }
+]
+</div>
+
+<h4>Step 5: Test</h4>
+
+<div class="code-block">
+# Test API endpoint in PowerShell
+Invoke-RestMethod -Uri "http://localhost:8000/api/reports/adf/adf-pipeline-status/"
+
+# Or in browser
+http://localhost:8000/api/reports/adf/adf-pipeline-status/
+
+# Test in UI
+1. Go to http://localhost:8000/dashboards/
+2. Click "ADF Application" card
+3. Click "VIEW" on "Pipeline Status" report
+4. Verify data displays correctly
+</div>
+
+<h3>14.2 What Happens Automatically</h3>
+
+<div class="success-box">
+    <strong>These work automatically once you add the configurations above:</strong>
+    <ul>
+        <li>✓ Application card appears on dashboard homepage</li>
+        <li>✓ Report appears in application's report list</li>
+        <li>✓ URL routing works: <code>/dashboards/adf/adf-pipeline-status/</code></li>
+        <li>✓ API endpoint accessible: <code>/api/reports/adf/adf-pipeline-status/</code></li>
+        <li>✓ JavaScript automatically calls API and renders table</li>
+        <li>✓ Refresh button works</li>
+        <li>✓ Statistics auto-calculate</li>
+        <li>✓ Status badges auto-format</li>
+    </ul>
+</div>
+
+<!-- Conclusion -->
+<h2>Conclusion</h2>
+
+<p>This document has covered the complete technical implementation of the PASE Monitor Portal, including:</p>
+
+<ul>
+    <li>✅ System architecture and technology stack</li>
+    <li>✅ Database connectivity and query implementation</li>
+    <li>✅ Complete request-response flow from click to display</li>
+    <li>✅ REST API architecture and endpoints</li>
+    <li>✅ Frontend JavaScript implementation</li>
+    <li>✅ User interface design system</li>
+    <li>✅ Error handling and resilience</li>
+    <li>✅ Security implementation</li>
+    <li>✅ Configuration and settings</li>
+    <li>✅ Tutorial for adding new applications</li>
+</ul>
+
+<div class="success-box">
+    <h3>Key Takeaways</h3>
+    <ul>
+        <li><strong>Layered Architecture:</strong> Clean separation between database, service, API, and presentation layers</li>
+        <li><strong>Modern API Design:</strong> RESTful JSON API with asynchronous frontend loading</li>
+        <li><strong>Professional UI:</strong> Custom CSS design system with Lumen branding</li>
+        <li><strong>Robust Error Handling:</strong> Multiple layers of error handling for resilience</li>
+        <li><strong>Extensible Design:</strong> Easy to add new applications and reports</li>
+        <li><strong>Production-Ready:</strong> Security features, error handling, and documentation in place</li>
+    </ul>
+</div>
+
+<div class="footer">
+    <strong>PASE Monitor Portal - Technical Documentation</strong><br>
+    Version 1.0.0 | March 2, 2026<br>
+    For questions or support, contact the PASE Development Team<br>
+    <br>
+    Document Status: Complete & Production Ready
+</div>
+
+</body>
+</html>

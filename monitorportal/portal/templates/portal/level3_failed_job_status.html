@@ -1,0 +1,1086 @@
+{# portal/templates/portal/level3_failed_job_status.html #}
+{% extends "portal/layout.html" %}
+
+{% block title %}LVL3 Failed Job Status{% endblock %}
+
+{% block content %}
+
+<!-- FLASH MESSAGES -->
+{% if flash_messages %}
+<div class="flash-messages">
+    {% for msg in flash_messages %}
+    <div class="flash-message flash-{{ msg.type }}">
+        <span class="flash-icon">
+            {% if msg.type == 'error' %}??
+            {% elif msg.type == 'warning' %}??
+            {% else %}??{% endif %}
+        </span>
+        <span class="flash-text">{{ msg.message }}</span>
+        <button class="flash-close" onclick="this.parentElement.style.display='none'">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- PAGE HEADER -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">LVL3 JOB STATUS WITH AI ANALYSIS</div>
+        <h1 class="app-title">Failed / Pending / Running Jobs</h1>
+        <div class="app-subtitle">
+            Informatica Monitoring Dashboard with Intelligent Error Analysis & Recommendations
+        </div>
+    </div>
+
+    <div class="app-stats">
+        <div class="stat">
+            <div class="stat-label">TOTAL FAILED</div>
+            <div class="stat-value {% if summary.total_failed > 10 %}stat-critical{% endif %}">
+                {{ summary.total_failed|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">PENDING RESTART</div>
+            <div class="stat-value {% if summary.pending_restart > 5 %}stat-warning{% endif %}">
+                {{ summary.pending_restart|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">LONG RUNNING</div>
+            <div class="stat-value {% if ai_insights.summary.long_running_sessions > 5 %}stat-warning{% endif %}">
+                {{ ai_insights.summary.long_running_sessions|default:0 }}
+            </div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">CRITICAL ISSUES</div>
+            <div class="stat-value {% if ai_insights.summary.critical_issues > 0 %}stat-critical{% endif %}">
+                {{ ai_insights.summary.critical_issues|default:0 }}
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- FAILED SESSIONS WITH AI ANALYSIS -->
+<section class="report-section">
+    <h2 class="section-title">? FAILED SESSIONS WITH AI ERROR ANALYSIS (LATEST FAILURES ONLY)</h2>
+
+    {% if failed %}
+    <div class="table-container">
+        <table class="table table-ai-enhanced">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>SEVERITY</th>
+                    <th>TEAM</th>
+                    <th>GRID</th>
+                    <th>FOLDER</th>
+                    <th>WORKFLOW</th>
+                    <th>SESSION</th>
+                    <th>START TIME</th>
+                    <th>END TIME</th>
+                    <th>STATUS</th>
+                    <th>AI ANALYSIS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in failed %}
+                <tr class="ai-row">
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {% for ai_row in ai_insights.failed_sessions %}
+                            {% if ai_row.session_name == row.session_name %}
+                                <span class="badge badge-severity badge-{{ ai_row.error_severity|lower }}">
+                                    {% if ai_row.error_severity == 'CRITICAL' %}??{% elif ai_row.error_severity == 'HIGH' %}??{% endif %}
+                                    {{ ai_row.error_severity }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for ai_row in ai_insights.failed_sessions %}
+                            {% if ai_row.session_name == row.session_name %}
+                                <span class="badge badge-team badge-{{ ai_row.assigned_to|lower }}">
+                                    {{ ai_row.assigned_to }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ row.grid_name }}</td>
+                    <td>{{ row.subject_area }}</td>
+                    <td class="wrap">{{ row.workflow_name }}</td>
+                    <td class="wrap">{{ row.session_name }}</td>
+                    <td class="nowrap">{{ row.start_time }}</td>
+                    <td class="nowrap">{{ row.end_time }}</td>
+                    <td><span class="badge badge-status-failed">{{ row.status }}</span></td>
+                    <td>
+                        <button class="btn-show-ai" onclick="showAIAnalysis('fail-{{ forloop.counter }}')">
+                            ?? View Full Details
+                        </button>
+                    </td>
+                </tr>
+                <tr id="ai-detail-fail-{{ forloop.counter }}" class="ai-detail-row" style="display: none;">
+                    <td colspan="11">
+                        <div class="ai-analysis-box">
+                            {% for ai_row in ai_insights.failed_sessions %}
+                                {% if ai_row.session_name == row.session_name %}
+                                    <div class="ai-category">
+                                        <strong>?? Error Category:</strong> {{ ai_row.error_category }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if row.error_message %}
+                            <div class="error-message-box">
+                                <strong>? FULL ERROR MESSAGE (Complete Log):</strong>
+                                <pre class="error-log">{{ row.error_message }}</pre>
+                            </div>
+                            {% else %}
+                            <div class="error-message-box">
+                                <strong>? ERROR MESSAGE:</strong>
+                                <p style="color: #999;">No error message captured</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% for ai_row in ai_insights.failed_sessions %}
+                                {% if ai_row.session_name == row.session_name %}
+                                    <div class="recommendations-box">
+                                        <strong>?? AI Recommendations for {{ ai_row.assigned_to }} Team:</strong>
+                                        <ol class="rec-list">
+                                            {% for rec in ai_row.recommendations %}
+                                            <li>{{ rec }}</li>
+                                            {% endfor %}
+                                        </ol>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="no-issues">? No failed sessions requiring attention!</div>
+    {% endif %}
+</section>
+
+
+<!-- LONG RUNNING SESSIONS WITH AI ANALYSIS -->
+<section class="report-section">
+    <h2 class="section-title">?? LONG-RUNNING SESSIONS WITH AI PERFORMANCE ANALYSIS</h2>
+
+    {% if long_running %}
+    <div class="table-container">
+        <table class="table table-ai-enhanced">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>SEVERITY</th>
+                    <th>GRID</th>
+                    <th>FOLDER</th>
+                    <th>WORKFLOW</th>
+                    <th>SESSION</th>
+                    <th>START TIME</th>
+                    <th>CURRENT (MIN)</th>
+                    <th>AVG (MIN)</th>
+                    <th>% OVER AVG</th>
+                    <th>AI ANALYSIS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in long_running %}
+                <tr class="ai-row">
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {% for ai_row in ai_insights.long_running_sessions %}
+                            {% if ai_row.session_name == row.session_name %}
+                                <span class="badge badge-severity badge-{{ ai_row.severity|lower }}">
+                                    {% if ai_row.severity == 'CRITICAL' %}??{% endif %}
+                                    {{ ai_row.severity }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ row.grid_name }}</td>
+                    <td>{{ row.subject_area }}</td>
+                    <td class="wrap">{{ row.workflow_name }}</td>
+                    <td class="wrap">{{ row.session_name }}</td>
+                    <td class="nowrap">{{ row.start_time }}</td>
+                    <td class="numeric">{{ row.current_duration_min|default:"N/A" }}</td>
+                    <td class="numeric">{{ row.avg_duration_min|default:"N/A" }}</td>
+                    <td class="numeric highlight-over">
+                        {% for ai_row in ai_insights.long_running_sessions %}
+                            {% if ai_row.session_name == row.session_name %}
+                                +{{ ai_row.percent_over_avg|floatformat:0 }}%
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <button class="btn-show-ai" onclick="showAIAnalysis('long-{{ forloop.counter }}')">
+                            ?? View Analysis
+                        </button>
+                    </td>
+                </tr>
+                <tr id="ai-detail-long-{{ forloop.counter }}" class="ai-detail-row" style="display: none;">
+                    <td colspan="11">
+                        <div class="ai-analysis-box ai-analysis-longrun">
+                            {% for ai_row in ai_insights.long_running_sessions %}
+                                {% if ai_row.session_name == row.session_name %}
+                                    <div class="recommendations-box">
+                                        <strong>?? AI Performance Recommendations:</strong>
+                                        <ol class="rec-list">
+                                            {% if ai_row.percent_over_avg > 200 %}
+                                            <li class="rec-critical">?? <strong>IMMEDIATE ACTION REQUIRED:</strong> Session running {{ ai_row.percent_over_avg|floatformat:0 }}% longer than normal. Consider stopping and investigating.</li>
+                                            <li>Check for database locks or blocking sessions</li>
+                                            <li>Review source data volume - possible unexpected increase</li>
+                                            <li>Check server resources (CPU, memory, disk I/O)</li>
+                                            {% elif ai_row.percent_over_avg > 100 %}
+                                            <li class="rec-warning">?? Session running {{ ai_row.percent_over_avg|floatformat:0 }}% longer than average. Monitor closely.</li>
+                                            <li>Review recent changes to workflow or mappings</li>
+                                            <li>Check for concurrent jobs affecting performance</li>
+                                            {% else %}
+                                            <li>Session running {{ ai_row.percent_over_avg|floatformat:0 }}% longer than average</li>
+                                            <li>Continue monitoring - may complete normally</li>
+                                            {% endif %}
+                                        </ol>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="no-issues">? No long-running sessions detected!</div>
+    {% endif %}
+</section>
+
+
+<!-- TEAM TASK SUMMARY -->
+<section class="report-section">
+    <h2 class="section-title">?? TEAM TASK ASSIGNMENTS</h2>
+
+    <div class="team-summary-grid">
+        <div class="team-card team-dba">
+            <div class="team-header">
+                <span class="team-icon">???</span>
+                <h3>DBA TEAM TASKS</h3>
+            </div>
+            <div class="team-count">{{ ai_insights.summary.dba_tasks_count|default:0 }}</div>
+            <div class="team-categories">
+                <div class="category-item">� Database Connection Issues</div>
+                <div class="category-item">� Missing Tables/Objects</div>
+                <div class="category-item">� Tablespace Issues</div>
+                <div class="category-item">� Lock/Deadlock Problems</div>
+            </div>
+        </div>
+
+        <div class="team-card team-dev">
+            <div class="team-header">
+                <span class="team-icon">??</span>
+                <h3>DEV TEAM TASKS</h3>
+            </div>
+            <div class="team-count">{{ ai_insights.summary.dev_tasks_count|default:0 }}</div>
+            <div class="team-categories">
+                <div class="category-item">� Data Type Errors</div>
+                <div class="category-item">� File/Directory Issues</div>
+                <div class="category-item">� Transformation Errors</div>
+                <div class="category-item">� Workflow Logic Problems</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<style>
+/* Flash Messages */
+.flash-messages {
+    margin: 0 0 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.flash-message {
+    padding: 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.flash-error {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border-left: 5px solid #c92a2a;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.flash-warning {
+    background: linear-gradient(135deg, #ffd93d 0%, #ffb700 100%);
+    color: #333;
+    border-left: 5px solid #f76707;
+    box-shadow: 0 4px 12px rgba(255, 183, 0, 0.3);
+}
+
+.flash-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border-left: 5px solid #0c8599;
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.flash-icon { font-size: 1.5rem; }
+.flash-text { flex: 1; font-weight: 600; font-size: 1.05rem; }
+.flash-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 5px;
+    opacity: 0.7;
+}
+.flash-close:hover { opacity: 1; }
+
+/* Stats */
+.stat-critical {
+    color: #c92a2a !important;
+    animation: pulse 2s infinite;
+}
+.stat-warning { color: #f76707 !important; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Tables */
+.table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.table-ai-enhanced {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.table-ai-enhanced thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.table-ai-enhanced th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table-ai-enhanced td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+}
+
+.table-ai-enhanced tbody tr:hover {
+    background: #f8f9fa;
+}
+
+/* AI Row Highlighting */
+.ai-severity-critical {
+    border-left: 5px solid #c92a2a;
+    background: linear-gradient(to right, #fff5f5 0%, white 100%);
+}
+
+.ai-severity-high {
+    border-left: 5px solid #f76707;
+    background: linear-gradient(to right, #fff8f0 0%, white 100%);
+}
+
+.ai-severity-medium {
+    border-left: 5px solid #ffd93d;
+}
+
+.wrap {
+    max-width: 300px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.numeric {
+    text-align: right;
+    font-weight: 600;
+}
+
+.highlight-over {
+    color: #f76707;
+    font-weight: 700;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.badge-severity { color: white; }
+.badge-critical { background: #c92a2a; }
+.badge-high { background: #f76707; }
+.badge-medium { background: #ffd93d; color: #333; }
+
+.badge-team { color: white; }
+.badge-dba { background: #1971c2; }
+.badge-dev { background: #28a745; }
+
+.badge-status-failed {
+    background: #c92a2a;
+    color: white;
+}
+
+/* AI Analysis Button */
+.btn-show-ai {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.btn-show-ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
+/* AI Detail Row */
+.ai-detail-row td {
+    padding: 0 !important;
+    background: #f8f9fa;
+}
+
+.ai-analysis-box {
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #4facfe;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+.ai-analysis-longrun {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    border-color: #ffd93d;
+}
+
+.ai-category {
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+}
+
+.error-message-box {
+    background: #fff5f5;
+    border-left: 4px solid #c92a2a;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 15px 0;
+}
+
+.error-log {
+    background: white;
+    padding: 15px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: 'Courier New', monospace;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 10px 0 0 0;
+    max-height: 400px;
+    overflow-y: auto;
+    color: #c92a2a;
+}
+
+.recommendations-box {
+    background: white;
+    border-left: 4px solid #2f9e44;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+.recommendations-box strong {
+    color: #2f9e44;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.rec-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.rec-list li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.rec-critical {
+    background: #fff5f5;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.rec-warning {
+    background: #fff8f0;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Team Summary */
+.team-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.team-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.team-dba { border-left: 5px solid #1971c2; }
+.team-dev { border-left: 5px solid #28a745; }
+
+.team-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.team-icon { font-size: 2rem; }
+.team-header h3 { margin: 0; color: #333; }
+
+.team-count {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #FF8C00;
+    margin-bottom: 15px;
+}
+
+.team-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.category-item {
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.no-issues {
+    text-align: center;
+    padding: 40px;
+    font-size: 1.3rem;
+    color: #2f9e44;
+    font-weight: 600;
+    background: #f0fff4;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+/* 7-DAY INSIGHTS STYLES */
+/* ============================================================ */
+/* TODAY'S JOB STATUS SECTION - IMPROVED DESIGN */
+/* ============================================================ */
+.insights-section {
+    margin-top: 50px;
+    margin-bottom: 40px;
+}
+
+.insights-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    padding: 25px 35px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+}
+
+.insights-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.insights-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+/* TODAY'S COMPREHENSIVE CARD */
+.today-comprehensive-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+
+.today-header-banner {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.live-indicator {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.today-header-banner h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* MAIN STATS GRID */
+.main-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.main-stat-card {
+    text-align: center;
+    padding: 30px 20px;
+    border-right: 1px solid #e5e7eb;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.main-stat-card:last-child {
+    border-right: none;
+}
+
+.main-stat-card:hover {
+    background: #f9fafb;
+    transform: translateY(-2px);
+}
+
+.main-stat-card.total {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+}
+
+.main-stat-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.main-stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.main-stat-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.main-stat-card.total .main-stat-label {
+    color: rgba(255,255,255,0.9);
+}
+
+.main-stat-card.succeeded { background: #f0fdf4; }
+.main-stat-card.succeeded .main-stat-icon { color: #10b981; }
+.main-stat-card.succeeded .main-stat-value { color: #10b981; }
+
+.main-stat-card.failed { background: #fef2f2; }
+.main-stat-card.failed .main-stat-icon { color: #ef4444; }
+.main-stat-card.failed .main-stat-value { color: #ef4444; }
+
+.main-stat-card.running { background: #eff6ff; }
+.main-stat-card.running .main-stat-icon { color: #3b82f6; }
+.main-stat-card.running .main-stat-value { color: #3b82f6; }
+
+.main-stat-card.stopped { background: #fefce8; }
+.main-stat-card.stopped .main-stat-icon { color: #eab308; }
+.main-stat-card.stopped .main-stat-value { color: #eab308; }
+
+/* DETAILED BREAKDOWN SECTION */
+.detailed-breakdown {
+    padding: 25px 30px;
+    background: #f9fafb;
+}
+
+.detailed-breakdown h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.breakdown-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.breakdown-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.failed-text { color: #ef4444; }
+.stopped-text { color: #eab308; }
+.running-text { color: #3b82f6; }
+.succeeded-text { color: #10b981; }
+.disabled-text { color: #9ca3af; }
+.total-text { color: #8b5cf6; }
+
+/* HISTORICAL SECTION - COMPACT GRID */
+.historical-section-compact {
+    margin-top: 40px;
+}
+
+.historical-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.historical-days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.historical-day-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+}
+
+.historical-day-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.hist-day-header {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 15px 20px;
+    text-align: center;
+    border-bottom: 2px solid #d1d5db;
+}
+
+.hist-day-date {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 3px;
+}
+
+.hist-day-weekday {
+    font-size: 0.85rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hist-day-stats {
+    padding: 18px 20px;
+}
+
+.hist-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.hist-stat-row:last-child {
+    border-bottom: none;
+}
+
+.hist-stat-row.total-row {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 2px solid #e5e7eb;
+    border-bottom: none;
+    font-weight: 600;
+}
+
+.hist-stat-icon {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.succeeded-icon { color: #10b981; }
+.failed-icon { color: #ef4444; }
+.running-icon { color: #3b82f6; }
+.stopped-icon { color: #eab308; }
+
+.hist-stat-label {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.hist-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 50px;
+    text-align: right;
+}
+
+.empty-day {
+    text-align: center;
+    padding: 30px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .historical-days-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+function showAIAnalysis(id) {
+    const detailRow = document.getElementById('ai-detail-' + id);
+    if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+    } else {
+        detailRow.style.display = 'none';
+    }
+}
+</script>
+
+<!-- ============================================================ -->
+<!-- 7-DAY JOB STATUS INSIGHTS -->
+<!-- ============================================================ -->
+<section class="insights-section">
+    <div class="insights-header">
+        <h2>📊 Today's Job Status Insights</h2>
+        <div class="insights-subtitle">Real-time from REP_TASK_INST_RUN</div>
+    </div>
+
+    <!-- TODAY'S COMPREHENSIVE STATUS -->
+    {% if today_stats %}
+    <div class="today-comprehensive-card">
+        <div class="today-header-banner">
+            <span class="live-indicator">🔴 LIVE</span>
+            <h3>{{ today_stats.date|date:"l, F d, Y" }}</h3>
+        </div>
+        
+        <!-- Main Stats Grid -->
+        <div class="main-stats-grid">
+            <div class="main-stat-card total">
+                <div class="main-stat-value">{{ today_stats.total|default:0 }}</div>
+                <div class="main-stat-label">Total Jobs</div>
+            </div>
+            
+            <div class="main-stat-card succeeded">
+                <div class="main-stat-icon">✓</div>
+                <div class="main-stat-value">{{ today_stats.succeeded|default:0 }}</div>
+                <div class="main-stat-label">Succeeded</div>
+            </div>
+            
+            <div class="main-stat-card failed">
+                <div class="main-stat-icon">✗</div>
+                <div class="main-stat-value">{{ today_stats.failed|default:0 }}</div>
+                <div class="main-stat-label">Failed</div>
+            </div>
+            
+            <div class="main-stat-card running">
+                <div class="main-stat-icon">▶</div>
+                <div class="main-stat-value">{{ today_stats.running|default:0 }}</div>
+                <div class="main-stat-label">Running</div>
+            </div>
+            
+            <div class="main-stat-card stopped">
+                <div class="main-stat-icon">⏸</div>
+                <div class="main-stat-value">{{ today_stats.stopped|default:0 }}</div>
+                <div class="main-stat-label">Stopped/Aborted</div>
+            </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="detailed-breakdown">
+            <h4>Detailed Breakdown</h4>
+            <div class="breakdown-grid">
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Failed:</span>
+                    <span class="breakdown-value failed-text">{{ today_stats.failed|default:0 }}</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Stopped:</span>
+                    <span class="breakdown-value stopped-text">{{ today_stats.stopped|default:0 }}</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Running:</span>
+                    <span class="breakdown-value running-text">{{ today_stats.running|default:0 }}</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Succeeded:</span>
+                    <span class="breakdown-value succeeded-text">{{ today_stats.succeeded|default:0 }}</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="breakdown-label">Disabled:</span>
+                    <span class="breakdown-value disabled-text">{{ today_stats.disabled|default:0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- HISTORICAL 6 DAYS - COMPACT VIEW -->
+    {% if historical_days %}
+    <div class="historical-section-compact">
+        <h3 class="historical-title">
+            <span>📅</span> Last 6 Days Overview
+        </h3>
+        
+        <div class="historical-days-grid">
+            {% for day in historical_days %}
+            <div class="historical-day-card">
+                <div class="hist-day-header">
+                    <div class="hist-day-date">{{ day.date|date:"M d" }}</div>
+                    <div class="hist-day-weekday">{{ day.date|date:"D" }}</div>
+                </div>
+                
+                <div class="hist-day-stats">
+                    <div class="hist-stat-row">
+                        <span class="hist-stat-icon succeeded-icon">✓</span>
+                        <span class="hist-stat-label">Succeeded:</span>
+                        <span class="hist-stat-value succeeded-text">{{ day.succeeded|default:0 }}</span>
+                    </div>
+                    
+                    <div class="hist-stat-row">
+                        <span class="hist-stat-icon failed-icon">✗</span>
+                        <span class="hist-stat-label">Failed:</span>
+                        <span class="hist-stat-value failed-text">{{ day.failed|default:0 }}</span>
+                    </div>
+                    
+                    <div class="hist-stat-row">
+                        <span class="hist-stat-icon running-icon">▶</span>
+                        <span class="hist-stat-label">Running:</span>
+                        <span class="hist-stat-value running-text">{{ day.running|default:0 }}</span>
+                    </div>
+                    
+                    <div class="hist-stat-row">
+                        <span class="hist-stat-icon stopped-icon">⏸</span>
+                        <span class="hist-stat-label">Stopped:</span>
+                        <span class="hist-stat-value stopped-text">{{ day.stopped|default:0 }}</span>
+                    </div>
+                    
+                    <div class="hist-stat-row total-row">
+                        <span class="hist-stat-icon">📊</span>
+                        <span class="hist-stat-label">Total:</span>
+                        <span class="hist-stat-value total-text">{{ day.total|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+{% endblock %}
+

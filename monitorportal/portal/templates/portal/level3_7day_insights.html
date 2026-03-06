@@ -1,0 +1,583 @@
+{# portal/templates/portal/level3_7day_insights.html #}
+{% extends "portal/layout.html" %}
+
+{% block title %}LVL3 7-Day Job Insights{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* 7-Day Insights Dashboard Styles */
+    .insights-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        margin: 0 0 10px 0;
+        font-weight: 700;
+    }
+
+    .page-header .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+
+    /* Overall 7-Day Summary */
+    .summary-banner {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .summary-stat {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-top: 4px solid #ddd;
+    }
+
+    .summary-stat.completed {
+        border-top-color: #10b981;
+    }
+
+    .summary-stat.failed {
+        border-top-color: #ef4444;
+    }
+
+    .summary-stat.running {
+        border-top-color: #3b82f6;
+    }
+
+    .summary-stat.total {
+        border-top-color: #8b5cf6;
+    }
+
+    .summary-stat .label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .summary-stat .value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat.completed .value {
+        color: #10b981;
+    }
+
+    .summary-stat.failed .value {
+        color: #ef4444;
+    }
+
+    .summary-stat.running .value {
+        color: #3b82f6;
+    }
+
+    .summary-stat.total .value {
+        color: #8b5cf6;
+    }
+
+    /* TODAY Section */
+    .today-section {
+        margin-bottom: 40px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-title .icon {
+        font-size: 1.8rem;
+    }
+
+    .today-card {
+        background: linear-gradient(135deg, #f6f8fb 0%, #ffffff 100%);
+        border: 3px solid #10b981;
+        border-radius: 12px;
+        padding: 35px;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .today-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .today-badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .today-date {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 25px;
+    }
+
+    .today-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .today-stat-box {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .today-stat-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    }
+
+    .today-stat-box .icon-badge {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .today-stat-box .stat-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .today-stat-box .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+    }
+
+    .today-stat-box.completed-box {
+        border-left: 4px solid #10b981;
+    }
+
+    .today-stat-box.completed-box .stat-value {
+        color: #10b981;
+    }
+
+    .today-stat-box.failed-box {
+        border-left: 4px solid #ef4444;
+    }
+
+    .today-stat-box.failed-box .stat-value {
+        color: #ef4444;
+    }
+
+    .today-stat-box.running-box {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .today-stat-box.running-box .stat-value {
+        color: #3b82f6;
+    }
+
+    .today-stat-box.total-box {
+        border-left: 4px solid #8b5cf6;
+    }
+
+    .today-stat-box.total-box .stat-value {
+        color: #8b5cf6;
+    }
+
+    /* HISTORICAL DAYS Section */
+    .historical-section {
+        margin-bottom: 40px;
+    }
+
+    .historical-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .day-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-left: 4px solid #e5e7eb;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .day-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .day-card-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    .day-card-date {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 5px;
+    }
+
+    .day-card-weekday {
+        font-size: 0.9rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .day-card-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .day-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+    }
+
+    .day-stat .stat-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .day-stat .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .day-stat.completed .stat-value {
+        color: #10b981;
+    }
+
+    .day-stat.failed .stat-value {
+        color: #ef4444;
+    }
+
+    .day-stat.running .stat-value {
+        color: #3b82f6;
+    }
+
+    .day-stat.total .stat-value {
+        color: #8b5cf6;
+    }
+
+    /* Percentage bars */
+    .percentage-bar {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .percentage-bar-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .percentage-bar-track {
+        width: 100%;
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .percentage-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .percentage-bar-fill.failed-fill {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .today-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .historical-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="insights-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <h1>📊 Level3 Job Insights - Last 7 Days</h1>
+    </div>
+
+    <!-- OVERALL 7-DAY SUMMARY TABLE -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 40px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <th style="padding: 20px; text-align: center; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px;">✅ TOTAL COMPLETED</th>
+                    <th style="padding: 20px; text-align: center; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; border-left: 1px solid rgba(255,255,255,0.2);">❌ TOTAL FAILED</th>
+                    <th style="padding: 20px; text-align: center; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; border-left: 1px solid rgba(255,255,255,0.2);">🔄 CURRENTLY RUNNING</th>
+                    <th style="padding: 20px; text-align: center; font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; border-left: 1px solid rgba(255,255,255,0.2);">📈 TOTAL JOBS (7 DAYS)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background: #f9fafb;">
+                    <td style="padding: 30px 20px; text-align: center;">
+                        <div style="font-size: 3rem; font-weight: 700; color: #10b981; margin-bottom: 5px;">{{ total_stats.succeeded|default:0 }}</div>
+                    </td>
+                    <td style="padding: 30px 20px; text-align: center; border-left: 1px solid #e5e7eb;">
+                        <div style="font-size: 3rem; font-weight: 700; color: #ef4444; margin-bottom: 5px;">{{ total_stats.failed|default:0 }}</div>
+                    </td>
+                    <td style="padding: 30px 20px; text-align: center; border-left: 1px solid #e5e7eb;">
+                        <div style="font-size: 3rem; font-weight: 700; color: #3b82f6; margin-bottom: 5px;">{{ total_stats.running|default:0 }}</div>
+                    </td>
+                    <td style="padding: 30px 20px; text-align: center; border-left: 1px solid #e5e7eb;">
+                        <div style="font-size: 3rem; font-weight: 700; color: #8b5cf6; margin-bottom: 5px;">{{ total_stats.total|default:0 }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TODAY SECTION - TABLE FORMAT -->
+    {% if today_stats %}
+    <div class="today-section">
+        <h2 class="section-title">
+            <span class="icon">⚡</span>
+            Today's Live Status
+        </h2>
+        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.1); margin-bottom: 30px; border: 2px solid #10b981;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                        <th style="padding: 18px 20px; text-align: left; font-weight: 600; letter-spacing: 0.5px; font-size: 1.05rem;">⚡ STATUS</th>
+                        <th style="padding: 18px 20px; text-align: left; font-weight: 600; letter-spacing: 0.5px;">DATE</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">✅ COMPLETED</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">❌ FAILED</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">🔄 RUNNING</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">📊 TOTAL</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">SUCCESS RATE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                        <td style="padding: 20px; font-weight: 700; color: #10b981; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">
+                            🔴 LIVE TODAY
+                        </td>
+                        <td style="padding: 20px; font-weight: 600; color: #1f2937; font-size: 1.05rem;">
+                            {{ today_stats.date|date:"l, M d, Y" }}
+                        </td>
+                        <td style="padding: 20px; text-align: center; font-weight: 700; font-size: 1.4rem; color: #10b981;">
+                            {{ today_stats.succeeded|default:0|floatformat:0 }}
+                        </td>
+                        <td style="padding: 20px; text-align: center; font-weight: 700; font-size: 1.4rem; color: #ef4444;">
+                            {{ today_stats.failed|default:0 }}
+                        </td>
+                        <td style="padding: 20px; text-align: center; font-weight: 700; font-size: 1.4rem; color: #3b82f6;">
+                            {{ today_stats.running|default:0 }}
+                        </td>
+                        <td style="padding: 20px; text-align: center; font-weight: 700; font-size: 1.4rem; color: #8b5cf6;">
+                            {{ today_stats.total|default:0|floatformat:0 }}
+                        </td>
+                        <td style="padding: 20px; text-align: center;">
+                            {% if today_stats.total > 0 %}
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <span style="font-weight: 700; color: #10b981; font-size: 1.3rem;">{% widthratio today_stats.succeeded today_stats.total 100 %}%</span>
+                                <div style="width: 80px; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden;">
+                                    <div style="height: 100%; background: linear-gradient(90deg, #10b981, #059669); width: {% widthratio today_stats.succeeded today_stats.total 100 %}%;"></div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span style="color: #9ca3af;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- FOLDER FILTER INFO (Below Today's Insight) -->
+    {% if folder_name %}
+    <div style="margin-top: 30px; margin-bottom: 20px; padding: 20px 25px; background: linear-gradient(135deg, #fff5f0 0%, #fff9f5 100%); border-left: 5px solid #FF6A13; border-radius: 10px; box-shadow: 0 2px 10px rgba(255, 106, 19, 0.1);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #FF6A13, #E85A0A); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 3px 10px rgba(255, 106, 19, 0.3);">📁</div>
+                <div>
+                    <div style="font-size: 0.8rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Viewing Folder</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #FF6A13;">{{ folder_name }}</div>
+                </div>
+            </div>
+            <a href="{% url 'report_view' 'level3' 'lvl3-failed-jobs-status' %}" 
+               style="padding: 10px 20px; background: white; color: #6b7280; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.9rem; border: 2px solid #e5e7eb; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
+               onmouseover="this.style.borderColor='#FF6A13'; this.style.color='#FF6A13';"
+               onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#6b7280';">
+                ← Back to All Folders
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- HISTORICAL DAYS (LAST 6 DAYS) - TABLE FORMAT -->
+    {% if historical_days %}
+    <div class="historical-section">
+        <h2 class="section-title">
+            <span class="icon">📅</span>
+            Last 6 Days Historical View
+        </h2>
+        
+        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.08);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <th style="padding: 18px 20px; text-align: left; font-weight: 600; letter-spacing: 0.5px;">DATE</th>
+                        <th style="padding: 18px 20px; text-align: left; font-weight: 600; letter-spacing: 0.5px;">DAY</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">✅ COMPLETED</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">❌ FAILED</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">🔄 RUNNING</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">📊 TOTAL</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">SUCCESS RATE</th>
+                        <th style="padding: 18px 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px;">FAILURE RATE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in historical_days %}
+                    <tr style="border-bottom: 1px solid #e5e7eb; transition: background 0.2s;" 
+                        onmouseover="this.style.background='#f9fafb';" 
+                        onmouseout="this.style.background='white';">
+                        <td style="padding: 16px 20px; font-weight: 600; color: #1f2937;">{{ day.date|date:"M d, Y" }}</td>
+                        <td style="padding: 16px 20px; color: #6b7280;">{{ day.date|date:"l" }}</td>
+                        <td style="padding: 16px 20px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #10b981;">
+                            {{ day.succeeded|default:0|floatformat:0 }}
+                        </td>
+                        <td style="padding: 16px 20px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #ef4444;">
+                            {{ day.failed|default:0 }}
+                        </td>
+                        <td style="padding: 16px 20px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #3b82f6;">
+                            {{ day.running|default:0 }}
+                        </td>
+                        <td style="padding: 16px 20px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #8b5cf6;">
+                            {{ day.total|default:0|floatformat:0 }}
+                        </td>
+                        <td style="padding: 16px 20px; text-align: center;">
+                            {% if day.total > 0 %}
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span style="font-weight: 700; color: #10b981; font-size: 1.05rem;">{% widthratio day.succeeded day.total 100 %}%</span>
+                                <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; background: linear-gradient(90deg, #10b981, #059669); width: {% widthratio day.succeeded day.total 100 %}%;"></div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span style="color: #9ca3af;">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 16px 20px; text-align: center;">
+                            {% if day.total > 0 %}
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                {% load custom_filters %}
+                                <span style="font-weight: 700; color: #ef4444; font-size: 1.05rem;">{{ day.failed|multiply:100|divide:day.total|floatformat:2 }}%</span>
+                                <div style="width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); width: {{ day.failed|multiply:100|divide:day.total|floatformat:1 }}%;"></div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <span style="color: #9ca3af;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <h3>No historical data available</h3>
+        <p>Data for the last 6 days will appear here once available.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

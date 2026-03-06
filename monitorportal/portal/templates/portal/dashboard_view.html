@@ -1,0 +1,22 @@
+﻿{# portal/templates/portal/dashboard_view.html #}
+{% extends "portal/layout.html" %}
+{% block title %}{{ dash.name }} - Monitoring Portal{% endblock %}
+
+{% block content %}
+<h2>{{ dash.name }}</h2>
+
+<div class="viewer-actions">
+    <a class="btn secondary" href="{% url 'home' %}">← Back</a>
+    <a class="btn" href="{{ dash.url }}" target="_blank" rel="noopener">Open in SSRS</a>
+</div>
+
+{% if dash.embed %}
+<iframe class="ssrs-frame" src="{{ dash.url }}" loading="lazy"></iframe>
+{% else %}
+<div class="info-box">
+    <b>Embedding is disabled.</b><br />
+    Use <b>Open in SSRS</b>. If SSRS allows iframe embedding, set <code>embed=True</code> in
+    <code>ssrs_registry.py</code>.
+</div>
+{% endif %}
+{% endblock %}
