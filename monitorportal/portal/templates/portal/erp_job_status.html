@@ -303,6 +303,7 @@
                     <th style="min-width: 300px;">JOB/WORKFLOW NAME</th>
                     <th>SUBTASKS</th>
                     <th>START TIME (MST)</th>
+                    <th>END TIME (MST)</th>
                     <th>DURATION</th>
                     <th>STATUS</th>
                     <th>LOCATION</th>
@@ -316,11 +317,18 @@
                     <td style="text-align: center; font-weight: bold;">
                         {{ job.subtask_count }}
                     </td>
-                    <td class="nowrap">{{ job.start_time }}</td>
+                    <td class="nowrap">{{ job.start_time_mst }}</td>
+                    <td class="nowrap">
+                        {% if job.status == 'RUNNING' %}
+                            <span style="color: #FFC107; font-style: italic;">Running...</span>
+                        {% else %}
+                            {{ job.end_time_mst|default:"N/A" }}
+                        {% endif %}
+                    </td>
                     <td class="nowrap" style="font-weight: bold;">
                         {% if job.status == 'RUNNING' %}
                             {{ job.duration_minutes|format_duration }} ⏱️
-                        {% elif job.end_time == 'Running...' %}
+                        {% elif job.end_time_mst == 'Running...' %}
                             {{ job.duration_minutes|format_duration }} ⏱️
                         {% else %}
                             {{ job.duration_minutes|format_duration }}
