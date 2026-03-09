@@ -15,6 +15,13 @@ APPS = [
                 "view_type": "level3_failed_jobs_status",
             },
             {
+                "name": "LVL3 7-Day Job Insights",
+                "slug": "lvl3-7day-insights",
+                "description": "Level3 7-Day Job Performance Trends by Date",
+                "ssrs_url": "",
+                "view_type": "level3_7day_insights",
+            },
+            {
                 "name": "Level3 Failures with Error",
                 "slug": "lvl3-failed-with-error",
                 "description": "LVL3 FAILED SESSIONS WITH ERRORS",
