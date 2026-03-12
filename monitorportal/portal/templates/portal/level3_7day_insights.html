@@ -383,137 +383,6 @@
 </style>
 {% endblock %}
 
-<!-- AUTO-REFRESH CONTROLS SCRIPT -->
-<script>
-const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
-let lastRefreshTimestamp = new Date();
-let autoRefreshEnabled = true;
-let autoRefreshTimer = null;
-let countdownInterval = null;
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize refresh controls
-    updateLastRefreshTime();
-    startCountdownTimer();
-    startAutoRefresh();
-    
-    // Update countdown timer every second
-    startCountdownTimer();
-});
-
-function updateLastRefreshTime() {
-    lastRefreshTimestamp = new Date();
-    const timeStr = lastRefreshTimestamp.toLocaleTimeString();
-    document.getElementById('lastRefreshTime').textContent = timeStr;
-}
-
-function updateNextRefreshTime() {
-    if (lastRefreshTimestamp && autoRefreshEnabled) {
-        const nextRefreshTime = new Date(lastRefreshTimestamp.getTime() + REFRESH_INTERVAL);
-        const now = new Date();
-        const timeLeft = nextRefreshTime - now;
-        
-        if (timeLeft > 0) {
-            const minutes = Math.floor(timeLeft / 60000);
-            const seconds = Math.floor((timeLeft % 60000) / 1000);
-            document.getElementById('nextRefreshTime').textContent = `${minutes} min ${seconds < 10 ? '0' : ''}${seconds}s`;
-            document.getElementById('nextRefreshTime').style.color = '#fbbf24';
-        } else {
-            document.getElementById('nextRefreshTime').textContent = 'Refreshing...';
-            document.getElementById('nextRefreshTime').style.color = '#a78bfa';
-        }
-    }
-}
-
-function startCountdownTimer() {
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
-    
-    countdownInterval = setInterval(function() {
-        updateNextRefreshTime();
-    }, 1000);
-}
-
-function toggleAutoRefresh(enabled) {
-    autoRefreshEnabled = enabled;
-    const toggle = document.getElementById('autoRefreshToggle');
-    
-    if (enabled) {
-        startAutoRefresh();
-        updateLastRefreshTime();
-        startCountdownTimer();
-        toggle.checked = true;
-        console.log('✅ Auto-refresh enabled (30 mins)');
-    } else {
-        stopAutoRefresh();
-        toggle.checked = false;
-        document.getElementById('nextRefreshTime').textContent = 'Disabled';
-        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
-        console.log('⏸️ Auto-refresh disabled');
-    }
-}
-
-function startAutoRefresh() {
-    if (autoRefreshTimer) {
-        clearTimeout(autoRefreshTimer);
-    }
-    
-    autoRefreshTimer = setTimeout(function() {
-        if (autoRefreshEnabled) {
-            console.log('🔄 Auto-refresh triggered');
-            manualRefresh();
-        }
-    }, REFRESH_INTERVAL);
-}
-
-function stopAutoRefresh() {
-    if (autoRefreshTimer) {
-        clearTimeout(autoRefreshTimer);
-        autoRefreshTimer = null;
-    }
-}
-
-function manualRefresh() {
-    const btn = document.getElementById('manualRefreshBtn');
-    const icon = document.getElementById('manualRefreshIcon');
-    
-    // Disable button during refresh
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    btn.style.cursor = 'not-allowed';
-    icon.style.display = 'inline-block';
-    icon.style.animation = 'spin 1s linear infinite';
-    
-    // Add spin animation if not exists
-    if (!document.getElementById('refreshSpinStyle')) {
-        const style = document.createElement('style');
-        style.id = 'refreshSpinStyle';
-        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
-        document.head.appendChild(style);
-    }
-    
-    // Reload page after slight delay
-    setTimeout(function() {
-        window.location.reload(true);
-    }, 500);
-}
-
-function refreshData() {
-    manualRefresh();
-}
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', function() {
-    if (autoRefreshTimer) {
-        clearTimeout(autoRefreshTimer);
-    }
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
-});
-</script>
-
 {% block content %}
 <!-- REFRESH CONTROLS -->
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
@@ -742,4 +611,135 @@ window.addEventListener('beforeunload', function() {
     </div>
     {% endif %}
 </div>
+
+<!-- AUTO-REFRESH CONTROLS SCRIPT -->
+<script>
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+let lastRefreshTimestamp = new Date();
+let autoRefreshEnabled = true;
+let autoRefreshTimer = null;
+let countdownInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize refresh controls
+    updateLastRefreshTime();
+    startCountdownTimer();
+    startAutoRefresh();
+    
+    // Update countdown timer every second
+    startCountdownTimer();
+});
+
+function updateLastRefreshTime() {
+    lastRefreshTimestamp = new Date();
+    const timeStr = lastRefreshTimestamp.toLocaleTimeString();
+    document.getElementById('lastRefreshTime').textContent = timeStr;
+}
+
+function updateNextRefreshTime() {
+    if (lastRefreshTimestamp && autoRefreshEnabled) {
+        const nextRefreshTime = new Date(lastRefreshTimestamp.getTime() + REFRESH_INTERVAL);
+        const now = new Date();
+        const timeLeft = nextRefreshTime - now;
+        
+        if (timeLeft > 0) {
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            document.getElementById('nextRefreshTime').textContent = `${minutes} min ${seconds < 10 ? '0' : ''}${seconds}s`;
+            document.getElementById('nextRefreshTime').style.color = '#fbbf24';
+        } else {
+            document.getElementById('nextRefreshTime').textContent = 'Refreshing...';
+            document.getElementById('nextRefreshTime').style.color = '#a78bfa';
+        }
+    }
+}
+
+function startCountdownTimer() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    countdownInterval = setInterval(function() {
+        updateNextRefreshTime();
+    }, 1000);
+}
+
+function toggleAutoRefresh(enabled) {
+    autoRefreshEnabled = enabled;
+    const toggle = document.getElementById('autoRefreshToggle');
+    
+    if (enabled) {
+        startAutoRefresh();
+        updateLastRefreshTime();
+        startCountdownTimer();
+        toggle.checked = true;
+        console.log('✅ Auto-refresh enabled (30 mins)');
+    } else {
+        stopAutoRefresh();
+        toggle.checked = false;
+        document.getElementById('nextRefreshTime').textContent = 'Disabled';
+        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
+        console.log('⏸️ Auto-refresh disabled');
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    
+    autoRefreshTimer = setTimeout(function() {
+        if (autoRefreshEnabled) {
+            console.log('🔄 Auto-refresh triggered');
+            manualRefresh();
+        }
+    }, REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
+
+function manualRefresh() {
+    const btn = document.getElementById('manualRefreshBtn');
+    const icon = document.getElementById('manualRefreshIcon');
+    
+    // Disable button during refresh
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    icon.style.display = 'inline-block';
+    icon.style.animation = 'spin 1s linear infinite';
+    
+    // Add spin animation if not exists
+    if (!document.getElementById('refreshSpinStyle')) {
+        const style = document.createElement('style');
+        style.id = 'refreshSpinStyle';
+        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    }
+    
+    // Reload page after slight delay
+    setTimeout(function() {
+        window.location.reload(true);
+    }, 500);
+}
+
+function refreshData() {
+    manualRefresh();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+});
+</script>
 {% endblock %}
