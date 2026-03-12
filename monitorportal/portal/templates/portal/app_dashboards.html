@@ -64,9 +64,32 @@
 <!-- TODAY'S JOB STATUS (Only for Level3) -->
 {% if today_stats %}
 <section style="margin-top: 50px; margin-bottom: 40px;">
-    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 25px 35px; border-radius: 10px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);">
-        <h2 style="margin: 0 0 8px 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px;">📊 Today's Job Status Overview</h2>
-        <div style="font-size: 1rem; opacity: 0.9; font-weight: 400;">Real-time from REP_DW_ADMIN.OPB_TASK_INST_RUN | Updated: {{ today_stats.date|date:"M d, Y" }}</div>
+    <!-- REFRESH HEADER WITH CONTROLS -->
+    <div style="background: linear-gradient(135deg, #fb923c 0%, #f97316 100%); color: white; padding: 25px 35px; border-radius: 10px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; flex: 1;">📊 Today's Job Status Overview</h2>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button onclick="refreshDashboard()" style="background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;">
+                    🔄 REFRESH
+                </button>
+                <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" style="background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;">
+                    ⏱️ AUTO (30 MIN)
+                </button>
+            </div>
+        </div>
+        
+        <!-- INFO ROW -->
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
+            <div style="opacity: 0.9;">Real-time from REP_DW_ADMIN.OPB_TASK_INST_RUN</div>
+            <div style="display: flex; gap: 30px; align-items: center;">
+                <div>
+                    Last Updated: <span id="lastUpdatedTime" style="font-weight: 600;">--:-- --</span>
+                </div>
+                <div id="countdownTimer" style="font-weight: 600; min-width: 120px;">
+                    Next refresh: 30:00
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- TODAY'S STATUS CARD -->
@@ -82,34 +105,87 @@
             </div>
         </div>
         
-        <!-- Main Stats Grid -->
+        <!-- Main Stats Grid - CLICKABLE -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-bottom: 2px solid #f3f4f6;">
-            <div style="text-align: center; padding: 30px 20px; background: #f0fdf4; border-right: 1px solid #e5e7eb;">
+            <!-- COMPLETED STAT BOX -->
+            <div onclick="openJobDetailsModal('succeeded')" style="text-align: center; padding: 30px 20px; background: #f0fdf4; border-right: 1px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
+                 onmouseover="this.style.background='#dcfce7'; this.style.transform='scale(1.02)'; this.style.boxShadow='inset 0 0 10px rgba(16, 185, 129, 0.1)';" 
+                 onmouseout="this.style.background='#f0fdf4'; this.style.transform='scale(1)'; this.style.boxShadow='none';">
                 <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #10b981;">✓</div>
                 <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #10b981;">{{ today_stats.succeeded|default:0 }}</div>
-                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Succeeded</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Completed</div>
+                <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Click to View Details →</div>
             </div>
             
-            <div style="text-align: center; padding: 30px 20px; background: #fef2f2; border-right: 1px solid #e5e7eb;">
+            <!-- FAILED STAT BOX -->
+            <div onclick="openJobDetailsModal('failed')" style="text-align: center; padding: 30px 20px; background: #fef2f2; border-right: 1px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
+                 onmouseover="this.style.background='#fee2e2'; this.style.transform='scale(1.02)'; this.style.boxShadow='inset 0 0 10px rgba(239, 68, 68, 0.1)';" 
+                 onmouseout="this.style.background='#fef2f2'; this.style.transform='scale(1)'; this.style.boxShadow='none';">
                 <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #ef4444;">✗</div>
                 <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #ef4444;">{{ today_stats.failed|default:0 }}</div>
-                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Failed</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Failed</div>
+                <div style="font-size: 0.75rem; color: #ef4444; font-weight: 600;">Click to View Details →</div>
             </div>
             
-            <div style="text-align: center; padding: 30px 20px; background: #eff6ff; border-right: 1px solid #e5e7eb;">
+            <!-- RUNNING STAT BOX -->
+            <div onclick="openJobDetailsModal('running')" style="text-align: center; padding: 30px 20px; background: #eff6ff; border-right: 1px solid #e5e7eb; cursor: pointer; transition: all 0.3s ease;" 
+                 onmouseover="this.style.background='#dbeafe'; this.style.transform='scale(1.02)'; this.style.boxShadow='inset 0 0 10px rgba(59, 130, 246, 0.1)';" 
+                 onmouseout="this.style.background='#eff6ff'; this.style.transform='scale(1)'; this.style.boxShadow='none';">
                 <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #3b82f6;">▶</div>
                 <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #3b82f6;">{{ today_stats.running|default:0 }}</div>
-                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Running</div>
-            </div>
-            
-            <div style="text-align: center; padding: 30px 20px; background: #fefce8;">
-                <div style="font-size: 2rem; margin-bottom: 8px; font-weight: 700; color: #eab308;">⏸</div>
-                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; color: #eab308;">{{ today_stats.stopped|default:0 }}</div>
-                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Stopped</div>
+                <div style="font-size: 0.9rem; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Running</div>
+                <div style="font-size: 0.75rem; color: #3b82f6; font-weight: 600;">Click to View Details →</div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- JOB DETAILS MODAL -->
+<div id="jobDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 16px; max-width: 95vw; max-height: 90vh; width: 100%; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 0;">
+        
+        <!-- Modal Header -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 25px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0;">
+            <div>
+                <h2 id="modalTitle" style="margin: 0; font-size: 1.8rem; font-weight: 700;">Job Details</h2>
+                <div id="modalSubtitle" style="font-size: 0.95rem; opacity: 0.9; margin-top: 5px;">View all records</div>
+            </div>
+            <button onclick="closeJobDetailsModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.3s ease;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)';"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                ✕
+            </button>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="modalLoading" style="padding: 60px 30px; text-align: center; display: none;">
+            <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
+            <div style="font-size: 1.1rem; color: #6b7280;">Loading job details...</div>
+        </div>
+        
+        <!-- Modal Content -->
+        <div id="modalContent" style="padding: 30px;">
+            <table id="jobDetailsTable" style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                <thead id="tableHeader">
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Folder</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Workflow</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Session</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Start Time</th>
+                        <th id="endTimeHeader" style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">End Time</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Status</th>
+                        <th id="errorHeader" style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Error Message</th>
+                    </tr>
+                </thead>
+                <tbody id="jobDetailsBody">
+                    <tr>
+                        <td colspan="7" style="padding: 30px; text-align: center; color: #9ca3af;">No records found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <!-- 7-DAY JOB INSIGHTS BANNER (Only for Level3) -->
 <section style="margin-bottom: 50px;">
@@ -224,4 +300,253 @@
         {% endif %}
     </div>
 </section>
+
+<!-- AUTO-REFRESH & TIMESTAMP SCRIPT -->
+{% if app.slug == 'level3' %}
+<script>
+let autoRefreshInterval = null;
+let countdownInterval = null;
+let secondsUntilRefresh = 1800; // 30 minutes = 1800 seconds
+let isAutoRefreshEnabled = false;
+
+// Initialize time display
+function initializeTimeDisplay() {
+    updateLastUpdatedTime();
+    // Update time every 10 seconds
+    setInterval(updateLastUpdatedTime, 10000);
+}
+
+// Update last updated time
+function updateLastUpdatedTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    const displayHours = String(now.getHours() % 12 || 12).padStart(2, '0');
+    document.getElementById('lastUpdatedTime').textContent = displayHours + ':' + minutes + ' ' + ampm;
+}
+
+// Format countdown time
+function formatCountdown(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins + ':' + String(secs).padStart(2, '0');
+}
+
+// Update countdown timer
+function updateCountdown() {
+    if (isAutoRefreshEnabled) {
+        document.getElementById('countdownTimer').textContent = 'Next refresh: ' + formatCountdown(secondsUntilRefresh);
+        secondsUntilRefresh--;
+        
+        if (secondsUntilRefresh < 0) {
+            refreshDashboard();
+            secondsUntilRefresh = 1800; // Reset to 30 minutes
+        }
+    }
+}
+
+// Refresh dashboard
+function refreshDashboard() {
+    location.reload();
+}
+
+// Toggle auto-refresh
+function toggleAutoRefresh() {
+    isAutoRefreshEnabled = !isAutoRefreshEnabled;
+    const btn = document.getElementById('autoRefreshBtn');
+    
+    if (isAutoRefreshEnabled) {
+        btn.style.background = 'rgba(34, 197, 94, 0.5)';
+        btn.textContent = '⏱️ AUTO (30 MIN) ✓ ON';
+        secondsUntilRefresh = 1800;
+        countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+    } else {
+        btn.style.background = 'rgba(255,255,255,0.25)';
+        btn.textContent = '⏱️ AUTO (30 MIN)';
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+        document.getElementById('countdownTimer').textContent = 'Next refresh: 30:00';
+    }
+}
+
+// ===================================
+// JOB DETAILS MODAL FUNCTIONS
+// ===================================
+
+function openJobDetailsModal(type) {
+    const modal = document.getElementById('jobDetailsModal');
+    modal.style.display = 'flex';
+    
+    // Set title and subtitle
+    const titles = {
+        'succeeded': { title: '✓ Completed Jobs', subtitle: 'Latest 2000 successful sessions today' },
+        'failed': { title: '✗ Failed Jobs', subtitle: 'Latest 1000 failed sessions today' },
+        'running': { title: '▶ Running Jobs', subtitle: 'Latest 1000 currently running sessions' }
+    };
+    
+    const titleObj = titles[type] || titles['succeeded'];
+    document.getElementById('modalTitle').textContent = titleObj.title;
+    document.getElementById('modalSubtitle').textContent = titleObj.subtitle;
+        // Set modal header color based on type
+    const modalHeader = document.querySelector('#jobDetailsModal > div > div:first-child');
+    const headerColors = {
+        'succeeded': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        'failed': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        'running': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    };
+    modalHeader.style.background = headerColors[type] || headerColors['succeeded'];
+        // Store current type for table rendering
+    window.currentJobType = type;
+    
+    // Show loading state
+    document.getElementById('modalLoading').style.display = 'block';
+    document.getElementById('modalContent').style.display = 'none';
+    
+    // Fetch job details
+    fetchJobDetails(type);
+}
+
+function closeJobDetailsModal() {
+    const modal = document.getElementById('jobDetailsModal');
+    modal.style.display = 'none';
+}
+
+function fetchJobDetails(type) {
+    fetch(`/api/level3/today-job-details/?type=${type}`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading, show content
+            document.getElementById('modalLoading').style.display = 'none';
+            document.getElementById('modalContent').style.display = 'block';
+            
+            if (data.success && data.data && data.data.length > 0) {
+                populateJobDetailsTable(data.data);
+            } else {
+                document.getElementById('jobDetailsBody').innerHTML = 
+                    '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #9ca3af;">No records found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching job details:', error);
+            document.getElementById('modalLoading').style.display = 'none';
+            document.getElementById('modalContent').style.display = 'block';
+            document.getElementById('jobDetailsBody').innerHTML = 
+                '<tr><td colspan="7" style="padding: 30px; text-align: center; color: #ef4444;">Error loading data</td></tr>';
+        });
+}
+
+function populateJobDetailsTable(data) {
+    const tbody = document.getElementById('jobDetailsBody');
+    tbody.innerHTML = '';
+    
+    const type = window.currentJobType;
+    const endTimeHeader = document.getElementById('endTimeHeader');
+    const errorHeader = document.getElementById('errorHeader');
+    
+    // Show/hide columns based on job type
+    if (type === 'running') {
+        endTimeHeader.style.display = 'none';
+        errorHeader.style.display = 'none';
+    } else {
+        endTimeHeader.style.display = 'table-cell';
+        if (type === 'failed') {
+            errorHeader.style.display = 'table-cell';
+        } else {
+            errorHeader.style.display = 'none';
+        }
+    }
+    
+    // Debug: log first record to check field names
+    if (data.length > 0) {
+        console.log('First record keys:', Object.keys(data[0]));
+        console.log('First record:', data[0]);
+    }
+    
+    data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        const bgColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+        tr.style.backgroundColor = bgColor;
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.style.transition = 'background-color 0.3s ease';
+        
+        tr.onmouseover = () => tr.style.backgroundColor = '#f3f4f6';
+        tr.onmouseout = () => tr.style.backgroundColor = bgColor;
+        
+        // Get status with multiple fallback options
+        const status = row.STATUS || row.status || row.Status || '-';
+        const statusColor = getStatusColor(status);
+        
+        // Build columns based on type
+        let html = `
+            <td style="padding: 12px; color: #374151;">${row.FOLDER || row.folder || '-'}</td>
+            <td style="padding: 12px; color: #374151;">${row.WORKFLOW_NAME || row.workflow_name || '-'}</td>
+            <td style="padding: 12px; color: #374151;">${row.SESSION_NAME || row.session_name || '-'}</td>
+            <td style="padding: 12px; color: #374151;">${row.SESS_START_TIME || row.sess_start_time || '-'}</td>
+        `;
+        
+        // Add end time column (not for running)
+        if (type !== 'running') {
+            html += `<td style="padding: 12px; color: #374151;">${row.SESS_END_TIME || row.sess_end_time || '-'}</td>`;
+        } else {
+            html += `<td style="padding: 12px; color: #374151; display: none;"></td>`;
+        }
+        
+        // Add status column - ALWAYS VISIBLE
+        html += `
+            <td style="padding: 12px;">
+                <span style="background: ${statusColor}; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; display: inline-block;">
+                    ${status}
+                </span>
+            </td>
+        `;
+        
+        // Add error message column (only for failed, not for running)
+        if (type === 'failed') {
+            html += `<td style="padding: 12px; color: #ef4444; font-size: 0.85rem;">${truncateText(row.ERROR_MESSAGE || row.error_message || row.ERROR_MESSAGE || '-', 40)}</td>`;
+        } else {
+            html += `<td style="padding: 12px; color: #ef4444; font-size: 0.85rem; display: none;"></td>`;
+        }
+        
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+}
+
+function getStatusColor(status) {
+    const statusColor = {
+        'Succeeded': '#10b981',
+        'Failed': '#ef4444',
+        'Stopped': '#f59e0b',
+        'Running': '#3b82f6',
+        'Suspended': '#8b5cf6',
+        'Suspending': '#ec4899',
+        'Aborted': '#6b7280'
+    };
+    return statusColor[status] || '#6b7280';
+}
+
+function truncateText(text, length) {
+    if (!text) return '-';
+    return text.length > length ? text.substring(0, length) + '...' : text;
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('jobDetailsModal');
+    if (e.target === modal) {
+        closeJobDetailsModal();
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTimeDisplay();
+});
+</script>
+{% endif %}
+
 {% endblock %}

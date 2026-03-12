@@ -3,6 +3,10 @@
         "/^python test_folders_display\\.py$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python manage\\.py check$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

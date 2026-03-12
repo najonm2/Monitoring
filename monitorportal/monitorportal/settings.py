@@ -26,8 +26,14 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-in-prod")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Local dev hosts
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+# Local dev hosts + internal network sharing
+ALLOWED_HOSTS = [
+    "127.0.0.1", 
+    "localhost",
+    "10.161.206.34",  # Your corporate IP - for internal Lumen network sharing
+    "192.168.0.100",  # Your local IP
+    "*",  # Allow all (temporary - for demo/testing only)
+]
 
 # -----------------------------------------------------------------------------
 # APPLICATIONS

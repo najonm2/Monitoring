@@ -24,6 +24,37 @@
 </div>
 {% endif %}
 
+<!-- REFRESH CONTROLS -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- Manual Refresh Button -->
+            <button onclick="manualRefresh()" id="manualRefreshBtn" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span id="manualRefreshIcon" style="font-size: 16px;">🔄</span> REFRESH
+            </button>
+            
+            <!-- Auto Refresh Toggle -->
+            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span style="font-size: 16px;">⏱️</span>
+                AUTO (30 MIN)
+                <input type="checkbox" id="autoRefreshToggle" checked style="margin-left: 8px; width: 16px; height: 16px; cursor: pointer;" onchange="toggleAutoRefresh(this.checked)">
+            </label>
+        </div>
+        
+        <!-- Refresh Status Info -->
+        <div style="display: flex; gap: 24px; align-items: center; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Last Refreshed:</span>
+                <span id="lastRefreshTime" style="font-weight: 600; font-size: 14px;">Just now</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Next refresh:</span>
+                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">30 mins</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- PAGE HEADER -->
 <section class="app-hero">
     <div>
@@ -87,6 +118,19 @@
                 <p style="margin: 0; color: #666; font-size: 14px;">Tracking {{ erp_data.last_8_runs|length }} most recent ERP runs (every 4 hours)</p>
             </div>
         </div>
+        
+        <!-- Performance Alert Banner -->
+        {% if erp_data.long_running_count > 0 %}
+        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #a71d2a;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">🔥</span>
+                <div>
+                    <strong style="font-size: 16px; display: block; margin-bottom: 4px;">Performance Alert</strong>
+                    <span style="font-size: 14px; opacity: 0.95;">{{ erp_data.long_running_count }} workflow subtask(s) currently running longer than 10-day average. See details in Long Running Sessions section below.</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div class="table-container">
@@ -119,7 +163,20 @@
                     </td>
                     <td style="font-weight: 500;">{{ run.run_label }}</td>
                     <td style="font-weight: 400; font-size: 12px; color: #666;">
-                        {{ run.end_time|default:"Running..." }}
+                        {% if run.is_recovered and run.recovery_info.completion_time %}
+                            {{ run.recovery_info.completion_time }}
+                        {% elif run.run_status == 'SUCCESS' %}
+                            {{ run.end_time|default:"N/A" }}
+                        {% elif run.run_status == 'SUSPENDED' and run.latest_success_end_time %}
+                            <span style="color: #FF8C00;" title="Last successful run completion time">{{ run.latest_success_end_time }}</span>
+                            <div style="font-size: 9px; color: #999; margin-top: 2px;">
+                                (Last Success)
+                            </div>
+                        {% elif run.run_status == 'RUNNING' %}
+                            <span style="color: #FFC107;">Running...</span>
+                        {% else %}
+                            {{ run.end_time|default:"N/A" }}
+                        {% endif %}
                     </td>
                     <td style="text-align: center; font-weight: 500;">
                         {% if run.duration_minutes %}
@@ -159,14 +216,14 @@
                         </span>
                     </td>
                     <td style="text-align: center;">
-                        {% if run.run_status == 'FAILED' %}
-                            <span class="badge badge-status-failed">FAILED</span>
+                        {% if run.is_recovered and run.run_status == 'SUCCESS' %}
+                            <span class="badge badge-status-success">Succeeded</span>
                         {% elif run.run_status == 'RUNNING' %}
                             <span class="badge badge-status-running">RUNNING</span>
                         {% elif run.run_status == 'SUCCESS' %}
-                            <span class="badge badge-status-success">SUCCESS</span>
+                            <span class="badge badge-status-success">Succeeded</span>
                         {% elif run.run_status == 'SUSPENDED' %}
-                            <span class="badge badge-status-suspended">SUSPENDED</span>
+                            <span class="badge badge-status-suspended">Suspended</span>
                         {% else %}
                             <span class="badge badge-status-warning">{{ run.run_status|default:"UNKNOWN" }}</span>
                         {% endif %}
@@ -242,6 +299,123 @@
                 </p>
             </div>
         </div>
+
+        <!-- Long Running Sessions Alert -->
+        {% if erp_data.long_running_count > 0 %}
+        <div class="insight-card insight-critical" style="grid-column: span 2;">
+            <div class="insight-icon">🔥</div>
+            <div class="insight-content">
+                <h3>Performance Alert: Long Running Sessions</h3>
+                <p>
+                    <strong>{{ erp_data.long_running_count }}</strong> workflow subtask(s) currently running longer than average baseline.
+                    {% if erp_data.long_running_sessions %}
+                    <br><strong style="color: #dc3545;">Top Offenders:</strong> 
+                    {% for session in erp_data.long_running_sessions|slice:":3" %}
+                        {{ session.SUBTASK_ASSET_NAME }} (+{{ session.MINUTES_OVER_AVG|floatformat:0 }} min){% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<!-- LONG RUNNING SESSIONS SECTION -->
+{% if erp_data.long_running_sessions %}
+<section class="report-section">
+    <div style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; padding: 25px 35px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(255, 107, 107, 0.35);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div>
+                <h2 style="margin: 0 0 8px 0; font-size: 2rem; font-weight: 700; letter-spacing: -0.5px;">⏱️ LONG RUNNING SESSIONS</h2>
+                <div style="font-size: 1.05rem; opacity: 0.95; font-weight: 400;">Subtasks running 50%+ longer than 30-day average</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.25); padding: 15px 25px; border-radius: 10px; text-align: center; backdrop-filter: blur(10px);">
+                <div style="font-size: 2.5rem; font-weight: 700; line-height: 1;">{{ erp_data.long_running_count }}</div>
+                <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px;">Sessions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th style="min-width: 250px;">WORKFLOW NAME</th>
+                    <th style="min-width: 250px;">SUBTASK NAME</th>
+                    <th>STATUS</th>
+                    <th>START TIME (MST)</th>
+                    <th>END TIME (MST)</th>
+                    <th>CURRENT<br/>DURATION</th>
+                    <th>AVG<br/>DURATION</th>
+                    <th>MINUTES<br/>OVER AVG</th>
+                    <th>HISTORICAL<br/>RUNS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in erp_data.long_running_sessions %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="wrap" style="font-family: monospace; font-size: 11px;">{{ session.asset_name }}</td>
+                    <td class="wrap" style="font-family: monospace; font-size: 11px; font-weight: bold; color: #dc3545;">{{ session.subtask_name }}</td>
+                    <td>
+                        {% if session.status == 'RUNNING' %}
+                            <span class="badge" style="background: #FFC107; color: black;">⏱️ RUNNING</span>
+                        {% elif session.status == 'SUCCESS' %}
+                            <span class="badge" style="background: #28A745; color: white;">✅ SUCCESS</span>
+                        {% elif session.status == 'FAILED' %}
+                            <span class="badge" style="background: #DC3545; color: white;">❌ FAILED</span>
+                        {% else %}
+                            <span class="badge" style="background: #868E96; color: white;">{{ session.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="nowrap" style="font-size: 12px;">{{ session.start_time_mst }}</td>
+                    <td class="nowrap" style="font-size: 12px;">
+                        {% if session.status == 'RUNNING' %}
+                            <span style="color: #FFC107; font-style: italic;">Running...</span>
+                        {% else %}
+                            {{ session.end_time_mst|default:"N/A" }}
+                        {% endif %}
+                    </td>
+                    <td class="nowrap" style="font-weight: bold; font-size: 14px; color: #dc3545;">
+                        {{ session.current_duration_minutes|floatformat:0 }} min
+                    </td>
+                    <td class="nowrap" style="color: #28a745; font-weight: 600;">
+                        {{ session.avg_duration_minutes|floatformat:0 }} min
+                    </td>
+                    <td class="nowrap" style="font-weight: bold; color: #dc3545;">
+                        +{{ session.minutes_over_avg|floatformat:0 }} min
+                    </td>
+                    <td style="text-align: center; color: #6c757d;">
+                        {{ session.historical_count }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 6px;">
+        <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="font-size: 24px; line-height: 1;">💡</div>
+            <div>
+                <div style="font-weight: 700; color: #856404; margin-bottom: 6px;">What does this mean?</div>
+                <div style="color: #856404; font-size: 14px; line-height: 1.5;">
+                    These subtasks are <strong>currently running</strong> and have exceeded their average runtime from the last 10 days.
+                    Only RUNNING sessions from the current run are shown. Completed sessions are not displayed.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% elif erp_data.success %}
+<section class="report-section">
+    <div style="text-align: center; padding: 40px; background: #d1f2eb; border-radius: 12px; border: 2px solid #28a745;">
+        <div style="font-size: 3rem; margin-bottom: 12px;">✅</div>
+        <h3 style="margin: 0 0 8px 0; font-size: 1.4rem; font-weight: 600; color: #155724;">All Sessions Running Normally</h3>
+        <p style="margin: 0; color: #155724; font-size: 1rem;">No long-running sessions detected. All subtasks are within expected duration.</p>
     </div>
 </section>
 {% endif %}
@@ -281,6 +455,9 @@
                 <button onclick="filterByStatus('FAILED')" class="status-filter-btn" data-status="FAILED" style="padding: 8px 16px; border: 2px solid #DC3545; background: white; color: #DC3545; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
                     ❌ FAILED
                 </button>
+                <button onclick="filterByStatus('SUSPENDED')" class="status-filter-btn" data-status="SUSPENDED" style="padding: 8px 16px; border: 2px solid #6C757D; background: white; color: #6C757D; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                    ⏸️ SUSPENDED/CHILD
+                </button>
             </div>
         </div>
         
@@ -290,7 +467,8 @@
             <span style="color: #6c757d; margin-left: 10px;">
                 (🟢 {{ erp_data.current_run.completed }} Success | 
                  🟡 {{ erp_data.current_run.running }} Running | 
-                 🔴 {{ erp_data.current_run.failed }} Failed)
+                 🔴 {{ erp_data.current_run.failed }} Failed | 
+                 ⏸️ {{ erp_data.current_run.suspended }} Suspended)
             </span>
         </div>
     </div>
@@ -379,74 +557,6 @@
                     <td>{{ forloop.counter }}</td>
                     <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
                     <td><span class="badge badge-status-failed">{{ job.status }}</span></td>
-                    <td class="nowrap">{{ job.start_time }}</td>
-                    <td class="nowrap">{{ job.end_time }}</td>
-                    <td>{{ job.location }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
-{% endif %}
-
-<!-- RUNNING JOBS IN CURRENT RUN -->
-{% if erp_data.current_run.running_jobs %}
-<section class="report-section">
-    <h2 class="section-title">⏱️ RUNNING JOBS - CURRENT RUN</h2>
-
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>ASSET NAME</th>
-                    <th>STATUS</th>
-                    <th>START TIME (MST)</th>
-                    <th>END TIME (MST)</th>
-                    <th>LOCATION</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for job in erp_data.current_run.running_jobs %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
-                    <td><span class="badge badge-status-running">{{ job.status }}</span></td>
-                    <td class="nowrap">{{ job.start_time }}</td>
-                    <td class="nowrap">{{ job.end_time|default:"In Progress" }}</td>
-                    <td>{{ job.location }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
-{% endif %}
-
-<!-- SUCCEEDED JOBS IN CURRENT RUN -->
-{% if erp_data.current_run.succeeded_jobs %}
-<section class="report-section">
-    <h2 class="section-title">✅ SUCCESSFULLY COMPLETED - CURRENT RUN</h2>
-
-    <div class="table-container">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>ASSET NAME</th>
-                    <th>STATUS</th>
-                    <th>START TIME (MST)</th>
-                    <th>END TIME (MST)</th>
-                    <th>LOCATION</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for job in erp_data.current_run.succeeded_jobs %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td class="wrap">{{ job.subtask_asset_name|default:job.asset_name }}</td>
-                    <td><span class="badge badge-status-success">{{ job.status }}</span></td>
                     <td class="nowrap">{{ job.start_time }}</td>
                     <td class="nowrap">{{ job.end_time }}</td>
                     <td>{{ job.location }}</td>
@@ -604,7 +714,16 @@ function filterJobsTable() {
         
         // Check if row matches both search text and status filter
         const matchesSearch = jobName.includes(searchText);
-        const matchesStatus = (currentStatusFilter === 'ALL') || (status === currentStatusFilter);
+        
+        // Handle SUSPENDED filter to include both SUSPENDED and CHILD_SUSPENDED
+        let matchesStatus;
+        if (currentStatusFilter === 'ALL') {
+            matchesStatus = true;
+        } else if (currentStatusFilter === 'SUSPENDED') {
+            matchesStatus = (status === 'SUSPENDED' || status === 'CHILD_SUSPENDED');
+        } else {
+            matchesStatus = (status === currentStatusFilter);
+        }
         
         if (matchesSearch && matchesStatus) {
             rows[i].style.display = '';
@@ -642,6 +761,9 @@ function filterByStatus(status) {
             } else if (status === 'FAILED') {
                 btn.style.background = '#DC3545';
                 btn.style.color = 'white';
+            } else if (status === 'SUSPENDED') {
+                btn.style.background = '#6C757D';
+                btn.style.color = 'white';
             }
         } else {
             // Inactive style
@@ -654,6 +776,8 @@ function filterByStatus(status) {
                 btn.style.color = '#28A745';
             } else if (btnStatus === 'FAILED') {
                 btn.style.color = '#DC3545';
+            } else if (btnStatus === 'SUSPENDED') {
+                btn.style.color = '#6C757D';
             }
         }
     });
@@ -689,6 +813,137 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'scale(1)';
         });
     });
+});
+</script>
+
+<!-- AUTO-REFRESH CONTROLS SCRIPT -->
+<script>
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+let lastRefreshTimestamp = new Date();
+let autoRefreshEnabled = true;
+let autoRefreshTimer = null;
+let countdownInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize refresh controls
+    updateLastRefreshTime();
+    startCountdownTimer();
+    startAutoRefresh();
+    
+    // Update countdown timer every second
+    startCountdownTimer();
+});
+
+function updateLastRefreshTime() {
+    lastRefreshTimestamp = new Date();
+    const timeStr = lastRefreshTimestamp.toLocaleTimeString();
+    document.getElementById('lastRefreshTime').textContent = timeStr;
+}
+
+function updateNextRefreshTime() {
+    if (lastRefreshTimestamp && autoRefreshEnabled) {
+        const nextRefreshTime = new Date(lastRefreshTimestamp.getTime() + REFRESH_INTERVAL);
+        const now = new Date();
+        const timeLeft = nextRefreshTime - now;
+        
+        if (timeLeft > 0) {
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            document.getElementById('nextRefreshTime').textContent = `${minutes} min ${seconds < 10 ? '0' : ''}${seconds}s`;
+            document.getElementById('nextRefreshTime').style.color = '#fbbf24';
+        } else {
+            document.getElementById('nextRefreshTime').textContent = 'Refreshing...';
+            document.getElementById('nextRefreshTime').style.color = '#a78bfa';
+        }
+    }
+}
+
+function startCountdownTimer() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    countdownInterval = setInterval(function() {
+        updateNextRefreshTime();
+    }, 1000);
+}
+
+function toggleAutoRefresh(enabled) {
+    autoRefreshEnabled = enabled;
+    const toggle = document.getElementById('autoRefreshToggle');
+    
+    if (enabled) {
+        startAutoRefresh();
+        updateLastRefreshTime();
+        startCountdownTimer();
+        toggle.checked = true;
+        console.log('✅ Auto-refresh enabled (30 mins)');
+    } else {
+        stopAutoRefresh();
+        toggle.checked = false;
+        document.getElementById('nextRefreshTime').textContent = 'Disabled';
+        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
+        console.log('⏸️ Auto-refresh disabled');
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    
+    autoRefreshTimer = setTimeout(function() {
+        if (autoRefreshEnabled) {
+            console.log('🔄 Auto-refresh triggered');
+            manualRefresh();
+        }
+    }, REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
+
+function manualRefresh() {
+    const btn = document.getElementById('manualRefreshBtn');
+    const icon = document.getElementById('manualRefreshIcon');
+    
+    // Disable button during refresh
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    icon.style.display = 'inline-block';
+    icon.style.animation = 'spin 1s linear infinite';
+    
+    // Add spin animation if not exists
+    if (!document.getElementById('refreshSpinStyle')) {
+        const style = document.createElement('style');
+        style.id = 'refreshSpinStyle';
+        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    }
+    
+    // Reload page after slight delay
+    setTimeout(function() {
+        window.location.reload(true);
+    }, 500);
+}
+
+function refreshData() {
+    manualRefresh();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
 });
 </script>
 

@@ -14,16 +14,17 @@
     <header class="top-header">
         <div class="top-inner">
             <div class="brand">
-                <div class="brand-logo">L</div>
+                <img src="{% static 'portal/logo_lumen.jpg' %}" alt="LUMEN Logo" class="logo">
+            </div>
+
+            <div class="header-title">PASE JOB MONITORING CONSOLE</div>
+
+            <div class="header-right">
                 <div class="brand-info">
                     <div class="brand-title">DWBI-PASE</div>
                     <div class="brand-subtitle">Monitoring Portal</div>
                 </div>
-            </div>
-
-            <div class="header-title">PASE JOB MONITORING DASHBOARD</div>
-
-            <div class="header-right">
+                <div class="brand-logo">L</div>
                 <div class="user-chip" title="Signed in user">
                     <span class="dot"></span>
                     <span class="user-text">
@@ -34,7 +35,6 @@
                         {% endif %}
                     </span>
                 </div>
-                <img src="{% static 'portal/logo_lumen.jpg' %}" alt="LUMEN Logo" class="logo">
             </div>
         </div>
     </header>

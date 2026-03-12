@@ -48,6 +48,9 @@
     --error-bg: #FEE2E2;
     --error-text: #991B1B;
     --info: #133D3C;
+    
+    /* Professional Font Stack */
+    --font-family: 'Segoe UI', 'Trebuchet MS', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --info-bg: #DBEAFE;
     --info-text: #1E40AF;
     --running: #8B5CF6;
@@ -93,11 +96,13 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Trebuchet MS', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 50%, #E5E7EB 100%);
     color: var(--gray-900);
     line-height: 1.6;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -182,25 +187,28 @@ a:hover {
 
 .brand-title {
     font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    font-family: var(--font-family);
 }
 
 .brand-subtitle {
-    font-size: 12px;
-    opacity: 0.9;
+    font-size: 11px;
+    opacity: 0.85;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    font-family: var(--font-family);
 }
 
 .header-title {
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
     text-align: center;
     flex: 1;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    font-family: var(--font-family);
 }
 
 .header-right {
@@ -254,14 +262,16 @@ a:hover {
     height: 40px;
     width: auto;
     object-fit: contain;
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 0;
+    box-shadow: none;
     transition: all 0.3s ease;
+    filter: brightness(1);
 }
 
 .logo:hover {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+    box-shadow: none;
+    filter: brightness(1.05);
 }
 
 /* ===========================================================
@@ -443,6 +453,7 @@ a:hover {
     letter-spacing: 0.5px;
     position: relative;
     overflow: hidden;
+    font-family: var(--font-family);
 }
 
 .btn:hover {
@@ -644,6 +655,7 @@ a:hover {
     border-collapse: collapse;
     background: white;
     font-size: 14px;
+    font-family: var(--font-family);
 }
 
 .table thead th,
@@ -661,6 +673,7 @@ a:hover {
     top: 0;
     z-index: 10;
     box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+    font-family: var(--font-family);
 }
 
 .table tbody td {
