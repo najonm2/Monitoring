@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Application, Report
+from .models import Application, Report, ERPRunRecovery
 
 
 @admin.register(Application)
@@ -47,3 +47,26 @@ class ReportAdmin(admin.ModelAdmin):
                 object_list=self.get_queryset(request).filter(name="lvl3-failed-job-status")
             )
         )
+
+
+@admin.register(ERPRunRecovery)
+class ERPRunRecoveryAdmin(admin.ModelAdmin):
+    list_display = ("taskflow_run_id", "run_start_time", "completion_time", "original_status", 
+                    "final_status", "recovered_by", "recovered_at", "is_active")
+    list_filter = ("original_status", "final_status", "is_active", "recovered_at")
+    search_fields = ("taskflow_run_id", "recovered_by", "recovery_notes")
+    list_editable = ("is_active",)
+    readonly_fields = ("recovered_at",)
+    date_hierarchy = "recovered_at"
+    
+    fieldsets = (
+        ("Run Information", {
+            "fields": ("taskflow_run_id", "run_start_time", "completion_time", "original_status")
+        }),
+        ("Recovery Details", {
+            "fields": ("recovered_by", "recovered_at", "recovery_notes", "final_status")
+        }),
+        ("Status", {
+            "fields": ("is_active",)
+        }),
+    )

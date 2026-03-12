@@ -15,13 +15,6 @@ APPS = [
                 "view_type": "level3_failed_jobs_status",
             },
             {
-                "name": "LVL3 7-Day Job Insights",
-                "slug": "lvl3-7day-insights",
-                "description": "Level3 7-Day Job Performance Trends by Date",
-                "ssrs_url": "",
-                "view_type": "level3_7day_insights",
-            },
-            {
                 "name": "Level3 Failures with Error",
                 "slug": "lvl3-failed-with-error",
                 "description": "LVL3 FAILED SESSIONS WITH ERRORS",
@@ -41,6 +34,13 @@ APPS = [
                 "description": "ALL LEVEL3 JOBS STATUS",
                 "ssrs_url": "http://usidcvssrs0005/Reports/report/DWBIPASE/UAT%20Folder/ALL%20LEVEL3%20JOBS%20STATUS",
                 "view_type": "level3_all_jobs",
+            },
+            {
+                "name": "LVL3 7-Day Job Insights",
+                "slug": "lvl3-7day-insights",
+                "description": "Level3 7-Day Job Performance Trends by Date",
+                "ssrs_url": "",
+                "view_type": "level3_7day_insights",
             },
         ],
     },

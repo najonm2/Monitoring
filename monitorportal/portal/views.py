@@ -160,22 +160,39 @@ def level3_failed_job_status(request):
 
 def level3_bi_report(request):
     """
-    Level3 BI Report view showing BI Feed and CAPEX details
+    Level3 BI Report view showing BI Feed, CAPEX details, and ERP Status
+    OPTIMIZED: Cached for 3 minutes to improve performance
     """
     from portal.services.bi_service import get_level3_bi_feed, get_capex_details
+    from portal.erp_mdm_insights import get_erp_run_history
+    from django.core.cache import cache
     
-    context = {
-        "bi_feed_data": [],
-        "capex_data": [],
-        "error": None,
-    }
+    # Try to get cached data (cache for 3 minutes)
+    cache_key = 'level3_bi_report_data'
+    cached_data = cache.get(cache_key)
     
-    try:
-        context["bi_feed_data"] = get_level3_bi_feed()
-        context["capex_data"] = get_capex_details()
-    except Exception as e:
-        context["error"] = str(e)
-        print(f"Error loading Level3 BI Report: {e}")
+    if cached_data:
+        # Use cached data
+        context = cached_data
+    else:
+        # Fetch fresh data
+        context = {
+            "bi_feed_data": [],
+            "capex_data": [],
+            "erp_data": {},
+            "error": None,
+        }
+        
+        try:
+            context["bi_feed_data"] = get_level3_bi_feed()
+            context["capex_data"] = get_capex_details()
+            context["erp_data"] = get_erp_run_history()
+            
+            # Cache the successful result for 3 minutes
+            cache.set(cache_key, context, 180)
+        except Exception as e:
+            context["error"] = str(e)
+            print(f"Error loading Level3 BI Report: {e}")
     
     return render(request, "portal/level3_bi_report.html", context)
 
@@ -295,12 +312,13 @@ def erp_job_status(request):
     """
     ERP Job Status with AI Insights - Shows last 8 runs and current run details
     ERP runs every 4 hours: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
+    CACHE: 30 seconds for real-time status updates after recovery
     """
     from django.core.cache import cache
     from portal.erp_mdm_insights import get_erp_run_history
     import time
     
-    # Try to get cached data (cache for 2 minutes)
+    # Try to get cached data (cache for 30 seconds - shorter for real-time monitoring)
     cache_key = 'erp_run_history_data'
     cached_data = cache.get(cache_key)
     
@@ -312,8 +330,8 @@ def erp_job_status(request):
         start_time = time.time()
         erp_data = get_erp_run_history()
         
-        # Cache the results for 2 minutes (120 seconds)
-        cache.set(cache_key, erp_data, 120)
+        # Cache the results for 30 seconds (faster updates for recovery monitoring)
+        cache.set(cache_key, erp_data, 30)
         
         fetch_time = time.time() - start_time
         print(f"[PERFORMANCE] ERP data fetched in {fetch_time:.2f} seconds")
@@ -392,7 +410,7 @@ def mdm_job_status(request):
     from portal.erp_mdm_insights import get_mdm_insights
     import time
     
-    # Try to get cached data (cache for 2 minutes)
+    # Try to get cached data (cache for 30 seconds for real-time monitoring)
     cache_key = 'mdm_job_status_data'
     cached_data = cache.get(cache_key)
     
@@ -408,11 +426,11 @@ def mdm_job_status(request):
         # Get AI insights
         mdm_insights = get_mdm_insights()
         
-        # Cache the results for 2 minutes (120 seconds)
+        # Cache the results for 30 seconds (real-time monitoring)
         cache.set(cache_key, {
             'jobs': jobs,
             'mdm_insights': mdm_insights,
-        }, 120)
+        }, 30)
         
         fetch_time = time.time() - start_time
         print(f"[PERFORMANCE] MDM data fetched in {fetch_time:.2f} seconds")

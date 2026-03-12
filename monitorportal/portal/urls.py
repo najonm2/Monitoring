@@ -17,6 +17,8 @@ urlpatterns = [
     
     # API Endpoints
     path("api/reports/<slug:app_slug>/<slug:report_slug>/", api_views.api_report_data, name="api_report_data"),
+    path("api/level3/today-job-details/", api_views.level3_today_job_details, name="level3_today_job_details"),
+    path("api/level3/failed-jobs-details/", api_views.level3_failed_jobs_details, name="level3_failed_jobs_details"),
     
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),

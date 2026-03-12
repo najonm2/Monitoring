@@ -174,6 +174,130 @@
     </div>
 </div>
 
+<!-- ERP APPLICATION STATUS SECTION -->
+<div class="card" style="margin-top: 32px;">
+    <div class="card-header">
+        <h5>📊 ERP Application - Last 8 Runs Status (AI Insights)</h5>
+        <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">
+            Tracking 8 most recent ERP runs (every 4 hours) - <a href="{% url 'app_dashboards_erp' %}" style="color: #667eea; font-weight: 600;">View Full Details →</a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if erp_data.success and erp_data.last_8_runs %}
+        <div class="table-responsive">
+            <table class="table" style="font-size: 13px;">
+                <thead class="table-header">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th>RUN TIME (MST)</th>
+                        <th>END TIME (MST)</th>
+                        <th style="text-align: center;">DURATION</th>
+                        <th style="text-align: center;">TOTAL JOBS</th>
+                        <th style="text-align: center;">✅ SUCCEEDED</th>
+                        <th style="text-align: center;">⏱️ RUNNING</th>
+                        <th style="text-align: center;">❌ FAILED</th>
+                        <th style="text-align: center;">⏸️ SUSPENDED</th>
+                        <th style="text-align: center;">SUCCESS %</th>
+                        <th style="text-align: center;">STATUS</th>
+                        <th style="text-align: center;">SLA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in erp_data.last_8_runs %}
+                    <tr {% if forloop.first %}style="background: #FFFBF0; font-weight: 600;"{% endif %}>
+                        <td style="text-align: center;">
+                            {% if forloop.first %}
+                                <span style="background: #FFC107; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">LATEST</span>
+                            {% else %}
+                                {{ forloop.counter }}
+                            {% endif %}
+                        </td>
+                        <td style="font-weight: 500;">{{ run.run_label }}</td>
+                        <td style="font-weight: 400; font-size: 12px; color: #666;">{{ run.end_time|default:"N/A" }}</td>
+                        <td style="text-align: center; font-weight: 500;">
+                            {% if run.duration_minutes %}
+                                {{ run.duration_minutes|floatformat:0 }} min
+                            {% else %}
+                                <span style="color: #999;">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">{{ run.total_jobs }}</td>
+                        <td style="text-align: center;">
+                            <span style="color: #28A745; font-weight: 600;">{{ run.succeeded }}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if run.running > 0 %}
+                                <span style="color: #FFC107; font-weight: 600;">{{ run.running }}</span>
+                            {% else %}
+                                <span style="color: #999;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if run.failed > 0 %}
+                                <span style="color: #DC3545; font-weight: 600;">{{ run.failed }}</span>
+                            {% else %}
+                                <span style="color: #999;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if run.suspended > 0 %}
+                                <span style="color: #FF8C00; font-weight: 600;">{{ run.suspended }}</span>
+                            {% else %}
+                                <span style="color: #999;">0</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <span style="font-weight: 600; color: {% if run.success_rate >= 95 %}#28A745{% elif run.success_rate >= 80 %}#FFC107{% else %}#DC3545{% endif%};">
+                                {{ run.success_rate|floatformat:1 }}%
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if run.run_status == 'FAILED' %}
+                                <span class="status-badge status-failed">FAILED</span>
+                            {% elif run.run_status == 'RUNNING' %}
+                                <span class="status-badge status-running">RUNNING</span>
+                            {% elif run.run_status == 'SUCCESS' %}
+                                <span class="status-badge status-succeeded">SUCCESS</span>
+                            {% elif run.run_status == 'SUSPENDED' %}
+                                <span class="badge" style="background: #FF8C00; color: white; font-size: 11px; padding: 3px 8px;">SUSPENDED</span>
+                            {% else %}
+                                <span class="badge" style="background: #999; color: white; font-size: 11px; padding: 3px 8px;">{{ run.run_status|default:"UNKNOWN" }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; font-size: 11px;">
+                            {% if run.sla_status == 'MET' %}
+                                <span style="color: #28A745; font-weight: 600;">
+                                    ✓ MET<br><span style="font-size: 9px;">({{ run.sla_met_by|floatformat:0 }}m early)</span>
+                                </span>
+                            {% elif run.sla_status == 'MISSED' %}
+                                <span style="color: #DC3545; font-weight: 600;">
+                                    ✗ MISSED<br><span style="font-size: 9px;">({{ run.sla_met_by|floatformat:0 }}m over)</span>
+                                </span>
+                            {% elif run.sla_status == 'IN PROGRESS' %}
+                                <span style="color: #FFC107; font-weight: 600;">⏱️ IN PROGRESS</span>
+                            {% else %}
+                                <span style="color: #999;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div style="padding: 16px; background: #F9FAFB; border-top: 1px solid #E5E7EB;">
+            <strong style="color: #374151;">Total Runs:</strong>
+            <span style="color: #6B7280; font-weight: 600;">{{ erp_data.last_8_runs|length }}</span>
+            <span style="margin-left: 20px; color: #6B7280;">Runs every 4 hours: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 (MST)</span>
+        </div>
+        {% else %}
+        <div style="padding: 32px; text-align: center; color: #6B7280;">
+            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+            <div style="font-weight: 600;">No ERP run data available</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <style>
     .report-header {
         display: flex;

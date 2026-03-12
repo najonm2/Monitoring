@@ -13,6 +13,37 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+<!-- REFRESH CONTROLS -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- Manual Refresh Button -->
+            <button onclick="manualRefresh()" id="manualRefreshBtn" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span id="manualRefreshIcon" style="font-size: 16px;">🔄</span> REFRESH
+            </button>
+            
+            <!-- Auto Refresh Toggle -->
+            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span style="font-size: 16px;">⏱️</span>
+                AUTO (30 MIN)
+                <input type="checkbox" id="autoRefreshToggle" checked style="margin-left: 8px; width: 16px; height: 16px; cursor: pointer;" onchange="toggleAutoRefresh(this.checked)">
+            </label>
+        </div>
+        
+        <!-- Refresh Status Info -->
+        <div style="display: flex; gap: 24px; align-items: center; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Last Refreshed:</span>
+                <span id="lastRefreshTime" style="font-weight: 600; font-size: 14px;">Just now</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Next refresh:</span>
+                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">30 mins</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Report Header -->
 <div class="report-header">
     <div>
@@ -180,29 +211,59 @@
     
     #dataTable {
         width: 100% !important;
+        table-layout: fixed;
     }
     
     #dataTable td,
     #dataTable th {
-        white-space: nowrap;
         padding: 10px 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Allow wrapping on long-text columns */
+    #dataTable td.wrap-cell {
+        white-space: normal;
+        word-break: break-word;
+        overflow: visible;
+        text-overflow: unset;
     }
     
-    /* DataTables custom styling */
+    /* DataTables custom styling - VISIBLE search controls */
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: flex-start;
+    }
+    
     .dataTables_wrapper .dataTables_filter input {
         border: 2px solid var(--lumen-primary);
         border-radius: 6px;
-        padding: 8px 16px;
+        padding: 10px 16px;
         margin-left: 8px;
         font-size: 14px;
-        width: 300px;
+        min-width: 350px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    
+    .dataTables_wrapper .dataTables_length {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
     }
     
     .dataTables_wrapper .dataTables_length select {
-        border: 1px solid var(--gray-300);
-        border-radius: 4px;
-        padding: 6px 12px;
+        border: 2px solid var(--lumen-primary);
+        border-radius: 6px;
+        padding: 8px 12px;
         margin: 0 8px;
+        min-width: 80px;
+        background: white;
+        cursor: pointer;
+        font-weight: 600;
     }
     
     .dataTables_wrapper .dataTables_info,
@@ -436,6 +497,13 @@
             config.columns.forEach(col => {
                 const td = document.createElement('td');
                 td.innerHTML = formatValue(col, row[col]);
+                // Allow text wrapping on long-text columns
+                if (['error_message', 'workflow_name', 'session_name', 'grid_name', 'asset_name', 'subtask_asset_name', 'job_name'].includes(col)) {
+                    td.className = 'wrap-cell';
+                }
+                if (col !== 'error_message' && row[col] && String(row[col]).length > 0) {
+                    td.title = String(row[col]);
+                }
                 tr.appendChild(td);
             });
             
@@ -444,17 +512,44 @@
         
         // Initialize DataTables with search and pagination
         setTimeout(() => {
+            const reportType = detectReportType('{{ report_slug }}');
+            let colDefs = [
+                { orderable: true, targets: '_all' }
+            ];
+            if (reportType === 'level3_error') {
+                // Grid, Workflow, Session, Status, Start, End, Error
+                colDefs.push(
+                    { width: '10%', targets: 0 },
+                    { width: '14%', targets: 1 },
+                    { width: '14%', targets: 2 },
+                    { width: '7%',  targets: 3 },
+                    { width: '12%', targets: 4 },
+                    { width: '12%', targets: 5 },
+                    { width: '31%', targets: 6 }
+                );
+            } else if (reportType === 'level3_long_running') {
+                colDefs.push(
+                    { width: '15%', targets: 0 },
+                    { width: '25%', targets: 1 },
+                    { width: '25%', targets: 2 },
+                    { width: '15%', targets: 3 },
+                    { width: '10%', targets: 4 },
+                    { width: '10%', targets: 5 }
+                );
+            } else {
+                colDefs.push(
+                    { width: '120px', targets: 0 },
+                    { width: '200px', targets: 1 },
+                    { width: '200px', targets: 2 },
+                    { width: '150px', targets: 3 }
+                );
+            }
             dataTableInstance = $('#dataTable').DataTable({
                 pageLength: 25,
+                autoWidth: false,
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                order: [[0, 'asc']], // Sort by status
-                columnDefs: [
-                    { orderable: true, targets: '_all' },
-                    { width: '120px', targets: 0 },  // Status
-                    { width: '200px', targets: 1 },  // Session
-                    { width: '200px', targets: 2 },  // Workflow
-                    { width: '150px', targets: 3 }   // Folder
-                ],
+                order: [[0, 'asc']],
+                columnDefs: colDefs,
                 language: {
                     search: "🔍 Search jobs:",
                     lengthMenu: "Show _MENU_ jobs per page",
@@ -566,5 +661,136 @@
     
     document.addEventListener('DOMContentLoaded', loadReportData);
     document.getElementById('refreshBtn').addEventListener('click', loadReportData);
+</script>
+
+<!-- AUTO-REFRESH CONTROLS SCRIPT -->
+<script>
+const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+let lastRefreshTimestamp = new Date();
+let autoRefreshEnabled = true;
+let autoRefreshTimer = null;
+let countdownInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize refresh controls
+    updateLastRefreshTime();
+    startCountdownTimer();
+    startAutoRefresh();
+    
+    // Update countdown timer every second
+    startCountdownTimer();
+});
+
+function updateLastRefreshTime() {
+    lastRefreshTimestamp = new Date();
+    const timeStr = lastRefreshTimestamp.toLocaleTimeString();
+    document.getElementById('lastRefreshTime').textContent = timeStr;
+}
+
+function updateNextRefreshTime() {
+    if (lastRefreshTimestamp && autoRefreshEnabled) {
+        const nextRefreshTime = new Date(lastRefreshTimestamp.getTime() + REFRESH_INTERVAL);
+        const now = new Date();
+        const timeLeft = nextRefreshTime - now;
+        
+        if (timeLeft > 0) {
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            document.getElementById('nextRefreshTime').textContent = `${minutes} min ${seconds < 10 ? '0' : ''}${seconds}s`;
+            document.getElementById('nextRefreshTime').style.color = '#fbbf24';
+        } else {
+            document.getElementById('nextRefreshTime').textContent = 'Refreshing...';
+            document.getElementById('nextRefreshTime').style.color = '#a78bfa';
+        }
+    }
+}
+
+function startCountdownTimer() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    countdownInterval = setInterval(function() {
+        updateNextRefreshTime();
+    }, 1000);
+}
+
+function toggleAutoRefresh(enabled) {
+    autoRefreshEnabled = enabled;
+    const toggle = document.getElementById('autoRefreshToggle');
+    
+    if (enabled) {
+        startAutoRefresh();
+        updateLastRefreshTime();
+        startCountdownTimer();
+        toggle.checked = true;
+        console.log('✅ Auto-refresh enabled (30 mins)');
+    } else {
+        stopAutoRefresh();
+        toggle.checked = false;
+        document.getElementById('nextRefreshTime').textContent = 'Disabled';
+        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
+        console.log('⏸️ Auto-refresh disabled');
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    
+    autoRefreshTimer = setTimeout(function() {
+        if (autoRefreshEnabled) {
+            console.log('🔄 Auto-refresh triggered');
+            manualRefresh();
+        }
+    }, REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
+
+function manualRefresh() {
+    const btn = document.getElementById('manualRefreshBtn');
+    const icon = document.getElementById('manualRefreshIcon');
+    
+    // Disable button during refresh
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    icon.style.display = 'inline-block';
+    icon.style.animation = 'spin 1s linear infinite';
+    
+    // Add spin animation if not exists
+    if (!document.getElementById('refreshSpinStyle')) {
+        const style = document.createElement('style');
+        style.id = 'refreshSpinStyle';
+        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    }
+    
+    // Reload page after slight delay
+    setTimeout(function() {
+        window.location.reload(true);
+    }, 500);
+}
+
+function refreshData() {
+    manualRefresh();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshTimer) {
+        clearTimeout(autoRefreshTimer);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+});
 </script>
 {% endblock %}

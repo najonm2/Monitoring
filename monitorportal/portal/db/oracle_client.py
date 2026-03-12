@@ -14,7 +14,7 @@ DB_CONFIG = {
     "port": 1521,
     "service": "infr01p_app",
     "user": "icsm_appl",
-    "password": "icsm_appl_infprd"
+    "password": "Infprd3_appl"
 }
 
 # MDM, ERP, ADF Applications Database (IICS CDI / Metadata Framework)

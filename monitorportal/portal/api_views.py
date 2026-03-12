@@ -110,55 +110,52 @@ def generate_realistic_data(report_type):
         return {"data": data}
     
     elif report_type == "level3_all_jobs":
-        # Generate all Level3 job statuses
+        # Generate realistic Level3 job statuses (matching production volume)
         data = []
-        num_records = random.randint(30, 50)
+        num_records = random.randint(500, 1500)  # Much larger dataset like production
         
-        statuses = ["Succeeded", "Failed", "Running", "Stopped", "Terminated", "Waiting"]
-        status_weights = [60, 15, 10, 5, 5, 5]
+        statuses = ["Succeeded", "Failed", "Running", "Stopped", "Aborted", "Suspended", "Waiting"]
+        status_weights = [85, 5, 5, 2, 1, 1, 1]  # Most succeed
+        
+        # Generate sample sessions over the entire day
+        base_start = base_time.replace(hour=0, minute=0, second=0)  # Start of today
         
         for i in range(num_records):
-            start_time = base_time - timedelta(hours=random.randint(0, 12))
+            # Spread throughout the day
+            hours_offset = random.randint(0, 23)
+            minutes_offset = random.randint(0, 59)
+            start_time = base_start + timedelta(hours=hours_offset, minutes=minutes_offset)
+            
             status = random.choices(statuses, weights=status_weights)[0]
-            end_time = start_time + timedelta(minutes=random.randint(10, 120)) if status not in ["Running", "Waiting"] else None
+            # Duration: 1-120 minutes for finished, None for running
+            if status not in ["Running", "Waiting"]:
+                duration_mins = random.randint(1, 120)
+                end_time = start_time + timedelta(minutes=duration_mins)
+            else:
+                end_time = None
             
             record = {
-                "grid_name": random.choice(grid_names),
-                "subject_area": random.choice(subject_areas),
+                "folder": random.choice(subject_areas),
                 "workflow_name": random.choice(workflows),
                 "session_name": random.choice(sessions),
-                "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else None,
+                "sess_start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "sess_end_time": end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else None,
+                "duration_in_mins": str(duration_mins).zfill(2) + ":00" if status not in ["Running", "Waiting"] else None,
                 "status": status
             }
             data.append(record)
         
-        # Sort by subject_area first, then status priority
-        priority = {"Failed": 1, "Stopped": 1, "Terminated": 1, "Running": 2, "Succeeded": 3, "Waiting": 4}
-        data.sort(key=lambda x: (x["subject_area"], priority.get(x["status"], 5), x["start_time"]), reverse=False)
+        # Sort by start_time DESC (latest first) as requested
+        data.sort(key=lambda x: x["sess_start_time"], reverse=True)
         
-        # Create app-wise summary
-        from collections import defaultdict
-        app_summary = defaultdict(lambda: {"total": 0, "succeeded": 0, "failed": 0, "running": 0, "other": 0})
-        for record in data:
-            app = record["subject_area"]
-            app_summary[app]["total"] += 1
-            status_lower = record["status"].lower()
-            if status_lower == "succeeded":
-                app_summary[app]["succeeded"] += 1
-            elif status_lower in ["failed", "stopped", "terminated"]:
-                app_summary[app]["failed"] += 1
-            elif status_lower == "running":
-                app_summary[app]["running"] += 1
-            else:
-                app_summary[app]["other"] += 1
-        
+        # Calculate summary
         summary = {
             "total_jobs": len(data),
-            "by_application": dict(app_summary),
-            "total_succeeded": sum(r["status"] == "Succeeded" for r in data),
-            "total_failed": sum(r["status"] in ["Failed", "Stopped", "Terminated"] for r in data),
-            "total_running": sum(r["status"] == "Running" for r in data),
+            "total_succeeded": sum(1 for r in data if r["status"] == "Succeeded"),
+            "total_failed": sum(1 for r in data if r["status"] in ["Failed", "Stopped", "Aborted", "Terminated"]),
+            "total_running": sum(1 for r in data if r["status"] == "Running"),
+            "total_suspended": sum(1 for r in data if r["status"] == "Suspended"),
+            "total_other": len(data) - sum(1 for r in data if r["status"] in ["Succeeded", "Failed", "Stopped", "Aborted", "Terminated", "Running", "Suspended"]),
         }
         
         return {"data": data, "summary": summary}
@@ -217,7 +214,11 @@ def api_report_data(request, app_slug, report_slug):
     """
     API endpoint to fetch report data from Oracle database
     Falls back to mock data if Oracle fails
+    PERFORMANCE: Added 2-minute caching + timing logs
     """
+    from django.core.cache import cache
+    import time
+    
     # Import Oracle services
     from portal.services.level3_service import (
         get_level3_failed_jobs,
@@ -230,6 +231,18 @@ def api_report_data(request, app_slug, report_slug):
         get_adf_failed_jobs,
     )
     
+    request_start = time.time()
+    
+    # Try cache first for slow endpoints (2 minutes)
+    cache_key = f"api_report_{app_slug}_{report_slug}"
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        cached_result["cache_hit"] = True
+        print(f"[CACHE HIT] {report_slug} returned from cache in {time.time() - request_start:.3f}s")
+        return JsonResponse(cached_result, safe=False)
+    
+    print(f"[CACHE MISS] {report_slug} - fetching from Oracle...")
+    
     result = {
         "app_slug": app_slug,
         "report_slug": report_slug,
@@ -238,9 +251,12 @@ def api_report_data(request, app_slug, report_slug):
         "data": [],
         "summary": None,
         "error": None,
+        "cache_hit": False,
     }
     
     try:
+        fetch_start = time.time()
+        
         # Fetch REAL data from Oracle database
         if report_slug == "lvl3-failed-job-status":
             summary, data = get_level3_failed_jobs()
@@ -249,6 +265,7 @@ def api_report_data(request, app_slug, report_slug):
             
         elif report_slug == "lvl3-failed-with-error":
             result["data"] = get_level3_failed_with_error()
+            print(f"[QUERY TIME] Failed with error: {time.time() - fetch_start:.2f}s")
             
         elif report_slug == "lvl3-long-running-sessions":
             result["data"] = get_level3_long_running()
@@ -277,6 +294,20 @@ def api_report_data(request, app_slug, report_slug):
         result["success"] = True
         result["source"] = "oracle_database"
         
+        # Set cache duration based on report type
+        # Failed jobs status: longer cache (2 min) due to slow 5-query process
+        if report_slug == "lvl3-failed-jobs-status":
+            cache_duration = 120  # 2 minutes for slow report
+            cache_label = "2min"
+        else:
+            cache_duration = 30  # 30 seconds for other reports
+            cache_label = "30sec"
+        
+        cache.set(cache_key, result, cache_duration)
+        
+        total_time = time.time() - request_start
+        print(f"[API SUCCESS] {report_slug}: {len(result.get('data', []))} rows in {total_time:.2f}s (cached for {cache_label})")
+        
     except Exception as e:
         # If Oracle fails, use mock data as fallback
         print(f"⚠️ Oracle error, using mock data: {e}")
@@ -300,3 +331,122 @@ def api_report_data(request, app_slug, report_slug):
         result["warning"] = f"Using mock data due to: {str(e)}"
     
     return JsonResponse(result, safe=False)
+
+
+# ===================================
+# LEVEL3 JOB DETAILS API ENDPOINTS
+# ===================================
+
+@require_http_methods(["GET"])
+def level3_today_job_details(request):
+    """
+    Fetch today's job details by status type
+    Query params: type=all|succeeded|failed|running
+    """
+    import time
+    start_time = time.time()
+    
+    try:
+        status_type = request.GET.get('type', 'all').lower()
+        
+        from portal.services.level3_service import (
+            get_today_all_job_details,
+            get_today_succeeded_job_details,
+            get_today_failed_job_details,
+            get_today_running_job_details
+        )
+        
+        # Fetch based on type
+        if status_type == 'succeeded':
+            data = get_today_succeeded_job_details(limit=2000)
+        elif status_type == 'failed':
+            data = get_today_failed_job_details(limit=1000)
+        elif status_type == 'running':
+            data = get_today_running_job_details(limit=1000)
+        else:
+            data = get_today_all_job_details()
+        
+        # Convert cursor results to list of dicts
+        rows = []
+        if data:
+            for row in data:
+                rows.append(dict(row) if hasattr(row, '__getitem__') else row)
+        
+        elapsed = time.time() - start_time
+        
+        return JsonResponse({
+            'success': True,
+            'type': status_type,
+            'count': len(rows),
+            'data': rows,
+            'query_time_ms': round(elapsed * 1000),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        elapsed = time.time() - start_time
+        print(f"[ERROR] Failed to fetch job details: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'type': status_type,
+            'query_time_ms': round(elapsed * 1000)
+        }, status=500)
+
+
+def level3_failed_jobs_details(request):
+    """
+    Fetch failed jobs details filtered by status type.
+    Query params: type=total|completed|pending|running
+    """
+    import time
+    start_time = time.time()
+    
+    try:
+        status_filter = request.GET.get('type', 'total').lower()
+        
+        from portal.services.level3_service import get_all_failed_jobs_status_details
+        
+        # Fetch all failed jobs, optionally filtered by type
+        if status_filter == 'total':
+            # Return all failed jobs
+            data = get_all_failed_jobs_status_details(status_filter=None)
+        elif status_filter in ['completed', 'pending', 'running']:
+            # Return filtered by status type
+            data = get_all_failed_jobs_status_details(status_filter=status_filter)
+        else:
+            # Invalid type, return all
+            data = get_all_failed_jobs_status_details(status_filter=None)
+        
+        # Convert cursor results to list of dicts
+        rows = []
+        if data:
+            for row in data:
+                rows.append(dict(row) if hasattr(row, '__getitem__') else row)
+        
+        elapsed = time.time() - start_time
+        
+        return JsonResponse({
+            'success': True,
+            'type': status_filter,
+            'count': len(rows),
+            'data': rows,
+            'query_time_ms': round(elapsed * 1000),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        elapsed = time.time() - start_time
+        print(f"[ERROR] Failed to fetch failed jobs details: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'type': status_filter,
+            'query_time_ms': round(elapsed * 1000)
+        }, status=500)
