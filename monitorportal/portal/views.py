@@ -160,10 +160,10 @@ def level3_failed_job_status(request):
 
 def level3_bi_report(request):
     """
-    Level3 BI Report view showing BI Feed, CAPEX details, and ERP Status
+    Level3 BI Report view showing BI Feed, CAPEX details, BI Status Query, and ERP Status
     OPTIMIZED: Cached for 3 minutes to improve performance
     """
-    from portal.services.bi_service import get_level3_bi_feed, get_capex_details
+    from portal.services.bi_service import get_level3_bi_feed, get_capex_details, get_bi_status_query
     from portal.erp_mdm_insights import get_erp_run_history
     from django.core.cache import cache
     
@@ -179,6 +179,7 @@ def level3_bi_report(request):
         context = {
             "bi_feed_data": [],
             "capex_data": [],
+            "bi_status_data": [],
             "erp_data": {},
             "error": None,
         }
@@ -186,6 +187,7 @@ def level3_bi_report(request):
         try:
             context["bi_feed_data"] = get_level3_bi_feed()
             context["capex_data"] = get_capex_details()
+            context["bi_status_data"] = get_bi_status_query()
             context["erp_data"] = get_erp_run_history()
             
             # Cache the successful result for 3 minutes
