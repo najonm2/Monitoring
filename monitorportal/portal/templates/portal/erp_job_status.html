@@ -25,32 +25,28 @@
 {% endif %}
 
 <!-- REFRESH CONTROLS -->
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <!-- Manual Refresh Button -->
-            <button onclick="manualRefresh()" id="manualRefreshBtn" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                <span id="manualRefreshIcon" style="font-size: 16px;">🔄</span> REFRESH
-            </button>
-            
-            <!-- Auto Refresh Toggle -->
-            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                <span style="font-size: 16px;">⏱️</span>
-                AUTO (15 MIN)
-                <input type="checkbox" id="autoRefreshToggle" checked style="margin-left: 8px; width: 16px; height: 16px; cursor: pointer;" onchange="toggleAutoRefresh(this.checked)">
-            </label>
+<div class="refresh-controls">
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="manualRefresh()" id="manualRefreshBtn" class="refresh-btn">
+            <span id="manualRefreshIcon">🔄</span> REFRESH
+        </button>
+        <label class="refresh-btn" style="gap: 6px;">
+            ⏱️ AUTO
+            <select id="refreshIntervalSelect" onchange="changeRefreshInterval(this.value)" style="margin-left: 4px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15); color: white; font-weight: 600; font-size: 13px; cursor: pointer;">
+                <option value="15" selected style="color: #333;">15 min</option>
+                <option value="30" style="color: #333;">30 min</option>
+                <option value="60" style="color: #333;">60 min</option>
+            </select>
+        </label>
+    </div>
+    <div class="refresh-info">
+        <div style="display: flex; flex-direction: column;">
+            <span style="opacity: .7; font-size: 11px;">Last Refreshed:</span>
+            <span id="lastRefreshTime" style="font-weight: 600;">Just now</span>
         </div>
-        
-        <!-- Refresh Status Info -->
-        <div style="display: flex; gap: 24px; align-items: center; font-size: 13px;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                <span style="opacity: 0.8; font-size: 12px;">Last Refreshed:</span>
-                <span id="lastRefreshTime" style="font-weight: 600; font-size: 14px;">Just now</span>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                <span style="opacity: 0.8; font-size: 12px;">Next refresh:</span>
-                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">15 mins</span>
-            </div>
+        <div style="display: flex; flex-direction: column;">
+            <span style="opacity: .7; font-size: 11px;">Next refresh:</span>
+            <span id="nextRefreshTime" style="font-weight: 600; color: var(--primary-orange-light);">15 min</span>
         </div>
     </div>
 </div>
@@ -818,7 +814,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- AUTO-REFRESH CONTROLS SCRIPT -->
 <script>
-const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+const REFRESH_INTERVAL_OPTIONS = { 15: 15 * 60 * 1000, 30: 30 * 60 * 1000, 60: 60 * 60 * 1000 };
+let refreshIntervalMinutes = 15;
+let REFRESH_INTERVAL = REFRESH_INTERVAL_OPTIONS[refreshIntervalMinutes];
 let lastRefreshTimestamp = new Date();
 let autoRefreshEnabled = true;
 let autoRefreshTimer = null;
@@ -868,23 +866,14 @@ function startCountdownTimer() {
     }, 1000);
 }
 
-function toggleAutoRefresh(enabled) {
-    autoRefreshEnabled = enabled;
-    const toggle = document.getElementById('autoRefreshToggle');
-    
-    if (enabled) {
-        startAutoRefresh();
-        updateLastRefreshTime();
-        startCountdownTimer();
-        toggle.checked = true;
-        console.log('✅ Auto-refresh enabled (15 mins)');
-    } else {
-        stopAutoRefresh();
-        toggle.checked = false;
-        document.getElementById('nextRefreshTime').textContent = 'Disabled';
-        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
-        console.log('⏸️ Auto-refresh disabled');
-    }
+function changeRefreshInterval(minutes) {
+    refreshIntervalMinutes = parseInt(minutes);
+    REFRESH_INTERVAL = REFRESH_INTERVAL_OPTIONS[refreshIntervalMinutes];
+    autoRefreshEnabled = true;
+    startAutoRefresh();
+    updateLastRefreshTime();
+    startCountdownTimer();
+    console.log('✅ Auto-refresh set to ' + refreshIntervalMinutes + ' mins');
 }
 
 function startAutoRefresh() {

@@ -3,84 +3,102 @@
 {% block title %}Home - PASE Job Monitoring Dashboard{% endblock %}
 
 {% block content %}
-<!-- Welcome Hero Card -->
-<div class="card" style="padding: 48px; text-align: center; margin-bottom: 32px;">
-    <div style="max-width: 800px; margin: 0 auto;">
-        <h2 style="font-size: 42px; font-weight: 800; color: var(--lumen-primary); margin-bottom: 16px; letter-spacing: -0.5px;">
-            Welcome to PASE Job Monitoring Portal
-        </h2>
-        <p style="font-size: 18px; color: var(--gray-600); line-height: 1.7; margin-bottom: 24px;">
-            Centralized real-time monitoring for Informatica PowerCenter jobs with instant access to operational reports and Oracle database insights
-        </p>
-        <div style="display: flex; gap: 16px; justify-content: center; margin-top: 32px;">
-            <a href="{% url 'dashboards' %}" class="btn btn-primary" style="padding: 14px 32px; font-size: 16px;">
-                📊 View All Applications
-            </a>
+<!-- HERO BANNER — Orange with teal accent (per screenshot) -->
+<div class="hero-banner" style="margin: -32px -24px 0 -24px;">
+    <div class="hero-inner">
+        <div class="hero-text">
+            <span class="kicker">PASE MONITORING PORTAL</span>
+            <h1>Welcome to PASE Job Monitoring Portal</h1>
+            <p>Centralized real-time monitoring for Informatica PowerCenter jobs with instant access to operational reports and Oracle database insights</p>
+            <div style="margin-top: 24px;">
+                <a href="{% url 'dashboards' %}" class="btn btn-orange" style="padding: 14px 32px; font-size: 15px;">
+                    📊 View All Applications
+                </a>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Features Grid -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
-    <div class="card" style="padding: 24px;">
-        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
-            📈
+<!-- CARDS SHOWCASE — Dark Teal BG with white cards (per screenshot) -->
+<div class="cards-showcase" style="margin: 0 -24px;">
+    <div class="cards-showcase-inner">
+        <div class="showcase-row">
+            <div class="showcase-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
+                <h4 style="font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">Real-Time Monitoring</h4>
+                <p style="color: var(--gray-500); font-size: 12px; line-height: 1.5;">Monitor failed jobs across Level3, MDM, ERP, and ADF</p>
+            </div>
+            <div class="showcase-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">🗄️</div>
+                <h4 style="font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">Oracle Database</h4>
+                <p style="color: var(--gray-500); font-size: 12px; line-height: 1.5;">Direct INFA_PCREPO and MAPDQPRD queries</p>
+            </div>
+            <div class="showcase-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">🎯</div>
+                <h4 style="font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">Centralized Dashboard</h4>
+                <p style="color: var(--gray-500); font-size: 12px; line-height: 1.5;">Single portal with easy navigation & SSRS integration</p>
+            </div>
+            <div class="showcase-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">🤖</div>
+                <h4 style="font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">AI Insights</h4>
+                <p style="color: var(--gray-500); font-size: 12px; line-height: 1.5;">Intelligent analysis and recommendations</p>
+            </div>
+            <div class="showcase-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+                <h4 style="font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px;">SLA Compliance</h4>
+                <p style="color: var(--gray-500); font-size: 12px; line-height: 1.5;">Track SLA targets and completion metrics</p>
+            </div>
         </div>
-        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
-            Real-Time Monitoring
-        </h4>
-        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
-            Monitor failed jobs, long-running sessions, and job status across Level3, MDM, ERP, and ADF applications in real-time
-        </p>
-    </div>
-    
-    <div class="card" style="padding: 24px;">
-        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
-            🗄️
+        <div style="text-align: center;">
+            <a href="{% url 'dashboards' %}" class="cta-btn">Explore Dashboards</a>
         </div>
-        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
-            Oracle Database Integration
-        </h4>
-        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
-            Direct queries to INFA_PCREPO and MAPDQPRD databases with automatic fallback and data validation
-        </p>
-    </div>
-    
-    <div class="card" style="padding: 24px;">
-        <div style="width: 56px; height: 56px; background: #FF6A13; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px;">
-            🎯
-        </div>
-        <h4 style="font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">
-            Centralized Dashboard
-        </h4>
-        <p style="color: var(--gray-600); font-size: 14px; line-height: 1.6;">
-            Single portal for all monitoring needs with easy navigation, SSRS report integration, and professional data views
-        </p>
     </div>
 </div>
 
-<!-- Quick Stats -->
-<div class="card">
-    <div class="card-header">
-        <h5 style="margin: 0; font-size: 20px; font-weight: 700;">🚀 Platform Capabilities</h5>
-    </div>
-    <div style="padding: 32px;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px;">
+<!-- SECTION: Platform Capabilities -->
+<div class="section-block">
+    <div class="section-inner">
+        <div class="section-bar">🚀 Platform Capabilities</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; padding: 24px 0;">
             <div style="text-align: center;">
-                <div style="font-size: 48px; font-weight: 800; color: var(--lumen-primary); margin-bottom: 8px;">4</div>
-                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Active Applications</div>
+                <div style="font-size: 48px; font-weight: 800; color: var(--primary-orange); margin-bottom: 8px;">4</div>
+                <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Active Applications</div>
             </div>
             <div style="text-align: center;">
                 <div style="font-size: 48px; font-weight: 800; color: var(--success); margin-bottom: 8px;">8</div>
-                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monitoring Reports</div>
+                <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Monitoring Reports</div>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 48px; font-weight: 800; color: var(--info); margin-bottom: 8px;">2</div>
-                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Oracle Databases</div>
+                <div style="font-size: 48px; font-weight: 800; color: var(--primary-teal); margin-bottom: 8px;">2</div>
+                <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Oracle Databases</div>
             </div>
             <div style="text-align: center;">
                 <div style="font-size: 48px; font-weight: 800; color: var(--warning); margin-bottom: 8px;">24/7</div>
-                <div style="color: var(--gray-600); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Live Monitoring</div>
+                <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Live Monitoring</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Quick Links Grid -->
+<div style="background: var(--gray-50); padding: 48px 0; margin: 0 -24px;">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 24px;">
+        <div class="section-bar" style="background: var(--primary-teal); color: white; padding: 14px 24px; border-radius: 8px; font-weight: 700; font-size: 18px; margin-bottom: 24px;">📋 Application Quick Links</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div class="card" style="border-left: 4px solid var(--primary-orange);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">📈 Level3 Reports</h4>
+                <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">Failed jobs, long-running sessions, and BI feed status</p>
+                <a href="{% url 'dashboards' %}" class="btn" style="font-size: 12px; padding: 8px 16px;">View →</a>
+            </div>
+            <div class="card" style="border-left: 4px solid var(--primary-orange);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">🗂️ MDM Monitoring</h4>
+                <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">MDM job status with AI-powered success/failure analysis</p>
+                <a href="{% url 'dashboards' %}" class="btn" style="font-size: 12px; padding: 8px 16px;">View →</a>
+            </div>
+            <div class="card" style="border-left: 4px solid var(--primary-orange);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">💼 ERP Tracking</h4>
+                <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">Last 8 runs tracker with completion rates and status</p>
+                <a href="{% url 'dashboards' %}" class="btn" style="font-size: 12px; padding: 8px 16px;">View →</a>
             </div>
         </div>
     </div>

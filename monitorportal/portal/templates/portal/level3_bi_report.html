@@ -187,10 +187,10 @@
 <!-- Additional Info -->
 <div class="card" style="background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); border: 2px solid #3B82F6;">
     <div style="padding: 20px;">
-        <h4 style="margin: 0 0 12px 0; color: #1E40AF; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        <h4 style="margin: 0 0 12px 0; color: var(--primary-teal); font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
             ℹ️ Report Information
         </h4>
-        <div style="display: grid; gap: 8px; font-size: 14px; color: #1E3A8A;">
+        <div style="display: grid; gap: 8px; font-size: 14px; color: var(--primary-teal-dark);">
             <div><strong>Data Source:</strong> ICSM.app_control_status table</div>
             <div><strong>Time Zone:</strong> Timestamps converted to MST (Mountain Standard Time, GMT-7)</div>
             <div><strong>CAPEX SLA:</strong> 3 hours (180 minutes) - Negative values indicate SLA miss</div>
@@ -204,7 +204,7 @@
     <div class="card-header">
         <h5>📊 ERP Application - Last 8 Runs Status (AI Insights)</h5>
         <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">
-            Tracking 8 most recent ERP runs (every 4 hours) - <a href="{% url 'app_dashboards_erp' %}" style="color: #667eea; font-weight: 600;">View Full Details →</a>
+            Tracking 8 most recent ERP runs (every 4 hours) - <a href="{% url 'app_dashboards_erp' %}" style="color: var(--primary-teal); font-weight: 600;">View Full Details →</a>
         </div>
     </div>
     <div class="card-body p-0">

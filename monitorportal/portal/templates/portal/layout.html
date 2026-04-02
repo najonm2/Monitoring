@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    <!-- HEADER -->
+    <!-- HEADER — Dark Teal with Orange Accent -->
     <header class="top-header">
         <div class="top-inner">
             <div class="brand">
@@ -39,7 +39,7 @@
         </div>
     </header>
 
-    <!-- NAV BAR -->
+    <!-- NAV BAR — Orange -->
     <nav class="nav-bar">
         <div class="nav-container">
             <a class="nav-pill {% if request.path == '/' %}active{% endif %}" href="{% url 'home' %}">
@@ -81,13 +81,12 @@
             {% block content %}{% endblock %}
         </div>
         
-        <!-- INFO GUIDELINES (can be overridden per page) -->
         {% block info_guidelines %}{% endblock %}
     </main>
 
-    <!-- FOOTER -->
+    <!-- FOOTER — Dark Teal with Orange Accent -->
     <footer class="footer">
-        © {% now "Y" %} Lumen. All rights reserved.
+        <span style="position:relative;z-index:1;">© {% now "Y" %} Lumen Technologies. All rights reserved. | PASE Job Monitoring Portal</span>
     </footer>
 </body>
 </html>

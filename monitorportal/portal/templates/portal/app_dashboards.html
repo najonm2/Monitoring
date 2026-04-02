@@ -65,38 +65,27 @@
 {% if today_stats %}
 <section style="margin-top: 50px; margin-bottom: 40px;">
     <!-- REFRESH HEADER WITH CONTROLS -->
-    <div style="background: linear-gradient(135deg, #fb923c 0%, #f97316 100%); color: white; padding: 25px 35px; border-radius: 10px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(249, 115, 22, 0.3);">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-            <h2 style="margin: 0; font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; flex: 1;">📊 Today's Job Status Overview</h2>
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <button onclick="refreshDashboard()" style="background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;">
-                    🔄 REFRESH
-                </button>
-                <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" style="background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;">
-                    ⏱️ AUTO (30 MIN)
-                </button>
-            </div>
+    <div class="refresh-controls" style="border-radius: 10px; margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 16px; flex: 1;">
+            <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700;">📊 Today's Job Status Overview</h2>
         </div>
-        
-        <!-- INFO ROW -->
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem;">
-            <div style="opacity: 0.9;">Real-time from REP_DW_ADMIN.OPB_TASK_INST_RUN</div>
-            <div style="display: flex; gap: 30px; align-items: center;">
-                <div>
-                    Last Updated: <span id="lastUpdatedTime" style="font-weight: 600;">--:-- --</span>
-                </div>
-                <div id="countdownTimer" style="font-weight: 600; min-width: 120px;">
-                    Next refresh: 30:00
-                </div>
-            </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <button onclick="refreshDashboard()" class="refresh-btn">
+                🔄 REFRESH
+            </button>
+            <select id="refreshIntervalSelect" onchange="changeRefreshInterval(this.value)" class="refresh-btn" style="padding: 8px 12px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15); color: white; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 8px;">
+                <option value="15" selected style="color: #333;">⏱️ AUTO 15 min</option>
+                <option value="30" style="color: #333;">⏱️ AUTO 30 min</option>
+                <option value="60" style="color: #333;">⏱️ AUTO 60 min</option>
+            </select>
         </div>
     </div>
 
     <!-- TODAY'S STATUS CARD -->
-    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px 30px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="background: white; border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden;">
+        <div style="background: var(--primary-teal); color: white; padding: 20px 30px; display: flex; align-items: center; justify-content: space-between;">
             <div>
-                <span style="display: inline-block; padding: 6px 14px; background: rgba(255,255,255,0.2); border-radius: 20px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px;">🔴 LIVE</span>
+                <span style="display: inline-block; padding: 6px 14px; background: var(--primary-orange); border-radius: 20px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px;">🔴 LIVE</span>
                 <h3 style="margin: 0; font-size: 1.5rem; font-weight: 600;">{{ today_stats.date|date:"l, F d, Y" }}</h3>
             </div>
             <div style="text-align: right;">
@@ -190,9 +179,9 @@
 <!-- 7-DAY JOB INSIGHTS BANNER (Only for Level3) -->
 <section style="margin-bottom: 50px;">
     <a href="{% url 'report_view' app.slug 'lvl3-7day-insights' %}" style="text-decoration: none; display: block; transition: transform 0.2s ease, box-shadow 0.2s ease;" 
-       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 30px rgba(102, 126, 234, 0.4)';" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(102, 126, 234, 0.3)';">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 50px; border-radius: 16px; box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden;">
+       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 30px rgba(27, 60, 61, 0.4)';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(27, 60, 61, 0.3)';">
+        <div style="background: var(--primary-teal); color: white; padding: 40px 50px; border-radius: 16px; box-shadow: 0 4px 20px rgba(27, 60, 61, 0.3); position: relative; overflow: hidden;">
             <!-- Background Pattern -->
             <div style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; opacity: 0.1; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px);"></div>
             
@@ -222,7 +211,7 @@
                 </div>
                 
                 <div style="text-align: center; padding-left: 40px;">
-                    <div style="background: white; color: #667eea; padding: 18px 40px; border-radius: 12px; font-size: 1.3rem; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 10px;">
+                    <div style="background: white; color: var(--primary-teal); padding: 18px 40px; border-radius: 12px; font-size: 1.3rem; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 10px;">
                         VIEW INSIGHTS ➡️
                     </div>
                 </div>
@@ -306,8 +295,9 @@
 <script>
 let autoRefreshInterval = null;
 let countdownInterval = null;
-let secondsUntilRefresh = 1800; // 30 minutes = 1800 seconds
-let isAutoRefreshEnabled = false;
+let refreshIntervalMinutes = 15;
+let secondsUntilRefresh = refreshIntervalMinutes * 60;
+let isAutoRefreshEnabled = true;
 
 // Initialize time display
 function initializeTimeDisplay() {
@@ -342,7 +332,7 @@ function updateCountdown() {
         
         if (secondsUntilRefresh < 0) {
             refreshDashboard();
-            secondsUntilRefresh = 1800; // Reset to 30 minutes
+            secondsUntilRefresh = refreshIntervalMinutes * 60;
         }
     }
 }
@@ -352,25 +342,15 @@ function refreshDashboard() {
     location.reload();
 }
 
-// Toggle auto-refresh
-function toggleAutoRefresh() {
-    isAutoRefreshEnabled = !isAutoRefreshEnabled;
-    const btn = document.getElementById('autoRefreshBtn');
-    
-    if (isAutoRefreshEnabled) {
-        btn.style.background = 'rgba(34, 197, 94, 0.5)';
-        btn.textContent = '⏱️ AUTO (30 MIN) ✓ ON';
-        secondsUntilRefresh = 1800;
-        countdownInterval = setInterval(updateCountdown, 1000);
-        updateCountdown();
-    } else {
-        btn.style.background = 'rgba(255,255,255,0.25)';
-        btn.textContent = '⏱️ AUTO (30 MIN)';
-        if (countdownInterval) {
-            clearInterval(countdownInterval);
-        }
-        document.getElementById('countdownTimer').textContent = 'Next refresh: 30:00';
-    }
+// Change refresh interval from dropdown
+function changeRefreshInterval(minutes) {
+    refreshIntervalMinutes = parseInt(minutes);
+    secondsUntilRefresh = refreshIntervalMinutes * 60;
+    isAutoRefreshEnabled = true;
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+    console.log('✅ Auto-refresh set to ' + refreshIntervalMinutes + ' mins');
 }
 
 // ===================================
@@ -394,7 +374,7 @@ function openJobDetailsModal(type) {
         // Set modal header color based on type
     const modalHeader = document.querySelector('#jobDetailsModal > div > div:first-child');
     const headerColors = {
-        'succeeded': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        'succeeded': 'var(--primary-teal)',
         'failed': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
         'running': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
     };
@@ -545,6 +525,9 @@ document.addEventListener('click', (e) => {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeTimeDisplay();
+    // Start auto-refresh countdown by default
+    countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
 });
 </script>
 {% endif %}
