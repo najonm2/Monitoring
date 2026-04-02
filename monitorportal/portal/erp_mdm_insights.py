@@ -352,8 +352,15 @@ def get_erp_insights() -> Dict[str, Any]:
         running_count = len(running_jobs)
         suspended_count = len(suspended_jobs)
         not_started_count = len(not_started_jobs)
-        fail_rate = round((failed_count / total_jobs * 100), 1) if total_jobs > 0 else 0
-        success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
+        # New logic: Only running + succeeded jobs are considered
+        running_and_succeeded = running_count + succeeded_count
+        denominator = running_and_succeeded if running_and_succeeded > 0 else 1
+        if failed_count == 0:
+            success_rate = 100.0
+            fail_rate = 0.0
+        else:
+            fail_rate = round((failed_count / denominator * 100), 1) if denominator > 0 else 0
+            success_rate = round((running_and_succeeded / denominator * 100), 1) if denominator > 0 else 0
         
         return {
             'success': True,
@@ -453,7 +460,10 @@ def get_mdm_insights() -> Dict[str, Any]:
         running_count = len(running_jobs)
         not_started_count = len(not_started_jobs)
         fail_rate = round((failed_count / total_jobs * 100), 1) if total_jobs > 0 else 0
-        success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
+        if failed_count == 0:
+            success_rate = 100.0
+        else:
+            success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
         
         return {
             'success': True,
