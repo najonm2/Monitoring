@@ -243,16 +243,28 @@ def get_erp_run_history():
         # Get long-running sessions
         long_running_sessions = get_erp_long_running_sessions()
         
+        # Success rate logic: if failed == 0, always 100%
+        current_success_rate = 100.0 if failed_current == 0 else (round((completed_current / total_current * 100), 1) if total_current > 0 else 0)
+        # Patch last_8_runs success_rate as well
+        patched_runs = []
+        for run in runs_summary:
+            failed = run.get('failed', 0)
+            succeeded = run.get('succeeded', 0)
+            total_jobs = run.get('total_jobs', 0)
+            patched_rate = 100.0 if failed == 0 else (round((succeeded / total_jobs * 100), 1) if total_jobs > 0 else 0)
+            run = dict(run)
+            run['success_rate'] = patched_rate
+            patched_runs.append(run)
         return {
             'success': True,
-            'last_8_runs': runs_summary,
+            'last_8_runs': patched_runs,
             'current_run': {
                 'total_jobs': total_current,
                 'completed': completed_current,
                 'running': running_current,
                 'failed': failed_current,
                 'suspended': suspended_current,
-                'success_rate': round((completed_current / total_current * 100), 1) if total_current > 0 else 0,
+                'success_rate': current_success_rate,
                 'jobs': current_run_jobs,
                 'failed_jobs': failed_jobs,
                 'succeeded_jobs': succeeded_jobs,

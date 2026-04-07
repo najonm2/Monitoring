@@ -1,28 +1,53 @@
 # portal/middleware.py
 """
-Development middleware to simulate SSO REMOTE_USER header for local testing.
-This should ONLY be used in development environments, never in production!
+Development middleware to capture logged-in user info.
+Automatically detects Windows username and display name.
 """
+import os
+import platform
+
+
+def _get_windows_display_name():
+    """
+    Get the full display name of the currently logged-in Windows user.
+    Falls back to USERNAME environment variable if display name is unavailable.
+    """
+    if platform.system() != 'Windows':
+        return os.environ.get('USER', 'Guest')
+    
+    try:
+        import ctypes
+        GetUserNameEx = ctypes.windll.secur32.GetUserNameExW
+        NameDisplay = 3  # NameDisplay enum value
+        size = ctypes.pointer(ctypes.c_ulong(0))
+        GetUserNameEx(NameDisplay, None, size)
+        if size.contents.value > 0:
+            nameBuffer = ctypes.create_unicode_buffer(size.contents.value)
+            GetUserNameEx(NameDisplay, nameBuffer, size)
+            if nameBuffer.value:
+                return nameBuffer.value
+    except Exception:
+        pass
+    
+    return os.environ.get('USERNAME', 'Guest')
 
 
 class DevRemoteUserMiddleware:
     """
-    Simulates SSO REMOTE_USER header for local development testing.
-    
-    Usage:
-    1. Add this middleware to settings.py MIDDLEWARE list
-    2. Set the username you want to test with below
-    3. Remove this middleware before deploying to production!
+    Captures the logged-in user's CUID and display name.
+    Works with Windows SSO (REMOTE_USER) or falls back to OS username.
     """
     
     def __init__(self, get_response):
         self.get_response = get_response
     
     def __call__(self, request):
-        # Set a test username for local development
-        # Change 'AB64033' to your actual CUID for testing
+        # Set REMOTE_USER from OS if not already set by SSO
         if not request.META.get('REMOTE_USER'):
-            request.META['REMOTE_USER'] = 'AB64033'
+            request.META['REMOTE_USER'] = os.environ.get('USERNAME', os.environ.get('USER', 'Guest'))
+        
+        # Attach the full display name to the request for templates
+        request.user_display_name = _get_windows_display_name()
         
         response = self.get_response(request)
         return response

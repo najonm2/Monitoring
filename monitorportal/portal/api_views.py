@@ -1,6 +1,7 @@
 # portal/api_views.py
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 import random
 
@@ -449,4 +450,120 @@ def level3_failed_jobs_details(request):
             'error': str(e),
             'type': status_filter,
             'query_time_ms': round(elapsed * 1000)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def restart_workflow(request):
+    """
+    API endpoint to restart an Informatica PowerCenter workflow or session
+    
+    POST body (JSON):
+    {
+        "workflow_name": "WF_DailyLoad_Customer",
+        "session_name": "s_Load_Customer",  // Optional - if provided, restarts specific session
+        "folder_name": "Production", 
+        "restart_from_task": "optional_task_name"  // Only used when restarting full workflow
+    }
+    """
+    import json
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    from django.conf import settings
+    
+    try:
+        body = json.loads(request.body)
+        workflow_name = body.get('workflow_name')
+        session_name = body.get('session_name')
+        folder_name = body.get('folder_name', settings.INFORMATICA_DEFAULT_FOLDER)
+        restart_from_task = body.get('restart_from_task')
+        
+        if not workflow_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'workflow_name is required'
+            }, status=400)
+        
+        # Initialize restart service
+        service = InformaticaRestartService()
+        
+        # Check configuration
+        if not service.is_configured():
+            return JsonResponse({
+                'success': False,
+                'message': 'Informatica PowerCenter is not configured. Please configure credentials in settings.',
+                'help': 'Set INFORMATICA_DOMAIN, INFORMATICA_REPOSITORY, INFORMATICA_INTEGRATION_SERVICE, INFORMATICA_USERNAME, INFORMATICA_PASSWORD in settings or environment variables.'
+            }, status=503)
+        
+        # Restart session if session_name provided, otherwise restart workflow
+        if session_name:
+            result = service.restart_session(
+                workflow_name=workflow_name,
+                session_name=session_name,
+                folder_name=folder_name,
+                wait=False
+            )
+        else:
+            result = service.restart_workflow(
+                workflow_name=workflow_name,
+                folder_name=folder_name,
+                restart_from_task=restart_from_task,
+                wait=False  # Don't wait for completion
+            )
+        
+        status_code = 200 if result['success'] else 500
+        return JsonResponse(result, status=status_code)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error restarting workflow: {str(e)}',
+            'error': str(e)
+        }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def check_workflow_status(request):
+    """
+    API endpoint to check workflow status
+    
+    POST body (JSON):
+    {
+        "workflow_name": "WF_DailyLoad_Customer",
+        "folder_name": "Production"
+    }
+    """
+    import json
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    from django.conf import settings
+    
+    try:
+        body = json.loads(request.body)
+        workflow_name = body.get('workflow_name')
+        folder_name = body.get('folder_name', settings.INFORMATICA_DEFAULT_FOLDER)
+        
+        if not workflow_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'workflow_name is required'
+            }, status=400)
+        
+        service = InformaticaRestartService()
+        result = service.get_workflow_status(workflow_name, folder_name)
+        
+        status_code = 200 if result['success'] else 500
+        return JsonResponse(result, status=status_code)
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error checking status: {str(e)}'
         }, status=500)

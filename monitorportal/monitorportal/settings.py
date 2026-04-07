@@ -185,3 +185,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # depending on your org requirements.
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+# -----------------------------------------------------------------------------
+# INFORMATICA POWERCENTER CONFIGURATION (for workflow restart)
+# -----------------------------------------------------------------------------
+# Path to pmcmd (PowerCenter Command Line Program)
+# Windows example: 'C:\\Program Files\\Informatica\\PowerCenter\\server\\bin\\pmcmd.exe'
+# Linux example: '/opt/informatica/server/bin/pmcmd'
+INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', '/prd1/app/informatica/infa_shared/server/bin/pmcmd')
+
+# Server and connection details
+INFORMATICA_HOST = os.getenv('INFORMATICA_HOST', 'azeus2lipcp01')
+INFORMATICA_PORT = os.getenv('INFORMATICA_PORT', '6005')
+
+# Repository and domain configuration
+INFORMATICA_DOMAIN = os.getenv('INFORMATICA_DOMAIN', 'Domain_INFA_PRD1')
+INFORMATICA_REPOSITORY = os.getenv('INFORMATICA_REPOSITORY', 'PCREPO_PRD1_01')
+INFORMATICA_INTEGRATION_SERVICE = os.getenv('INFORMATICA_INTEGRATION_SERVICE', 'infr01p_app')
+
+# Credentials for pmcmd authentication
+INFORMATICA_USERNAME = os.getenv('INFORMATICA_USERNAME', 'Ab64033')
+INFORMATICA_PASSWORD = os.getenv('INFORMATICA_PASSWORD', 'Samsungs26@123')
+
+# Default folder for workflows (can be overridden per restart request)
+INFORMATICA_DEFAULT_FOLDER = os.getenv('INFORMATICA_DEFAULT_FOLDER', 'Default')

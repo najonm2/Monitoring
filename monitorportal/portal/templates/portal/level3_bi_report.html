@@ -146,8 +146,8 @@
                     <tr>
                         <td>{{ row.application_name }}</td>
                         <td>{{ row.dependency_name }}</td>
-                        <td>{{ row.start_date_mdt }}</td>
-                        <td>{{ row.end_date_mdt }}</td>
+                        <td>{{ row.start_date_mdt|date:"Y/m/d H:i" }}</td>
+                        <td>{{ row.end_date_mdt|date:"Y/m/d H:i" }}</td>
                         <td style="font-weight: 700;">
                             {% if row.sla_met_miss_min < 0 %}
                                 <span style="color: #EF4444;">{{ row.sla_met_miss_min }} min <span style="font-size: 11px;">(MISSED)</span></span>

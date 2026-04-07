@@ -152,6 +152,8 @@
                         <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Status</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Last Comp Time</th>
                         <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Failing Since (Days)</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Actions</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">AI Analysis</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -191,6 +193,23 @@
                             {% else %}
                             <span style="color: #9ca3af;">—</span>
                             {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
+                            <button onclick="restartWorkflow('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}')" 
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(16,185,129,0.3);"
+                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'"
+                                    title="Restart session: {{ job.session_name }}">
+                                🔄 Restart
+                            </button>
+                        </td>
+                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
+                            <button onclick="analyzeError('{{ job.session_name|escapejs }}', '{{ job.workflow_name|escapejs }}', '{{ job.error_message|default:""|escapejs }}')" 
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(124,58,237,0.3);"
+                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(124,58,237,0.4)'"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(124,58,237,0.3)'">
+                                🤖 AI Fix
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -539,6 +558,243 @@ window.addEventListener('beforeunload', function() {
         clearInterval(countdownInterval);
     }
 });
+</script>
+
+<!-- AI ERROR ANALYSIS MODAL -->
+<div id="aiAnalysisModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 16px; width: 95%; max-width: 720px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+        <!-- Modal Header -->
+        <div style="padding: 20px 24px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.6rem;">🤖</span>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700;">AI Error Analysis</h2>
+                    <p id="aiModalSubtitle" style="margin: 2px 0 0 0; opacity: 0.85; font-size: 0.85rem;">Analyzing error...</p>
+                </div>
+            </div>
+            <button onclick="closeAiModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.3rem; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div style="flex: 1; overflow-y: auto; padding: 24px;">
+            <!-- Loading State -->
+            <div id="aiLoading" style="text-align: center; padding: 40px;">
+                <div style="font-size: 2.5rem; margin-bottom: 16px; animation: pulse 1.5s ease-in-out infinite;">🤖</div>
+                <div style="color: #6b7280; font-size: 15px; font-weight: 500;">Analyzing error pattern...</div>
+                <div style="color: #9ca3af; font-size: 13px; margin-top: 6px;">Matching against known error signatures</div>
+            </div>
+            
+            <!-- Analysis Result -->
+            <div id="aiResult" style="display: none;">
+                <!-- Severity + Category Badge Row -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div id="aiSeverityBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px;"></div>
+                    <div id="aiCategoryBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #ede9fe; color: #6d28d9; border-radius: 8px; font-weight: 600; font-size: 13px;"></div>
+                    <div id="aiTeamBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px;"></div>
+                </div>
+                
+                <!-- Error Message -->
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 700; color: #1f2937; margin-bottom: 8px; font-size: 14px;">📝 Error Message</div>
+                    <div id="aiErrorText" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; color: #991b1b; line-height: 1.6; word-break: break-word; max-height: 120px; overflow-y: auto;"></div>
+                </div>
+                
+                <!-- Session/Workflow Info -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Session</div>
+                        <div id="aiSessionName" style="font-size: 13px; color: #1f2937; font-weight: 600; margin-top: 4px; word-break: break-word;"></div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Workflow</div>
+                        <div id="aiWorkflowName" style="font-size: 13px; color: #1f2937; font-weight: 600; margin-top: 4px; word-break: break-word;"></div>
+                    </div>
+                </div>
+                
+                <!-- Fix Recommendations -->
+                <div>
+                    <div style="font-weight: 700; color: #1f2937; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <span>💡</span> Recommended Fix Steps
+                    </div>
+                    <div id="aiRecommendations" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+            </div>
+            
+            <!-- Error State -->
+            <div id="aiError" style="display: none; text-align: center; padding: 30px; color: #ef4444;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">❌</div>
+                <div id="aiErrorMessage" style="font-size: 14px;">Failed to analyze error</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
+</style>
+
+<script>
+// AI Error Analysis functions
+function analyzeError(sessionName, workflowName, errorMessage) {
+    const modal = document.getElementById('aiAnalysisModal');
+    const loading = document.getElementById('aiLoading');
+    const result = document.getElementById('aiResult');
+    const error = document.getElementById('aiError');
+    const subtitle = document.getElementById('aiModalSubtitle');
+    
+    // Show modal + loading
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    result.style.display = 'none';
+    error.style.display = 'none';
+    subtitle.textContent = sessionName;
+    
+    fetch('/ai/api/analyze-error/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            error_message: errorMessage,
+            session_name: sessionName,
+            workflow_name: workflowName
+        })
+    })
+    .then(r => r.json())
+    .then(resp => {
+        if (resp.success) {
+            const d = resp.data;
+            loading.style.display = 'none';
+            result.style.display = 'block';
+            
+            // Severity badge
+            const sevBadge = document.getElementById('aiSeverityBadge');
+            const sevColors = {
+                'CRITICAL': { bg: '#fef2f2', color: '#dc2626', icon: '🔴' },
+                'HIGH':     { bg: '#fff7ed', color: '#ea580c', icon: '🟠' },
+                'MEDIUM':   { bg: '#fefce8', color: '#ca8a04', icon: '🟡' },
+                'LOW':      { bg: '#f0fdf4', color: '#16a34a', icon: '🟢' }
+            };
+            const sev = sevColors[d.severity] || sevColors['MEDIUM'];
+            sevBadge.style.background = sev.bg;
+            sevBadge.style.color = sev.color;
+            sevBadge.innerHTML = `${sev.icon} ${d.severity}`;
+            
+            // Category
+            document.getElementById('aiCategoryBadge').innerHTML = `📁 ${d.category}`;
+            
+            // Team badge
+            const teamBadge = document.getElementById('aiTeamBadge');
+            if (d.assigned_to === 'DBA') {
+                teamBadge.style.background = '#dbeafe';
+                teamBadge.style.color = '#2563eb';
+                teamBadge.innerHTML = '🗄️ Assign to DBA Team';
+            } else {
+                teamBadge.style.background = '#dcfce7';
+                teamBadge.style.color = '#16a34a';
+                teamBadge.innerHTML = '💻 Assign to DEV Team';
+            }
+            
+            // Error text
+            document.getElementById('aiErrorText').textContent = d.error_message || 'No error message captured';
+            
+            // Session + Workflow
+            document.getElementById('aiSessionName').textContent = d.session_name;
+            document.getElementById('aiWorkflowName').textContent = d.workflow_name;
+            
+            // Recommendations
+            const recsDiv = document.getElementById('aiRecommendations');
+            recsDiv.innerHTML = '';
+            (d.recommendations || []).forEach((rec, i) => {
+                const step = document.createElement('div');
+                step.style.cssText = 'display: flex; gap: 12px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;';
+                step.innerHTML = `
+                    <span style="flex-shrink: 0; width: 24px; height: 24px; background: #16a34a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${i + 1}</span>
+                    <span style="font-size: 13px; color: #1f2937; line-height: 1.5;">${rec}</span>
+                `;
+                recsDiv.appendChild(step);
+            });
+        } else {
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            document.getElementById('aiErrorMessage').textContent = resp.error || 'Analysis failed';
+        }
+    })
+    .catch(err => {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        document.getElementById('aiErrorMessage').textContent = err.message;
+    });
+}
+
+function closeAiModal() {
+    document.getElementById('aiAnalysisModal').style.display = 'none';
+}
+
+// Close AI modal on backdrop click or Escape
+document.addEventListener('click', function(e) {
+    if (e.target === document.getElementById('aiAnalysisModal')) closeAiModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAiModal();
+});
+
+// Workflow/Session Restart Function
+function restartWorkflow(workflowName, folderName, sessionName) {
+    const target = sessionName || workflowName;
+    const type = sessionName ? 'session' : 'workflow';
+    
+    if (!confirm(`Are you sure you want to restart ${type} "${target}"?\n\nWorkflow: ${workflowName}\nFolder: ${folderName}`)) {
+        return;
+    }
+    
+    // Show loading indicator
+    const button = event.target;
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '⏳ Restarting...';
+    button.style.opacity = '0.7';
+    button.style.cursor = 'not-allowed';
+    
+    const requestBody = {
+        workflow_name: workflowName,
+        folder_name: folderName
+    };
+    
+    // Add session_name if provided
+    if (sessionName) {
+        requestBody.session_name = sessionName;
+    }
+    
+    fetch('/api/informatica/restart-workflow/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.innerHTML = originalHTML;
+        
+        if (data.success) {
+            alert(`✅ SUCCESS!\n\n${data.message}`);
+        } else {
+            alert(`❌ FAILED!\n\n${data.message}\n\n${data.error || ''}`);
+        }
+    })
+    .catch(error => {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.innerHTML = originalHTML;
+        alert(`❌ ERROR!\n\nFailed to communicate with server.\n\n${error.message}`);
+    });
+}
 </script>
 
 {% endblock %}

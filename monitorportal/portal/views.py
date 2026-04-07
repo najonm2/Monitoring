@@ -5,15 +5,7 @@ from .ssrs_registry import APPS
 
 
 def home(request):
-    # Get CUID from REMOTE_USER header or fallback to username
-    cuid = request.META.get('REMOTE_USER', '').upper()
-    if not cuid and request.user.is_authenticated:
-        cuid = request.user.username.upper()
-    
-    ctx = {
-        "user_display": cuid if cuid else "Guest"
-    }
-    return render(request, "portal/home.html", ctx)
+    return render(request, "portal/home.html")
 
 
 def dashboards(request):
@@ -34,17 +26,30 @@ def app_dashboards(request, app_slug):
     if app_slug == "level3":
         try:
             from portal.services.level3_service import get_level3_jobs_today_only, get_level3_folders_with_metrics
+            from django.core.cache import cache
             
-            # Add only TODAY stats
-            today_stats = get_level3_jobs_today_only()
-            from datetime import datetime
-            today_stats['date'] = datetime.now()
-            today_stats['date_str'] = 'TODAY'
-            context["today_stats"] = today_stats
+            # Cache for 2 minutes to avoid slow repeated DB calls
+            cache_key = 'level3_dashboard_data'
+            cached = cache.get(cache_key)
             
-            # Add folders with 7-day metrics
-            folders = get_level3_folders_with_metrics()
-            context["folders"] = folders
+            if cached:
+                context["today_stats"] = cached["today_stats"]
+                context["folders"] = cached["folders"]
+            else:
+                # Add only TODAY stats
+                today_stats = get_level3_jobs_today_only()
+                from datetime import datetime
+                today_stats['date'] = datetime.now()
+                today_stats['date_str'] = 'TODAY'
+                
+                # Add folders with 7-day metrics
+                folders = get_level3_folders_with_metrics()
+                
+                context["today_stats"] = today_stats
+                context["folders"] = folders
+                
+                # Cache for 2 minutes
+                cache.set(cache_key, {"today_stats": today_stats, "folders": folders}, 120)
         except Exception as e:
             print(f"Error loading Level3 TODAY stats: {e}")
             context["today_stats"] = None
@@ -84,25 +89,41 @@ def report_view(request, app_slug, report_slug):
     # Level3 Failed Jobs Status - Summary + Failed Jobs List
     if view_type == "level3_failed_jobs_status":
         from portal.services.level3_service import get_level3_failed_jobs_status, get_level3_folders_with_metrics
+        from django.core.cache import cache
         from datetime import datetime
-        try:
-            summary, failed_jobs = get_level3_failed_jobs_status()
-            folders = get_level3_folders_with_metrics()  # Get folder metrics for 7-day navigation
-            ctx["summary"] = summary
-            ctx["failed_jobs"] = failed_jobs
-            ctx["folders"] = folders
-            ctx["current_date"] = datetime.now()  # Add current date for display
-        except Exception as e:
-            print(f"Error loading Level3 failed jobs status: {e}")
-            ctx["summary"] = {
-                'total_failed': 0,
-                'completed_after_restart': 0,
-                'pending_jobs': 0,
-                'restarted_running': 0
-            }
-            ctx["failed_jobs"] = []
-            ctx["folders"] = []
+        
+        # Cache for 2 minutes
+        cache_key = 'level3_failed_jobs_status_data'
+        cached = cache.get(cache_key)
+        
+        if cached:
+            ctx.update(cached)
             ctx["current_date"] = datetime.now()
+        else:
+            try:
+                summary, failed_jobs = get_level3_failed_jobs_status()
+                folders = get_level3_folders_with_metrics()
+                ctx["summary"] = summary
+                ctx["failed_jobs"] = failed_jobs
+                ctx["folders"] = folders
+                ctx["current_date"] = datetime.now()
+                
+                cache.set(cache_key, {
+                    "summary": summary,
+                    "failed_jobs": failed_jobs,
+                    "folders": folders,
+                }, 120)
+            except Exception as e:
+                print(f"Error loading Level3 failed jobs status: {e}")
+                ctx["summary"] = {
+                    'total_failed': 0,
+                    'completed_after_restart': 0,
+                    'pending_jobs': 0,
+                    'restarted_running': 0
+                }
+                ctx["failed_jobs"] = []
+                ctx["folders"] = []
+                ctx["current_date"] = datetime.now()
         
         return render(request, "portal/level3_failed_jobs_status.html", ctx)
     
@@ -459,3 +480,10 @@ def mdm_job_status(request):
         "mdm_insights": mdm_insights,
         "flash_messages": flash_messages,
     })
+
+
+def dh_health_dashboard(request):
+    """
+    DH Health Monitoring Dashboard - embedded view
+    """
+    return render(request, "portal/dh_health_dashboard.html")

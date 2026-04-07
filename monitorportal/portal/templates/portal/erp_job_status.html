@@ -93,7 +93,7 @@
 
         <div class="stat">
             <div class="stat-label">SUCCESS RATE</div>
-            <div class="stat-value {% if erp_data.current_run.success_rate < 80 %}stat-critical{% elif erp_data.current_run.success_rate < 95 %}stat-warning{% else %}stat-success{% endif %}">
+            <div class="stat-value" style="{% if erp_data.current_run.success_rate >= 95 %}color: white; background: linear-gradient(135deg, #28A745, #20C997); border-radius: 10px; padding: 4px 10px;{% elif erp_data.current_run.success_rate >= 80 %}color: #d97706;{% else %}color: #dc2626;{% endif %}">
                 {{ erp_data.current_run.success_rate|floatformat:1 }}%
             </div>
         </div>

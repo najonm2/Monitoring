@@ -28,25 +28,75 @@ MAPDQPRD_DB_CONFIG = {
 
 
 # ---------------------------------------------------------
-# CONNECTION CREATION
+# CONNECTION POOLS (reuse connections instead of open/close)
+# ---------------------------------------------------------
+_pool = None
+_pool_mapdqprd = None
+
+
+def _get_pool() -> oracledb.ConnectionPool:
+    """Lazy-init connection pool for INFA_PCREPO database."""
+    global _pool
+    if _pool is None:
+        dsn = oracledb.makedsn(
+            DB_CONFIG["host"],
+            DB_CONFIG["port"],
+            service_name=DB_CONFIG["service"]
+        )
+        _pool = oracledb.create_pool(
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            dsn=dsn,
+            min=2,
+            max=8,
+            increment=1,
+            getmode=oracledb.POOL_GETMODE_WAIT,
+        )
+    return _pool
+
+
+def _get_pool_mapdqprd() -> oracledb.ConnectionPool:
+    """Lazy-init connection pool for MAPDQPRD database."""
+    global _pool_mapdqprd
+    if _pool_mapdqprd is None:
+        dsn = oracledb.makedsn(
+            MAPDQPRD_DB_CONFIG["host"],
+            MAPDQPRD_DB_CONFIG["port"],
+            service_name=MAPDQPRD_DB_CONFIG["service"]
+        )
+        _pool_mapdqprd = oracledb.create_pool(
+            user=MAPDQPRD_DB_CONFIG["user"],
+            password=MAPDQPRD_DB_CONFIG["password"],
+            dsn=dsn,
+            min=2,
+            max=8,
+            increment=1,
+            getmode=oracledb.POOL_GETMODE_WAIT,
+        )
+    return _pool_mapdqprd
+
+
+# ---------------------------------------------------------
+# CONNECTION CREATION (now uses pool)
 # ---------------------------------------------------------
 def get_conn() -> oracledb.Connection:
     """
-    Creates and returns a new Oracle DB connection
-    using python-oracledb with keyword arguments.
+    Returns a connection from the pool (much faster than creating new ones).
     """
-    dsn = oracledb.makedsn(
-        DB_CONFIG["host"],
-        DB_CONFIG["port"],
-        service_name=DB_CONFIG["service"]
-    )
-
-    conn = oracledb.connect(
-        user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        dsn=dsn
-    )
-    return conn
+    try:
+        return _get_pool().acquire()
+    except Exception:
+        # Fallback to direct connection if pool fails
+        dsn = oracledb.makedsn(
+            DB_CONFIG["host"],
+            DB_CONFIG["port"],
+            service_name=DB_CONFIG["service"]
+        )
+        return oracledb.connect(
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            dsn=dsn
+        )
 
 
 # ---------------------------------------------------------
@@ -132,21 +182,22 @@ def fetch_kv(sql: str) -> dict:
 # ---------------------------------------------------------
 def get_mapdqprd_conn() -> oracledb.Connection:
     """
-    Creates and returns a new Oracle DB connection to MAPDQPRD database
-    Used for MDM, ERP, and ADF applications
+    Returns a connection from the MAPDQPRD pool (much faster than creating new ones).
     """
-    dsn = oracledb.makedsn(
-        MAPDQPRD_DB_CONFIG["host"],
-        MAPDQPRD_DB_CONFIG["port"],
-        service_name=MAPDQPRD_DB_CONFIG["service"]
-    )
-
-    conn = oracledb.connect(
-        user=MAPDQPRD_DB_CONFIG["user"],
-        password=MAPDQPRD_DB_CONFIG["password"],
-        dsn=dsn
-    )
-    return conn
+    try:
+        return _get_pool_mapdqprd().acquire()
+    except Exception:
+        # Fallback to direct connection if pool fails
+        dsn = oracledb.makedsn(
+            MAPDQPRD_DB_CONFIG["host"],
+            MAPDQPRD_DB_CONFIG["port"],
+            service_name=MAPDQPRD_DB_CONFIG["service"]
+        )
+        return oracledb.connect(
+            user=MAPDQPRD_DB_CONFIG["user"],
+            password=MAPDQPRD_DB_CONFIG["password"],
+            dsn=dsn
+        )
 
 
 @contextmanager

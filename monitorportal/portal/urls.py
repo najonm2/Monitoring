@@ -20,8 +20,15 @@ urlpatterns = [
     path("api/level3/today-job-details/", api_views.level3_today_job_details, name="level3_today_job_details"),
     path("api/level3/failed-jobs-details/", api_views.level3_failed_jobs_details, name="level3_failed_jobs_details"),
     
+    # Informatica Workflow Restart API
+    path("api/informatica/restart-workflow/", api_views.restart_workflow, name="restart_workflow"),
+    path("api/informatica/check-workflow-status/", api_views.check_workflow_status, name="check_workflow_status"),
+    
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),
+    
+    # DH Health Dashboard
+    path("dh-health/", views.dh_health_dashboard, name="dh_health_dashboard"),
     
     # AI Dashboard and Endpoints
     path("ai/", ai_views.ai_dashboard, name="ai_dashboard"),
@@ -31,6 +38,7 @@ urlpatterns = [
     path("ai/api/predictions/", ai_views.get_predictions, name="ai_predictions"),
     path("ai/api/patterns/", ai_views.get_patterns, name="ai_patterns"),
     path("ai/api/alerts/", ai_views.get_alerts, name="ai_alerts"),
+    path("ai/api/analyze-error/", ai_views.analyze_error_api, name="ai_analyze_error"),
     path("ai/api/status/", ai_views.get_agent_status, name="ai_status"),
     
     # Backward compatibility - Level3
