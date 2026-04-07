@@ -378,6 +378,19 @@ All styles are in `static/portal/professional_lumen.css`:
 - Follow gradient patterns for headers/buttons
 - Test responsive behavior on mobile
 
+## Documentation
+
+Additional documentation is available in the `docs/` folder:
+
+- **[QUICK_START.md](QUICK_START.md)** - Quick start guide for getting up and running
+- **[docs/PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md)** - High-level project overview
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Deployment procedures and guidelines
+- **[docs/WORKFLOW_RESTART_GUIDE.md](docs/WORKFLOW_RESTART_GUIDE.md)** - Workflow restart feature documentation
+- **[docs/AI_SYSTEM_README.md](docs/AI_SYSTEM_README.md)** - AI/ML features and integration
+- **[docs/CHANGELOG.md](docs/CHANGELOG.md)** - Version history and changes
+- **[docs/INFORMATICA_SETTINGS_EXAMPLE.sh](docs/INFORMATICA_SETTINGS_EXAMPLE.sh)** - Configuration examples
+
 ## Support
 
 For issues or questions:
