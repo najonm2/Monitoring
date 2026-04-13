@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level3 BI Report - {{ report_time|date:"Y-m-d H:i" }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF8C00 0%, #FF6B00 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin: -30px -30px 30px -30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .summary-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #FF8C00;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary-box h2 {
+            margin: 0 0 10px 0;
+            color: #FF8C00;
+            font-size: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            background-color: white;
+        }
+        table caption {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px;
+            text-align: left;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        th {
+            background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-failed {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-running {
+            background-color: #007bff;
+            color: white;
+        }
+        .status-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🔍 Level3 BI Monitoring Report</h1>
+            <p>Generated: {{ report_time|date:"F d, Y - H:i" }} ({{ report_time|date:"T" }})</p>
+        </div>
+
+        {% if has_failures %}
+        <div class="alert alert-danger">
+            🚨 <strong>FAILURES DETECTED!</strong> {{ failure_count }} failure(s) require immediate attention.
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            ✅ <strong>ALL SYSTEMS NORMAL</strong> - No failures detected in current monitoring cycle.
+        </div>
+        {% endif %}
+
+        <div class="summary-box">
+            <h2>📊 Summary</h2>
+            <p><strong>Failures:</strong> {{ failure_count }}</p>
+            <p><strong>Report Sections:</strong> BI Status SLA Compliance, CAPEX Details, ERP Last 8 Runs</p>
+        </div>
+
+        <!-- BI Status Query - SLA Compliance Report -->
+        {% if bi_status_data %}
+        <table>
+            <caption>📊 BI Status - SLA Compliance Report ({{ bi_status_data|length }} applications)</caption>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th style="text-align: center;">App#</th>
+                    <th style="text-align: center;">Pri.</th>
+                    <th>SLA Application</th>
+                    <th>Status</th>
+                    <th>Start Time (MT)</th>
+                    <th>Actual Completion (MT)</th>
+                    <th>Target SLA (MT)</th>
+                    <th style="text-align: center;">SLA Met By (Minutes)</th>
+                    <th style="text-align: center;">Met/Miss?</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in bi_status_data %}
+                <tr>
+                    <td><strong>{{ item.date|default:"-" }}</strong></td>
+                    <td style="text-align: center; color: #3B82F6; font-weight: 700;">{{ item.app_no|default:"-" }}</td>
+                    <td style="text-align: center;">{{ item.priority|default:"-" }}</td>
+                    <td><strong>{{ item.sla_application|default:"-" }}</strong></td>
+                    <td>
+                        {% if item.status == "Complete" %}
+                        <span class="status-badge status-success">✅ {{ item.status }}</span>
+                        {% elif item.status == "Running" %}
+                        <span class="status-badge status-running">⏱️ {{ item.status }}</span>
+                        {% elif item.status == "No Run" or item.status == "Failed" %}
+                        <span class="status-badge status-failed">{{ item.status }}</span>
+                        {% else %}
+                        <span class="status-badge status-warning">{{ item.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">{{ item.start_time|default:"-" }}</td>
+                    <td style="text-align: center;">{{ item.actual_completion|default:"-" }}</td>
+                    <td style="text-align: center;">{{ item.target_sla|default:"-" }}</td>
+                    <td style="text-align: center; font-weight: bold;">
+                        {% if item.sla_met_by_minutes %}
+                            {{ item.sla_met_by_minutes }} min
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if item.met_or_miss == "Met" %}
+                        <span style="color: #10B981; font-weight: bold;">✅ MET</span>
+                        {% elif item.met_or_miss == "Miss" %}
+                        <span style="color: #EF4444; font-weight: bold;">❌ MISS</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <!-- CAPEX Details -->
+        {% if capex_data %}
+        <table>
+            <caption>💰 CAPEX Job Details ({{ capex_data|length }} records)</caption>
+            <thead>
+                <tr>
+                    <th>Application</th>
+                    <th>Dependency</th>
+                    <th>Start Date (MDT)</th>
+                    <th>End Date (MDT)</th>
+                    <th>SLA Met/Miss (MIN)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in capex_data %}
+                <tr>
+                    <td>{{ item.application_name|default:"-" }}</td>
+                    <td>{{ item.dependency_name|default:"-" }}</td>
+                    <td>{{ item.start_date_mdt|default:"-" }}</td>
+                    <td>{{ item.end_date_mdt|default:"-" }}</td>
+                    <td style="font-weight: bold;">
+                        {% if item.sla_met_miss_min < 0 %}
+                        <span style="color: #EF4444;">{{ item.sla_met_miss_min }} min (MISSED)</span>
+                        {% else %}
+                        <span style="color: #10B981;">{{ item.sla_met_miss_min }} min (MET)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.status_cd == "Succeeded" %}
+                        <span class="status-badge status-success">{{ item.status_cd }}</span>
+                        {% elif item.status_cd == "Failed" %}
+                        <span class="status-badge status-failed">{{ item.status_cd }}</span>
+                        {% elif item.status_cd == "Running" %}
+                        <span class="status-badge status-running">{{ item.status_cd }}</span>
+                        {% else %}
+                        <span class="status-badge status-warning">{{ item.status_cd }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="summary-box">
+            <h2>💰 CAPEX Job Details</h2>
+            <p style="color: #6c757d; font-style: italic;">No CAPEX data available for this period.</p>
+        </div>
+        {% endif %}
+
+        <!-- ERP Application - Last 8 Runs Status -->
+        {% if erp_data.success and erp_data.last_8_runs %}
+        <table>
+            <caption>🏢 ERP Application - Last 8 Runs Status (AI Insights)</caption>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Run Time (MST)</th>
+                    <th>End Time (MST)</th>
+                    <th style="text-align: center;">Duration</th>
+                    <th style="text-align: center;">Total Jobs</th>
+                    <th style="text-align: center;">Succeeded</th>
+                    <th style="text-align: center;">Running</th>
+                    <th style="text-align: center;">Failed</th>
+                    <th style="text-align: center;">Suspended</th>
+                    <th style="text-align: center;">Success %</th>
+                    <th style="text-align: center;">Status</th>
+                    <th style="text-align: center;">SLA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for run in erp_data.last_8_runs %}
+                <tr {% if forloop.first %}style="background: #FFFBF0; font-weight: 600;"{% endif %}>
+                    <td style="text-align: center;">
+                        {% if forloop.first %}
+                        <span class="status-badge status-warning" style="font-weight: bold; font-size: 10px;">LATEST</span>
+                        {% else %}
+                        {{ forloop.counter }}
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ run.run_label }}</strong></td>
+                    <td style="font-size: 11px; color: #666;">{{ run.end_time|default:"N/A" }}</td>
+                    <td style="text-align: center; font-weight: 500;">
+                        {% if run.duration_minutes %}
+                        {{ run.duration_minutes|floatformat:0 }} min
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-weight: 600;">{{ run.total_jobs }}</td>
+                    <td style="text-align: center; color: #28A745; font-weight: 600;">{{ run.succeeded }}</td>
+                    <td style="text-align: center;">
+                        {% if run.running > 0 %}
+                        <span style="color: #FFC107; font-weight: 600;">{{ run.running }}</span>
+                        {% else %}
+                        <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.failed > 0 %}
+                        <span style="color: #DC3545; font-weight: 600;">{{ run.failed }}</span>
+                        {% else %}
+                        <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.suspended > 0 %}
+                        <span style="color: #FF8C00; font-weight: 600;">{{ run.suspended }}</span>
+                        {% else %}
+                        <span style="color: #999;">0</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-weight: 600;">
+                        {% if run.success_rate >= 95 %}
+                        <span style="color: #28A745;">{{ run.success_rate|floatformat:1 }}%</span>
+                        {% elif run.success_rate >= 80 %}
+                        <span style="color: #FFC107;">{{ run.success_rate|floatformat:1 }}%</span>
+                        {% else %}
+                        <span style="color: #DC3545;">{{ run.success_rate|floatformat:1 }}%</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if run.run_status == "FAILED" %}
+                        <span class="status-badge status-failed">FAILED</span>
+                        {% elif run.run_status == "RUNNING" %}
+                        <span class="status-badge status-running">RUNNING</span>
+                        {% elif run.run_status == "SUCCESS" %}
+                        <span class="status-badge status-success">SUCCESS</span>
+                        {% else %}
+                        <span class="status-badge">{{ run.run_status|default:"UNKNOWN" }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-size: 11px;">
+                        {% if run.sla_status == "MET" %}
+                        <span style="color: #28A745; font-weight: 600;">✓ MET<br>({{ run.sla_met_by|floatformat:0 }}m early)</span>
+                        {% elif run.sla_status == "MISSED" %}
+                        <span style="color: #DC3545; font-weight: 600;">✗ MISSED<br>({{ run.sla_met_by|floatformat:0 }}m over)</span>
+                        {% elif run.sla_status == "IN PROGRESS" %}
+                        <span style="color: #FFC107; font-weight: 600;">⏱️ IN PROGRESS</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% elif erp_data.success and erp_data.current_run %}
+        <table>
+            <caption>🏢 ERP Current Run Status</caption>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Completed</strong></td>
+                    <td><span class="status-badge status-success">{{ erp_data.current_run.completed|default:0 }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Running</strong></td>
+                    <td><span class="status-badge status-running">{{ erp_data.current_run.running|default:0 }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Failed</strong></td>
+                    <td><span class="status-badge status-failed">{{ erp_data.current_run.failed|default:0 }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>ERP Run Time</strong></td>
+                    <td>{{ erp_data.current_run.erp_run_time|default:"-" }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <div class="summary-box">
+            <h2>🏢 ERP Application Status</h2>
+            <p style="color: #6c757d; font-style: italic;">No ERP data available.</p>
+        </div>
+        {% endif %}
+
+        {% if not bi_feed_data and not capex_data and not bi_status_data and not erp_data.success %}
+        <div class="no-data">
+            ℹ️ No data available for this report period.
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            <p><strong>PASE Monitor Portal</strong> - Automated Email Report</p>
+            <p>This email is sent every 3 hours. To modify recipients or settings, contact the PASE Team.</p>
+            <p>View full dashboard: <a href="{{ SERVER_URL }}/level3-bi/">{{ SERVER_URL }}/level3-bi/</a></p>
+        </div>
+    </div>
+</body>
+</html>

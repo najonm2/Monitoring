@@ -187,12 +187,41 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # -----------------------------------------------------------------------------
+# EMAIL CONFIGURATION (for automated reports and alerts)
+# -----------------------------------------------------------------------------
+# Email backend options:
+# - smtp: Send via SMTP (requires firewall access)
+# - file: Save emails as .eml files (works without admin access)
+# - console: Print to console (development only)
+EMAIL_BACKEND_TYPE = os.getenv('EMAIL_BACKEND_TYPE', 'file')  # smtp, file, or console
+
+if EMAIL_BACKEND_TYPE == 'smtp':
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+elif EMAIL_BACKEND_TYPE == 'file':
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')  # Folder to save emails
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# SMTP Configuration for Lumen/Corporate Email (when using SMTP backend)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'mailrelay.corp.intranet')  # Lumen internal SMTP relay
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '25'))  # Standard SMTP port
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')  # No auth required for relay
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'naresh.m@lumen.com')
+
+# URL for screenshot capture (used by email service)
+SERVER_URL = os.getenv('SERVER_URL', 'http://127.0.0.1:8000')
+
+# -----------------------------------------------------------------------------
 # INFORMATICA POWERCENTER CONFIGURATION (for workflow restart)
 # -----------------------------------------------------------------------------
 # Path to pmcmd (PowerCenter Command Line Program)
 # Windows example: 'C:\\Program Files\\Informatica\\PowerCenter\\server\\bin\\pmcmd.exe'
 # Linux example: '/opt/informatica/server/bin/pmcmd'
-INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', '/prd1/app/informatica/infa_shared/server/bin/pmcmd')
+INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', '/prd1/usr/local/informatica/CDIPC/Informatica/platform/home/server/bin/pmcmd')
 
 # Server and connection details
 INFORMATICA_HOST = os.getenv('INFORMATICA_HOST', 'azeus2lipcp01')
@@ -201,11 +230,14 @@ INFORMATICA_PORT = os.getenv('INFORMATICA_PORT', '6005')
 # Repository and domain configuration
 INFORMATICA_DOMAIN = os.getenv('INFORMATICA_DOMAIN', 'Domain_INFA_PRD1')
 INFORMATICA_REPOSITORY = os.getenv('INFORMATICA_REPOSITORY', 'PCREPO_PRD1_01')
-INFORMATICA_INTEGRATION_SERVICE = os.getenv('INFORMATICA_INTEGRATION_SERVICE', 'infr01p_app')
+INFORMATICA_INTEGRATION_SERVICE = os.getenv('INFORMATICA_INTEGRATION_SERVICE', 'IS_GRID_BI')
 
 # Credentials for pmcmd authentication
-INFORMATICA_USERNAME = os.getenv('INFORMATICA_USERNAME', 'Ab64033')
+INFORMATICA_USERNAME = os.getenv('INFORMATICA_USERNAME', 'ab64033')
 INFORMATICA_PASSWORD = os.getenv('INFORMATICA_PASSWORD', 'Samsungs26@123')
+
+# User Security Domain (required for CTL/Lumen users)
+INFORMATICA_USER_SECURITY_DOMAIN = os.getenv('INFORMATICA_USER_SECURITY_DOMAIN', 'CTL')
 
 # Default folder for workflows (can be overridden per restart request)
 INFORMATICA_DEFAULT_FOLDER = os.getenv('INFORMATICA_DEFAULT_FOLDER', 'Default')

@@ -301,23 +301,74 @@ DB_CONFIG = {
 
 ## Deployment
 
+### Deployment Options
+
+This application supports multiple deployment methods:
+
+1. **Azure Cloud** (Recommended for Production)
+   - Azure App Service (PaaS) - Easiest, fully managed
+   - Azure Container Instances
+   - Azure Virtual Machines
+
+2. **Windows Server**
+   - IIS with FastCGI
+   - Windows Service
+
+3. **Linux Server**
+   - Gunicorn + Nginx
+   - Ubuntu/RHEL/CentOS
+
+4. **Docker**
+   - Docker Compose
+   - Container orchestration
+
+### Quick Start: Deploy to Azure
+
+The fastest way to get started in production:
+
+```powershell
+# 1. Install Azure CLI
+winget install Microsoft.AzureCLI
+
+# 2. Login to Azure
+az login
+
+# 3. Create and deploy (5 minutes)
+# See: docs/AZURE_DEPLOYMENT_QUICK_START.md
+```
+
+**📚 Azure Deployment Documentation:**
+- [Azure Quick Start Guide](docs/AZURE_DEPLOYMENT_QUICK_START.md) - Deploy in 5 minutes
+- [Azure Deployment Checklist](docs/AZURE_DEPLOYMENT_CHECKLIST.md) - Step-by-step checklist
+- [Full Deployment Guide](docs/DEPLOYMENT.md#method-4-azure-cloud-deployment) - Comprehensive guide
+
 ### Production Checklist
 
 - [ ] Set `DEBUG = False` in settings.py
 - [ ] Configure `ALLOWED_HOSTS`
 - [ ] Use environment variables for credentials
-- [ ] Set up production database (PostgreSQL/MySQL)
+- [ ] Set up production database (PostgreSQL/MySQL) or keep SQLite
 - [ ] Configure static files collection
 - [ ] Set up WSGI server (Gunicorn/uWSGI)
-- [ ] Configure reverse proxy (Nginx/Apache)
+- [ ] Configure reverse proxy (Nginx/Apache) or use Azure App Service
 - [ ] Enable HTTPS
-- [ ] Set up logging
+- [ ] Set up logging and monitoring (Application Insights for Azure)
 - [ ] Configure backup strategy
 
 ### Example Production Command
 ```bash
+# Local/VM deployment
 gunicorn monitorportal.wsgi:application --bind 0.0.0.0:8000
+
+# Azure App Service (automatic via startup.sh)
+gunicorn --bind=0.0.0.0:8000 --workers=4 --timeout=600 monitorportal.wsgi:application
 ```
+
+### Deployment Documentation
+
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md) - Complete deployment guide for all methods
+- [AZURE_DEPLOYMENT_QUICK_START.md](docs/AZURE_DEPLOYMENT_QUICK_START.md) - Fast Azure deployment
+- [AZURE_DEPLOYMENT_CHECKLIST.md](docs/AZURE_DEPLOYMENT_CHECKLIST.md) - Deployment checklist
 
 ## Troubleshooting
 

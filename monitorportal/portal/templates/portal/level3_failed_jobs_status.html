@@ -50,13 +50,20 @@
             <p style="margin: 0; font-size: 1.1rem; opacity: 0.9; line-height: 1.5;">{{ report.description }}</p>
         </div>
         
-        {% if report.ssrs_url %}
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <a href="{{ report.ssrs_url }}" target="_blank" rel="noopener" style="display: inline-block; background: var(--primary-orange); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            {% if report.ssrs_url %}
+            <a href="{{ report.ssrs_url }}" target="_blank" rel="noopener" style="display: inline-block; background: var(--primary-orange); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);"
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 106, 19, 0.4)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 106, 19, 0.3)'">
                 🔗 Open SSRS Report
             </a>
+            {% endif %}
+            <a href="/informatica/manual-restart/" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);"
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.4)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                🔧 Manual Restart
+            </a>
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -130,6 +137,26 @@
     </div>
 </div>
 
+<!-- QUICK ACTIONS BANNER -->
+<div style="margin: 40px 0;">
+    <a href="/informatica/manual-restart/" style="display: block; text-decoration: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 24px 32px; border-radius: 12px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;"
+       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)'"
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(16, 185, 129, 0.3)'">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="font-size: 2.5rem;">🔧</span>
+                <div>
+                    <h3 style="margin: 0 0 6px 0; font-size: 1.5rem; font-weight: 700;">Manual Informatica Restart</h3>
+                    <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Submit manual restart requests for workflows/tasks not in the failed jobs list (Developer Special Requests)</p>
+                </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; white-space: nowrap;">
+                Open Form →
+            </div>
+        </div>
+    </a>
+</div>
+
 <!-- FAILED JOBS TABLE -->
 <div style="margin-top: 40px;">
     <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px; color: #1f2937; display: flex; align-items: center; gap: 12px;">
@@ -195,11 +222,11 @@
                             {% endif %}
                         </td>
                         <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
-                            <button onclick="restartWorkflow('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}')" 
+                            <button onclick="showRestartOptions('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}', '{{ job.grid_name|escapejs }}')" 
                                     style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(16,185,129,0.3);"
                                     onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
                                     onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'"
-                                    title="Restart session: {{ job.session_name }}">
+                                    title="Restart with options">
                                 🔄 Restart
                             </button>
                         </td>
@@ -794,6 +821,125 @@ function restartWorkflow(workflowName, folderName, sessionName) {
         button.innerHTML = originalHTML;
         alert(`❌ ERROR!\n\nFailed to communicate with server.\n\n${error.message}`);
     });
+}
+</script>
+
+<!-- Restart Options Modal -->
+<div id="restartModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);">
+    <div style="background:#fff; margin:8% auto; padding:30px; width:550px; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#1f2937; font-size:20px; font-weight:700;">🔄 Select Restart Option</h3>
+        <div style="background:#f3f4f6; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <p style="margin:5px 0;"><strong>Workflow:</strong> <span id="modalWorkflow" style="color:#2563eb;"></span></p>
+            <p style="margin:5px 0;"><strong>Session:</strong> <span id="modalSession" style="color:#7c3aed;"></span></p>
+            <p style="margin:5px 0;"><strong>Folder:</strong> <span id="modalFolder" style="color:#059669;"></span></p>
+        </div>
+        
+        <div style="margin:20px 0;">
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="1" checked style="margin-right:8px;">
+                <strong style="color:#1f2937;">1. Restart Task Only</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts only this specific session/task</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="2" style="margin-right:8px;">
+                <strong style="color:#1f2937;">2. Restart Workflow from Task</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts workflow starting from this task onward</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="3" style="margin-right:8px;">
+                <strong style="color:#1f2937;">3. Restart Entire Workflow</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts the complete workflow from the beginning</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="4" style="margin-right:8px;">
+                <strong style="color:#1f2937;">4. Recover Workflow from Task</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Recovers workflow from this task in recovery mode</div>
+            </label>
+        </div>
+        
+        <div style="text-align:right; margin-top:25px; border-top:1px solid #e5e7eb; padding-top:20px;">
+            <button onclick="closeRestartModal()" style="padding:10px 24px; margin-right:10px; background:#f3f4f6; color:#374151; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition:all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">Cancel</button>
+            <button onclick="executeRestart()" style="padding:10px 24px; background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.4)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 2px 8px rgba(59,130,246,0.3)'">🚀 Execute Restart</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRestartData = {};
+
+function showRestartOptions(workflowName, folderName, sessionName, integrationService) {
+    currentRestartData = {
+        workflow_name: workflowName,
+        folder_name: folderName,
+        session_name: sessionName,
+        integration_service: integrationService
+    };
+    
+    document.getElementById('modalWorkflow').textContent = workflowName;
+    document.getElementById('modalSession').textContent = sessionName;
+    document.getElementById('modalFolder').textContent = folderName;
+    document.getElementById('restartModal').style.display = 'block';
+}
+
+function closeRestartModal() {
+    document.getElementById('restartModal').style.display = 'none';
+}
+
+function executeRestart() {
+    const selectedOption = document.querySelector('input[name="restartOption"]:checked').value;
+    
+    const data = {
+        ...currentRestartData,
+        restart_option: parseInt(selectedOption)
+    };
+    
+    closeRestartModal();
+    
+    // Show loading message
+    const optionNames = {
+        1: 'Restart Task',
+        2: 'Restart from Task',
+        3: 'Restart Workflow',
+        4: 'Recover Workflow'
+    };
+    
+    alert(`⏳ Executing: ${optionNames[selectedOption]}\n\nWorkflow: ${data.workflow_name}\nSession: ${data.session_name}\n\nPlease wait...`);
+    
+    fetch('/api/informatica/restart-with-options/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(`✅ SUCCESS!\n\n${result.message}\n\nWorkflow: ${data.workflow_name}\nOption: ${optionNames[selectedOption]}`);
+            location.reload();
+        } else {
+            alert(`❌ FAILED!\n\n${result.message}\n\nWorkflow: ${data.workflow_name}`);
+        }
+    })
+    .catch(error => {
+        alert(`❌ ERROR!\n\nFailed to execute restart.\n\n${error.message}`);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
 

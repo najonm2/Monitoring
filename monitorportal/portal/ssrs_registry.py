@@ -42,6 +42,14 @@ APPS = [
                 "ssrs_url": "",
                 "view_type": "level3_7day_insights",
             },
+            {
+                "name": "Manual Informatica Restart",
+                "slug": "manual-restart",
+                "description": "Manual restart requests for workflows/tasks (Developer Special Requests)",
+                "ssrs_url": "",
+                "view_type": "redirect",
+                "redirect_url": "/informatica/manual-restart/",
+            },
         ],
     },
     {

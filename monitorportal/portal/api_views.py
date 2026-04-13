@@ -567,3 +567,76 @@ def check_workflow_status(request):
             'success': False,
             'message': f'Error checking status: {str(e)}'
         }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def restart_workflow_with_options(request):
+    """
+    API endpoint to restart workflow/session with 4 different options
+    
+    POST body (JSON):
+    {
+        "workflow_name": "wkf_Load_CDW_ASL_ICG_GRANITE",
+        "folder_name": "B_CDW_ASL_ICG_GRANITE",
+        "restart_option": 1,  // 1=Task, 2=From Task, 3=Workflow, 4=Recover
+        "session_name": "s_m_Load_SITE_INST"  // Required for options 1, 2, 4
+    }
+    """
+    import json
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    from django.conf import settings
+    
+    try:
+        body = json.loads(request.body)
+        workflow_name = body.get('workflow_name')
+        folder_name = body.get('folder_name', settings.INFORMATICA_DEFAULT_FOLDER)
+        restart_option = int(body.get('restart_option', 1))
+        session_name = body.get('session_name')
+        integration_service = body.get('integration_service', settings.INFORMATICA_INTEGRATION_SERVICE)
+        
+        if not workflow_name or not folder_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'workflow_name and folder_name are required'
+            }, status=400)
+        
+        # Initialize restart service
+        service = InformaticaRestartService()
+        
+        # Check configuration
+        if not service.is_configured():
+            return JsonResponse({
+                'success': False,
+                'message': 'Informatica PowerCenter is not configured.'
+            }, status=503)
+        
+        # Execute restart with selected option
+        result = service.restart_with_options(
+            workflow_name=workflow_name,
+            folder_name=folder_name,
+            restart_option=restart_option,
+            session_name=session_name,
+            integration_service=integration_service
+        )
+        
+        status_code = 200 if result['success'] else 500
+        return JsonResponse(result, status=status_code)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON in request body'
+        }, status=400)
+    except ValueError as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Invalid restart_option: {str(e)}'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=500)

@@ -487,3 +487,11 @@ def dh_health_dashboard(request):
     DH Health Monitoring Dashboard - embedded view
     """
     return render(request, "portal/dh_health_dashboard.html")
+
+
+def manual_informatica_restart(request):
+    """
+    Manual Informatica Restart page for developer special requests
+    Allows submitting restart requests with Grid selection, Workflow, Task, and restart options
+    """
+    return render(request, "portal/manual_restart.html")

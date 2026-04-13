@@ -256,6 +256,523 @@ docker-compose up -d
 
 ---
 
+## Method 4: Azure Cloud Deployment
+
+### Option 4A: Azure App Service (PaaS) - Recommended
+
+Azure App Service is the easiest and most managed option for deploying Django applications.
+
+#### Prerequisites
+
+```powershell
+# Install Azure CLI
+winget install Microsoft.AzureCLI
+
+# Login to Azure
+az login
+
+# Set your subscription
+az account set --subscription "your-subscription-name"
+```
+
+#### Step 1: Create Azure Resources
+
+```powershell
+# Set variables
+$RESOURCE_GROUP="rg-monitorportal-prod"
+$LOCATION="eastus"  # or your preferred region
+$APP_SERVICE_PLAN="asp-monitorportal"
+$WEB_APP_NAME="monitorportal-app"  # Must be globally unique
+
+# Create resource group
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# Create App Service Plan (Linux, Python 3.11)
+az appservice plan create `
+    --name $APP_SERVICE_PLAN `
+    --resource-group $RESOURCE_GROUP `
+    --sku B2 `
+    --is-linux
+
+# Create Web App
+az webapp create `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --plan $APP_SERVICE_PLAN `
+    --runtime "PYTHON:3.11"
+```
+
+#### Step 2: Configure Application Settings
+
+```powershell
+# Set environment variables in Azure
+az webapp config appsettings set `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --settings `
+        DEBUG=False `
+        SECRET_KEY="your-secure-secret-key-here" `
+        ALLOWED_HOSTS="$WEB_APP_NAME.azurewebsites.net" `
+        LEVEL3_DB_USER="your-db-user" `
+        LEVEL3_DB_PASSWORD="your-db-password" `
+        LEVEL3_DB_HOST="10.120.190.4" `
+        LEVEL3_DB_PORT="1521" `
+        LEVEL3_DB_SERVICE="infr01p_app" `
+        MAPDQPRD_DB_USER="your-db-user" `
+        MAPDQPRD_DB_PASSWORD="your-db-password" `
+        MAPDQPRD_DB_HOST="RACORAP32-SCAN.CORP.INTRANET" `
+        MAPDQPRD_DB_PORT="1521" `
+        MAPDQPRD_DB_SERVICE="SVC_IDG01P" `
+        WEBSITES_PORT="8000" `
+        SCM_DO_BUILD_DURING_DEPLOYMENT="true"
+```
+
+#### Step 3: Prepare Deployment Files
+
+Create `.deployment` in project root:
+```ini
+[config]
+SCM_DO_BUILD_DURING_DEPLOYMENT = true
+```
+
+Create `startup.sh` in project root:
+```bash
+#!/bin/bash
+cd monitorportal
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Run database migrations
+python manage.py migrate --noinput
+
+# Start Gunicorn
+gunicorn --bind=0.0.0.0:8000 --workers=4 --timeout=600 --access-logfile '-' --error-logfile '-' monitorportal.wsgi:application
+```
+
+Create `requirements-azure.txt`:
+```txt
+Django>=6.0.0,<7.0.0
+python-oracledb>=2.0.0
+gunicorn>=21.0.0
+whitenoise>=6.0.0
+```
+
+#### Step 4: Update settings.py for Azure
+
+Add to `monitorportal/settings.py`:
+```python
+import os
+
+# Azure App Service detection
+RUNNING_IN_AZURE = os.getenv('WEBSITE_SITE_NAME') is not None
+
+if RUNNING_IN_AZURE:
+    DEBUG = False
+    
+    # WhiteNoise for static files
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Configure ALLOWED_HOSTS from environment
+    ALLOWED_HOSTS = [
+        os.getenv('WEBSITE_HOSTNAME'),
+        os.getenv('WEBSITE_SITE_NAME') + '.azurewebsites.net'
+    ]
+    
+    # Security settings for production
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+```
+
+#### Step 5: Deploy to Azure
+
+**Option 5A: Using Azure CLI (Local Git)**
+```powershell
+# Configure local Git deployment
+az webapp deployment source config-local-git `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP
+
+# Get deployment credentials
+$GIT_URL = az webapp deployment source show `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --query "repoUrl" -o tsv
+
+# Add Azure remote and push
+cd c:\Users\ab64033\source\repos\infa_monitor_portal
+git init  # if not already a git repo
+git add .
+git commit -m "Initial deployment to Azure"
+git remote add azure $GIT_URL
+git push azure main  # or master
+```
+
+**Option 5B: Using ZIP Deployment**
+```powershell
+# Create deployment package
+cd c:\Users\ab64033\source\repos\infa_monitor_portal
+Compress-Archive -Path * -DestinationPath deploy.zip -Force
+
+# Deploy
+az webapp deployment source config-zip `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --src deploy.zip
+```
+
+**Option 5C: Using VS Code Azure Extension**
+1. Install "Azure App Service" extension in VS Code
+2. Right-click project folder → "Deploy to Web App"
+3. Select subscription and web app
+4. Confirm deployment
+
+#### Step 6: Configure Networking for Oracle Databases
+
+If your Oracle databases are on-premises or in a VNet:
+
+```powershell
+# Option 1: VNet Integration (for databases in Azure VNet)
+az webapp vnet-integration add `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --vnet "your-vnet-name" `
+    --subnet "your-subnet-name"
+
+# Option 2: Hybrid Connection (for on-premises databases)
+# Configure in Azure Portal → App Service → Networking → Hybrid connections
+```
+
+#### Step 7: Enable Application Insights (Monitoring)
+
+```powershell
+# Create Application Insights
+az extension add --name application-insights
+az monitor app-insights component create `
+    --app monitorportal-insights `
+    --location $LOCATION `
+    --resource-group $RESOURCE_GROUP `
+    --application-type web
+
+# Get instrumentation key
+$INSIGHTS_KEY = az monitor app-insights component show `
+    --app monitorportal-insights `
+    --resource-group $RESOURCE_GROUP `
+    --query "instrumentationKey" -o tsv
+
+# Configure App Service to use Application Insights
+az webapp config appsettings set `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --settings APPINSIGHTS_INSTRUMENTATIONKEY=$INSIGHTS_KEY
+```
+
+#### Step 8: Configure Custom Domain (Optional)
+
+```powershell
+# Add custom domain
+az webapp config hostname add `
+    --webapp-name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --hostname "monitorportal.yourdomain.com"
+
+# Enable HTTPS
+az webapp config ssl bind `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --certificate-thumbprint "your-cert-thumbprint" `
+    --ssl-type SNI
+```
+
+#### Scaling Configuration
+
+```powershell
+# Auto-scaling rules
+az monitor autoscale create `
+    --name "monitorportal-autoscale" `
+    --resource-group $RESOURCE_GROUP `
+    --resource $APP_SERVICE_PLAN `
+    --resource-type Microsoft.Web/serverfarms `
+    --min-count 2 `
+    --max-count 5 `
+    --count 2
+
+# Scale up based on CPU
+az monitor autoscale rule create `
+    --autoscale-name "monitorportal-autoscale" `
+    --resource-group $RESOURCE_GROUP `
+    --condition "Percentage CPU > 70 avg 5m" `
+    --scale out 1
+```
+
+---
+
+### Option 4B: Azure Container Instances (ACI)
+
+For containerized deployment with less management overhead than AKS.
+
+#### Step 1: Build and Push Docker Image
+
+```powershell
+# Create Azure Container Registry
+$ACR_NAME="monitorportalacr"  # Must be globally unique
+az acr create `
+    --name $ACR_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --sku Basic `
+    --admin-enabled true
+
+# Login to ACR
+az acr login --name $ACR_NAME
+
+# Build and push image
+cd c:\Users\ab64033\source\repos\infa_monitor_portal
+docker build -t monitorportal:latest -f Dockerfile .
+docker tag monitorportal:latest "$ACR_NAME.azurecr.io/monitorportal:latest"
+docker push "$ACR_NAME.azurecr.io/monitorportal:latest"
+```
+
+#### Step 2: Create Container Instance
+
+```powershell
+# Get ACR credentials
+$ACR_PASSWORD = az acr credential show `
+    --name $ACR_NAME `
+    --query "passwords[0].value" -o tsv
+
+# Create container instance
+az container create `
+    --name monitorportal-container `
+    --resource-group $RESOURCE_GROUP `
+    --image "$ACR_NAME.azurecr.io/monitorportal:latest" `
+    --registry-login-server "$ACR_NAME.azurecr.io" `
+    --registry-username $ACR_NAME `
+    --registry-password $ACR_PASSWORD `
+    --dns-name-label monitorportal `
+    --ports 8000 `
+    --cpu 2 `
+    --memory 4 `
+    --environment-variables `
+        DEBUG=False `
+        SECRET_KEY="your-secret-key" `
+        LEVEL3_DB_USER="user" `
+        LEVEL3_DB_PASSWORD="password"
+
+# Get the FQDN
+az container show `
+    --name monitorportal-container `
+    --resource-group $RESOURCE_GROUP `
+    --query "ipAddress.fqdn"
+```
+
+---
+
+### Option 4C: Azure Virtual Machine (IaaS)
+
+For full control, deploy on a Windows or Linux VM.
+
+#### Windows VM Deployment
+
+```powershell
+# Create Windows VM
+az vm create `
+    --name monitorportal-vm `
+    --resource-group $RESOURCE_GROUP `
+    --image Win2022Datacenter `
+    --size Standard_D2s_v3 `
+    --admin-username azureuser `
+    --admin-password "YourSecurePassword123!"
+
+# Open port 80 and 443
+az vm open-port --port 80 --resource-group $RESOURCE_GROUP --name monitorportal-vm
+az vm open-port --port 443 --resource-group $RESOURCE_GROUP --name monitorportal-vm
+
+# Connect via RDP and follow "Method 1: Windows Server with IIS" steps above
+```
+
+#### Linux VM Deployment
+
+```powershell
+# Create Linux VM
+az vm create `
+    --name monitorportal-vm `
+    --resource-group $RESOURCE_GROUP `
+    --image Ubuntu2204 `
+    --size Standard_D2s_v3 `
+    --admin-username azureuser `
+    --generate-ssh-keys
+
+# Open ports
+az vm open-port --port 80 --resource-group $RESOURCE_GROUP --name monitorportal-vm
+az vm open-port --port 443 --resource-group $RESOURCE_GROUP --name monitorportal-vm
+
+# SSH into VM and follow "Method 2: Linux Server" steps above
+```
+
+---
+
+### Azure Deployment Best Practices
+
+#### 1. Use Azure Key Vault for Secrets
+
+```powershell
+# Create Key Vault
+az keyvault create `
+    --name "monitorportal-kv" `
+    --resource-group $RESOURCE_GROUP `
+    --location $LOCATION
+
+# Store secrets
+az keyvault secret set `
+    --vault-name "monitorportal-kv" `
+    --name "django-secret-key" `
+    --value "your-secret-key"
+
+az keyvault secret set `
+    --vault-name "monitorportal-kv" `
+    --name "level3-db-password" `
+    --value "your-db-password"
+
+# Grant App Service access to Key Vault
+$APP_IDENTITY = az webapp identity assign `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --query "principalId" -o tsv
+
+az keyvault set-policy `
+    --name "monitorportal-kv" `
+    --object-id $APP_IDENTITY `
+    --secret-permissions get list
+
+# Reference secrets in App Settings
+az webapp config appsettings set `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --settings `
+        SECRET_KEY="@Microsoft.KeyVault(SecretUri=https://monitorportal-kv.vault.azure.net/secrets/django-secret-key/)" `
+        LEVEL3_DB_PASSWORD="@Microsoft.KeyVault(SecretUri=https://monitorportal-kv.vault.azure.net/secrets/level3-db-password/)"
+```
+
+#### 2. Enable Diagnostic Logging
+
+```powershell
+# Create Log Analytics Workspace
+az monitor log-analytics workspace create `
+    --resource-group $RESOURCE_GROUP `
+    --workspace-name monitorportal-logs
+
+# Enable diagnostic settings
+az monitor diagnostic-settings create `
+    --name monitorportal-diagnostics `
+    --resource "/subscriptions/{subscription-id}/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Web/sites/$WEB_APP_NAME" `
+    --logs '[{"category": "AppServiceHTTPLogs", "enabled": true}, {"category": "AppServiceConsoleLogs", "enabled": true}]' `
+    --metrics '[{"category": "AllMetrics", "enabled": true}]' `
+    --workspace monitorportal-logs
+```
+
+#### 3. Set Up Azure Front Door (CDN + WAF)
+
+```powershell
+# Create Front Door
+az extension add --name front-door
+az network front-door create `
+    --name monitorportal-fd `
+    --resource-group $RESOURCE_GROUP `
+    --backend-address "$WEB_APP_NAME.azurewebsites.net" `
+    --accepted-protocols Http Https
+```
+
+#### 4. Backup Strategy
+
+```powershell
+# Enable automatic backups
+az webapp config backup create `
+    --resource-group $RESOURCE_GROUP `
+    --webapp-name $WEB_APP_NAME `
+    --container-url "https://yourstorageaccount.blob.core.windows.net/backups?{SAS-token}" `
+    --backup-name initial-backup
+
+# Schedule automatic backups
+az webapp config backup update `
+    --resource-group $RESOURCE_GROUP `
+    --webapp-name $WEB_APP_NAME `
+    --container-url "https://yourstorageaccount.blob.core.windows.net/backups?{SAS-token}" `
+    --frequency 1d `
+    --retain-one true `
+    --retention 30
+```
+
+#### 5. Cost Optimization
+
+```powershell
+# Use deployment slots for staging
+az webapp deployment slot create `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --slot staging
+
+# Deploy to staging first
+az webapp deployment source config-zip `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --slot staging `
+    --src deploy.zip
+
+# Swap to production after testing
+az webapp deployment slot swap `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --slot staging
+```
+
+---
+
+### Azure Troubleshooting
+
+#### View Application Logs
+```powershell
+# Stream logs in real-time
+az webapp log tail `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP
+
+# Download logs
+az webapp log download `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP `
+    --log-file webapp_logs.zip
+```
+
+#### SSH into App Service Container
+```powershell
+az webapp ssh `
+    --name $WEB_APP_NAME `
+    --resource-group $RESOURCE_GROUP
+```
+
+#### Common Issues
+
+**Issue**: Oracle connection timeout
+- **Solution**: Configure VNet Integration or Hybrid Connection
+- Verify firewall rules allow Azure IP ranges
+- Check NSG (Network Security Group) rules
+
+**Issue**: Static files not loading
+- **Solution**: Run `python manage.py collectstatic`
+- Add `whitenoise` to middleware
+- Verify `STATIC_ROOT` is configured
+
+**Issue**: 500 Internal Server Error
+- **Solution**: Check Application Insights logs
+- Enable detailed error pages temporarily
+- Verify all environment variables are set
+
+---
+
 ## Environment Variables Configuration
 
 ### Create .env file
@@ -605,4 +1122,4 @@ Always maintain ability to rollback:
 
 ---
 
-**Last Updated**: March 2, 2026
+**Last Updated**: April 9, 2026
