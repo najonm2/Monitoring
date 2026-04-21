@@ -24,9 +24,11 @@ urlpatterns = [
     path("api/informatica/restart-workflow/", api_views.restart_workflow, name="restart_workflow"),
     path("api/informatica/check-workflow-status/", api_views.check_workflow_status, name="check_workflow_status"),
     path("api/informatica/restart-with-options/", api_views.restart_workflow_with_options, name="restart_workflow_with_options"),
+    path("api/informatica/stop-workflow/", api_views.stop_workflow, name="stop_workflow"),
     
-    # Informatica Manual Restart Page
+    # Informatica Manual Restart and Stop Pages
     path("informatica/manual-restart/", views.manual_informatica_restart, name="manual_informatica_restart"),
+    path("informatica/manual-stop/", views.manual_informatica_stop, name="manual_informatica_stop"),
     
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),

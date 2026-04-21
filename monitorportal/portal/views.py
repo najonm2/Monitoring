@@ -495,3 +495,11 @@ def manual_informatica_restart(request):
     Allows submitting restart requests with Grid selection, Workflow, Task, and restart options
     """
     return render(request, "portal/manual_restart.html")
+
+
+def manual_informatica_stop(request):
+    """
+    Manual Informatica Stop/Kill page for stopping running workflows
+    Allows submitting stop/abort requests with Grid selection and Workflow
+    """
+    return render(request, "portal/manual_stop.html")

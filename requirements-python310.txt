@@ -1,0 +1,8 @@
+# Original Requirements (Django 6.0.2 + Python 3.10+)
+# Use this file when upgrading Python to 3.10 or higher
+
+Django>=6.0.0,<7.0.0
+python-oracledb>=2.0.0
+
+# Email and screenshot functionality (optional)
+selenium>=4.0.0  # For capturing screenshots (optional - only needed if screenshot feature is used)

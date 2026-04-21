@@ -27,7 +27,14 @@ class InformaticaRestartService:
     def __init__(self):
         """Initialize with credentials from settings"""
         self.pmcmd_path = getattr(settings, 'INFORMATICA_PMCMD_PATH', 'pmcmd')
-        self.repository =getattr(settings, 'INFORMATICA_REPOSITORY', '')
+        self.pmrep_path = self.pmcmd_path.replace('pmcmd.exe', 'pmrep.exe').replace('PmCmd.exe', 'pmrep.exe')
+        # Set domains file path (same directory as pmrep)
+        import os
+        pmrep_dir = os.path.dirname(self.pmrep_path)
+        self.domains_file = os.path.join(pmrep_dir, 'domains.infa')
+        self.host = getattr(settings, 'INFORMATICA_HOST', '')
+        self.port = getattr(settings, 'INFORMATICA_PORT', '')
+        self.repository = getattr(settings, 'INFORMATICA_REPOSITORY', '')
         self.domain = getattr(settings, 'INFORMATICA_DOMAIN', '')
         self.integration_service = getattr(settings, 'INFORMATICA_INTEGRATION_SERVICE', '')
         self.username = getattr(settings, 'INFORMATICA_USERNAME', '')
@@ -44,6 +51,65 @@ class InformaticaRestartService:
             self.password
         ]
         return all(required_fields)
+    
+    def _get_env(self) -> dict:
+        """Get environment with INFA_DOMAINS_FILE set"""
+        import os
+        env = os.environ.copy()
+        env['INFA_DOMAINS_FILE'] = self.domains_file
+        return env
+    
+    def establish_connection(self) -> Dict[str, Any]:
+        """
+        Establish gateway connection using pmrep connect
+        This must be called before pmcmd commands can work
+        
+        Returns:
+            dict: Connection status
+        """
+        try:
+            cmd = [
+                self.pmrep_path,
+                'connect',
+                '-r', self.repository,
+                '-h', self.host,
+                '-o', self.port,
+                '-n', self.username,
+                '-x', self.password
+            ]
+            
+            # Add user security domain if configured
+            if self.user_security_domain:
+                cmd.extend(['-s', self.user_security_domain])
+            
+            logger.debug(f"Establishing connection to {self.repository}")
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                logger.info(f"Connected to repository {self.repository}")
+                return {'success': True, 'message': 'Connection established'}
+            else:
+                logger.error(f"Failed to connect: {result.stderr or result.stdout}")
+                return {
+                    'success': False,
+                    'message': 'Failed to establish connection',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error establishing connection: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Connection error: {str(e)}',
+                'error': str(e)
+            }
     
     def restart_workflow(
         self,
@@ -70,6 +136,11 @@ class InformaticaRestartService:
                 'message': 'Informatica connection not configured. Check settings.',
                 'error': 'Missing configuration'
             }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
         
         try:
             # Build pmcmd command
@@ -105,7 +176,8 @@ class InformaticaRestartService:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
+                env=self._get_env()
             )
             
             if result.returncode == 0:
@@ -174,6 +246,11 @@ class InformaticaRestartService:
                 'error': 'Missing configuration'
             }
         
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
         try:
             # Build pmcmd starttask command
             cmd = [
@@ -205,7 +282,8 @@ class InformaticaRestartService:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
+                env=self._get_env()
             )
             
             if result.returncode == 0:
@@ -277,6 +355,11 @@ class InformaticaRestartService:
                 'message': 'Informatica connection not configured. Check settings.',
                 'error': 'Missing configuration'
             }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
         
         try:
             # Use provided integration_service or fall back to self.integration_service
@@ -353,7 +436,8 @@ class InformaticaRestartService:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
+                env=self._get_env()
             )
             
             if result.returncode == 0:
@@ -417,6 +501,11 @@ class InformaticaRestartService:
                 'message': 'Informatica connection not configured'
             }
         
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
         try:
             cmd = [
                 self.pmcmd_path,
@@ -433,7 +522,8 @@ class InformaticaRestartService:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
+                env=self._get_env()
             )
             
             if result.returncode == 0:
@@ -460,7 +550,8 @@ class InformaticaRestartService:
     def stop_workflow(
         self,
         workflow_name: str,
-        folder_name: str
+        folder_name: str,
+        integration_service: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Stop a running workflow
@@ -468,6 +559,7 @@ class InformaticaRestartService:
         Args:
             workflow_name: Name of the workflow to stop
             folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
             
         Returns:
             dict: Status of the operation
@@ -478,11 +570,18 @@ class InformaticaRestartService:
                 'message': 'Informatica connection not configured'
             }
         
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
         try:
+            is_service = integration_service if integration_service else self.integration_service
+            
             cmd = [
                 self.pmcmd_path,
                 'stopworkflow',
-                '-sv', self.integration_service,
+                '-sv', is_service,
                 '-d', self.domain,
                 '-u', self.username,
                 '-p', self.password,
@@ -494,7 +593,8 @@ class InformaticaRestartService:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
+                env=self._get_env()
             )
             
             if result.returncode == 0:
@@ -512,6 +612,227 @@ class InformaticaRestartService:
                 
         except Exception as e:
             logger.error(f"Error stopping workflow: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}',
+                'error': str(e)
+            }
+    
+    def abort_workflow(
+        self,
+        workflow_name: str,
+        folder_name: str,
+        integration_service: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Abort a running workflow (forceful termination)
+        
+        Args:
+            workflow_name: Name of the workflow to abort
+            folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
+            
+        Returns:
+            dict: Status of the operation
+        """
+        if not self.is_configured():
+            return {
+                'success': False,
+                'message': 'Informatica connection not configured'
+            }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
+        try:
+            is_service = integration_service if integration_service else self.integration_service
+            
+            cmd = [
+                self.pmcmd_path,
+                'abortworkflow',
+                '-sv', is_service,
+                '-d', self.domain,
+                '-u', self.username,
+                '-p', self.password,
+                '-f', folder_name,
+                workflow_name
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                return {
+                    'success': True,
+                    'message': f'Workflow "{workflow_name}" aborted successfully',
+                    'workflow': workflow_name
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Failed to abort workflow "{workflow_name}"',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error aborting workflow: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}',
+                'error': str(e)
+            }
+    
+    def stop_task(
+        self,
+        workflow_name: str,
+        session_name: str,
+        folder_name: str,
+        integration_service: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Stop a running task/session
+        
+        Args:
+            workflow_name: Name of the workflow containing the task
+            session_name: Name of the task/session to stop
+            folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
+            
+        Returns:
+            dict: Status of the operation
+        """
+        if not self.is_configured():
+            return {
+                'success': False,
+                'message': 'Informatica connection not configured'
+            }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
+        try:
+            is_service = integration_service if integration_service else self.integration_service
+            
+            cmd = [
+                self.pmcmd_path,
+                'stoptask',
+                '-sv', is_service,
+                '-d', self.domain,
+                '-u', self.username,
+                '-p', self.password,
+                '-f', folder_name,
+                '-w', workflow_name,
+                session_name
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                return {
+                    'success': True,
+                    'message': f'Task "{session_name}" stopped successfully',
+                    'workflow': workflow_name,
+                    'session': session_name
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Failed to stop task "{session_name}"',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error stopping task: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}',
+                'error': str(e)
+            }
+    
+    def abort_task(
+        self,
+        workflow_name: str,
+        session_name: str,
+        folder_name: str,
+        integration_service: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Abort a running task/session (forceful termination)
+        
+        Args:
+            workflow_name: Name of the workflow containing the task
+            session_name: Name of the task/session to abort
+            folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
+            
+        Returns:
+            dict: Status of the operation
+        """
+        if not self.is_configured():
+            return {
+                'success': False,
+                'message': 'Informatica connection not configured'
+            }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
+        try:
+            is_service = integration_service if integration_service else self.integration_service
+            
+            cmd = [
+                self.pmcmd_path,
+                'aborttask',
+                '-sv', is_service,
+                '-d', self.domain,
+                '-u', self.username,
+                '-p', self.password,
+                '-f', folder_name,
+                '-w', workflow_name,
+                session_name
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                return {
+                    'success': True,
+                    'message': f'Task "{session_name}" aborted successfully',
+                    'workflow': workflow_name,
+                    'session': session_name
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Failed to abort task "{session_name}"',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error aborting task: {str(e)}")
             return {
                 'success': False,
                 'message': f'Error: {str(e)}',

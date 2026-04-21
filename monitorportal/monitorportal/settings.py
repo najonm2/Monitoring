@@ -221,7 +221,10 @@ SERVER_URL = os.getenv('SERVER_URL', 'http://127.0.0.1:8000')
 # Path to pmcmd (PowerCenter Command Line Program)
 # Windows example: 'C:\\Program Files\\Informatica\\PowerCenter\\server\\bin\\pmcmd.exe'
 # Linux example: '/opt/informatica/server/bin/pmcmd'
-INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', '/prd1/usr/local/informatica/CDIPC/Informatica/platform/home/server/bin/pmcmd')
+# Local Windows installation - updated to actual install location
+INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', r'C:\Informatica\CDIPC_Client\clients\PowerCenterClient\CommandLineUtilities\PC\server\bin\PmCmd.exe')
+# Production Linux server path (default for deployment)
+#INFORMATICA_PMCMD_PATH = os.getenv('INFORMATICA_PMCMD_PATH', '/prd1/usr/local/informatica/CDIPC/Informatica/platform/home/server/bin/pmcmd')
 
 # Server and connection details
 INFORMATICA_HOST = os.getenv('INFORMATICA_HOST', 'azeus2lipcp01')

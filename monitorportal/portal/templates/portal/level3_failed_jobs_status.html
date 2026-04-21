@@ -63,6 +63,11 @@
                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
                 🔧 Manual Restart
             </a>
+            <a href="/informatica/manual-stop/" style="display: inline-block; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);"
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)'">
+                🛑 Stop Workflow
+            </a>
         </div>
     </div>
 </div>
@@ -174,12 +179,12 @@
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Folder Name</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Workflow Name</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Session Name</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Status</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706; background: rgba(16, 185, 129, 0.3);">🔄 Restart</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Start Time</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">End Time</th>
-                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Status</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Last Comp Time</th>
                         <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Failing Since (Days)</th>
-                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Actions</th>
                         <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">AI Analysis</th>
                     </tr>
                 </thead>
@@ -192,8 +197,6 @@
                         <td style="padding: 12px 16px; color: #374151; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.subject_area }}</td>
                         <td style="padding: 12px 16px; color: #374151; font-weight: 500; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.workflow_name }}</td>
                         <td style="padding: 12px 16px; color: #374151; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.session_name }}</td>
-                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.start_time|date:"m/d/Y H:i" }}</td>
-                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.end_time|date:"m/d/Y H:i" }}</td>
                         <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
                             {% if job.status == 'Failed' %}
                             <span style="display: inline-block; padding: 4px 10px; background: #fef2f2; color: #dc2626; border-radius: 4px; font-weight: 600; font-size: 11px;">Failed</span>
@@ -207,6 +210,17 @@
                             <span style="display: inline-block; padding: 4px 10px; background: #f3f4f6; color: #6b7280; border-radius: 4px; font-weight: 600; font-size: 11px;">{{ job.status }}</span>
                             {% endif %}
                         </td>
+                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb; background: #f0fdf4;">
+                            <button onclick="showRestartOptions('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}', '{{ job.grid_name|escapejs }}')" 
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(16,185,129,0.3);"
+                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'"
+                                    title="Restart with options">
+                                🔄 Restart
+                            </button>
+                        </td>
+                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.start_time|date:"m/d/Y H:i" }}</td>
+                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.end_time|date:"m/d/Y H:i" }}</td>
                         <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">
                             {% if job.last_comp_time %}
                             {{ job.last_comp_time|date:"m/d/Y H:i" }}
@@ -220,15 +234,6 @@
                             {% else %}
                             <span style="color: #9ca3af;">—</span>
                             {% endif %}
-                        </td>
-                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
-                            <button onclick="showRestartOptions('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}', '{{ job.grid_name|escapejs }}')" 
-                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(16,185,129,0.3);"
-                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
-                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'"
-                                    title="Restart with options">
-                                🔄 Restart
-                            </button>
                         </td>
                         <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
                             <button onclick="analyzeError('{{ job.session_name|escapejs }}', '{{ job.workflow_name|escapejs }}', '{{ job.error_message|default:""|escapejs }}')" 
@@ -664,6 +669,35 @@ window.addEventListener('beforeunload', function() {
 </style>
 
 <script>
+// Grid name to Integration Service mapping
+function mapGridToIntegrationService(gridName) {
+    const gridMap = {
+        'BI': 'IS_GRID_BI',
+        'UC': 'IS_GRID_UC',
+        'ERP': 'IS_GRID_ERP',
+        'MDM': 'IS_GRID_MDM',
+        'ORA11': 'IS_GRID_ORA11',
+        'ODBC': 'IS_GRID_ODBC',
+        'VSUM': 'IS_GRID_VSUM',
+        // Add more mappings as needed
+    };
+    
+    // Try exact match first
+    if (gridMap[gridName]) {
+        return gridMap[gridName];
+    }
+    
+    // Try to find partial match (e.g., "BI_PROD" -> "IS_GRID_BI")
+    for (const [key, value] of Object.entries(gridMap)) {
+        if (gridName.includes(key)) {
+            return value;
+        }
+    }
+    
+    // Default fallback
+    return 'IS_GRID_BI';
+}
+
 // AI Error Analysis functions
 function analyzeError(sessionName, workflowName, errorMessage) {
     const modal = document.getElementById('aiAnalysisModal');
@@ -829,9 +863,10 @@ function restartWorkflow(workflowName, folderName, sessionName) {
     <div style="background:#fff; margin:8% auto; padding:30px; width:550px; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
         <h3 style="margin-top:0; color:#1f2937; font-size:20px; font-weight:700;">🔄 Select Restart Option</h3>
         <div style="background:#f3f4f6; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <p style="margin:5px 0;"><strong>Grid/IS:</strong> <span id="modalGrid" style="color:#059669;"></span></p>
+            <p style="margin:5px 0;"><strong>Folder:</strong> <span id="modalFolder" style="color:#059669;"></span></p>
             <p style="margin:5px 0;"><strong>Workflow:</strong> <span id="modalWorkflow" style="color:#2563eb;"></span></p>
             <p style="margin:5px 0;"><strong>Session:</strong> <span id="modalSession" style="color:#7c3aed;"></span></p>
-            <p style="margin:5px 0;"><strong>Folder:</strong> <span id="modalFolder" style="color:#059669;"></span></p>
         </div>
         
         <div style="margin:20px 0;">
@@ -867,7 +902,10 @@ function restartWorkflow(workflowName, folderName, sessionName) {
 <script>
 let currentRestartData = {};
 
-function showRestartOptions(workflowName, folderName, sessionName, integrationService) {
+function showRestartOptions(workflowName, folderName, sessionName, gridName) {
+    // Map grid name to integration service
+    const integrationService = mapGridToIntegrationService(gridName);
+    
     currentRestartData = {
         workflow_name: workflowName,
         folder_name: folderName,
@@ -878,6 +916,7 @@ function showRestartOptions(workflowName, folderName, sessionName, integrationSe
     document.getElementById('modalWorkflow').textContent = workflowName;
     document.getElementById('modalSession').textContent = sessionName;
     document.getElementById('modalFolder').textContent = folderName;
+    document.getElementById('modalGrid').textContent = gridName + ' → ' + integrationService;
     document.getElementById('restartModal').style.display = 'block';
 }
 

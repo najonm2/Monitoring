@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import oracledb
+try:
+    import cx_Oracle as oracledb  # For Python 3.6 compatibility
+except ImportError:
+    import oracledb  # Fallback to python-oracledb for newer Python versions
 
 
 # ---------------------------------------------------------

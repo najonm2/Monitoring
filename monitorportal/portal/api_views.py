@@ -640,3 +640,118 @@ def restart_workflow_with_options(request):
             'success': False,
             'message': f'Error: {str(e)}'
         }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def stop_workflow(request):
+    """
+    API endpoint to stop or abort a running workflow or task
+    
+    POST body (JSON):
+    {
+        "workflow_name": "wkf_Load_CDW_ASL_ICG_GRANITE",
+        "folder_name": "B_CDW_ASL_ICG_GRANITE",
+        "integration_service": "IS_GRID_BI",
+        "action": "stop",  // "stop" or "abort"
+        "level": "workflow",  // "workflow" or "task"
+        "session_name": "session_name_here"  // Required if level="task"
+    }
+    """
+    import json
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    from django.conf import settings
+    
+    try:
+        body = json.loads(request.body)
+        workflow_name = body.get('workflow_name')
+        folder_name = body.get('folder_name', settings.INFORMATICA_DEFAULT_FOLDER)
+        integration_service = body.get('integration_service', settings.INFORMATICA_INTEGRATION_SERVICE)
+        action = body.get('action', 'stop')  # Default to stop
+        level = body.get('level', 'workflow')  # Default to workflow
+        session_name = body.get('session_name')
+        
+        if not workflow_name or not folder_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'workflow_name and folder_name are required'
+            }, status=400)
+        
+        if level == 'task' and not session_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'session_name is required when level="task"'
+            }, status=400)
+        
+        # Initialize restart service
+        service = InformaticaRestartService()
+        
+        # Check configuration
+        if not service.is_configured():
+            return JsonResponse({
+                'success': False,
+                'message': 'Informatica PowerCenter is not configured.'
+            }, status=503)
+        
+        # Execute stop/abort based on level and action
+        if level == 'workflow':
+            if action == 'stop':
+                result = service.stop_workflow(
+                    workflow_name=workflow_name,
+                    folder_name=folder_name,
+                    integration_service=integration_service
+                )
+            elif action == 'abort':
+                result = service.abort_workflow(
+                    workflow_name=workflow_name,
+                    folder_name=folder_name,
+                    integration_service=integration_service
+                )
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid action. Must be "stop" or "abort"'
+                }, status=400)
+        
+        elif level == 'task':
+            if action == 'stop':
+                result = service.stop_task(
+                    workflow_name=workflow_name,
+                    session_name=session_name,
+                    folder_name=folder_name,
+                    integration_service=integration_service
+                )
+            elif action == 'abort':
+                result = service.abort_task(
+                    workflow_name=workflow_name,
+                    session_name=session_name,
+                    folder_name=folder_name,
+                    integration_service=integration_service
+                )
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid action. Must be "stop" or "abort"'
+                }, status=400)
+        
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid level. Must be "workflow" or "task"'
+            }, status=400)
+        
+        status_code = 200 if result['success'] else 500
+        return JsonResponse(result, status=status_code)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=500)

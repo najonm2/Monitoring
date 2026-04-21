@@ -1,5 +1,12 @@
-Django>=6.0.0,<7.0.0
-python-oracledb>=2.0.0
+# Django 3.2 LTS - Compatible with Python 3.6.8
+# WARNING: Python 3.6.8 and Django 3.2 are both end-of-life and no longer receive security updates
+# Upgrade to Python 3.10+ and Django 4.2+ LTS is strongly recommended
+Django>=3.2.0,<3.3.0
+
+# Oracle Database connectivity for Python 3.6
+# Note: python-oracledb 2.x requires Python 3.7+, so using cx_Oracle instead
+cx_Oracle>=8.2.0,<9.0.0
 
 # Email and screenshot functionality (optional)
-selenium>=4.0.0  # For capturing screenshots (optional - only needed if screenshot feature is used)
+# Note: selenium 4.x requires Python 3.7+, downgraded to selenium 3.x
+selenium>=3.141.0,<4.0.0  # For capturing screenshots (optional - only needed if screenshot feature is used)
