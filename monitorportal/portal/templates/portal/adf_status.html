@@ -1,0 +1,342 @@
+{% extends "portal/layout.html" %}
+
+{% block title %}ADF Status - Today | PASE Monitoring Portal{% endblock %}
+
+{% block content %}
+
+<!-- REFRESH CONTROLS -->
+<div style="background: var(--primary-teal); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- Manual Refresh Button -->
+            <button onclick="manualRefresh()" id="manualRefreshBtn" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span id="manualRefreshIcon" style="font-size: 16px;">🔄</span> REFRESH
+            </button>
+            
+            <!-- Auto Refresh Dropdown -->
+            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                <span style="font-size: 16px;">⏱️</span>
+                AUTO
+                <select id="refreshIntervalSelect" onchange="changeRefreshInterval(this.value)" style="margin-left: 4px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15); color: white; font-weight: 600; font-size: 13px; cursor: pointer;">
+                    <option value="15" selected style="color: #333;">15 min</option>
+                    <option value="30" style="color: #333;">30 min</option>
+                    <option value="60" style="color: #333;">60 min</option>
+                </select>
+            </label>
+        </div>
+        
+        <!-- Refresh Status Info -->
+        <div style="display: flex; gap: 24px; align-items: center; font-size: 13px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Last Refreshed:</span>
+                <span id="lastRefreshTime" style="font-weight: 600; font-size: 14px;">Just now</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="opacity: 0.8; font-size: 12px;">Next refresh:</span>
+                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">15 min</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REPORT HEADER -->
+<div style="background: var(--primary-teal); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(19, 61, 60, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+        <div style="flex: 1; min-width: 300px;">
+            <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8; margin-bottom: 10px;">ADF APPLICATION</div>
+            <h1 style="margin: 0 0 12px 0; font-size: 2.5rem; font-weight: 800; line-height: 1.2;">ADF Job Status - Today</h1>
+            <p style="margin: 0; font-size: 1.1rem; opacity: 0.9; line-height: 1.5;">Latest run status for all ADF pipelines | Data Source: {{ data_source }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Error Message -->
+{% if error %}
+<div style="background:#fef2f2; border-left:4px solid #dc2626; padding:16px; border-radius:8px; margin-bottom:24px;">
+    <div style="display:flex; align-items:start; gap:12px;">
+        <span style="font-size:24px;">❌</span>
+        <div>
+            <div style="font-weight:600; color:#991b1b; margin-bottom:4px;">Connection Error</div>
+            <div style="font-size:13px; color:#6b7280; line-height:1.6;">
+                {{ error }}
+            </div>
+            <div style="font-size:12px; color:#9ca3af; margin-top:8px;">
+                💡 Ensure Databricks DSN "Databricks_Conn" is configured in ODBC Data Sources
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- SUMMARY SECTION -->
+<div style="margin-bottom: 40px;">
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px; color: #1f2937; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 2rem;">📊</span>
+        <span>Summary</span>
+    </h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+        <!-- Total Jobs -->
+        <div style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" 
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(99, 102, 241, 0.4)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.3)';">
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500;">📋 TOTAL JOBS</div>
+            <div style="font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 16px;">{{ stats.total }}</div>
+            <button onclick="filterJobs('all')" style="width: 100%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                📊 View Details
+            </button>
+        </div>
+
+        <!-- Succeeded -->
+        <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)';">
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500;">✅ SUCCEEDED</div>
+            <div style="font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 16px;">{{ stats.succeeded }}</div>
+            <button onclick="filterJobs('succeeded')" style="width: 100%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                📊 View Details
+            </button>
+        </div>
+
+        <!-- Failed -->
+        <div style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(239, 68, 68, 0.4)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)';">
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500;">❌ FAILED</div>
+            <div style="font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 16px;">{{ stats.failed }}</div>
+            <button onclick="filterJobs('failed')" style="width: 100%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                📊 View Details
+            </button>
+        </div>
+
+        <!-- In Progress -->
+        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(245, 158, 11, 0.4)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.3)';">
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500;">🔄 IN PROGRESS</div>
+            <div style="font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 16px;">{{ stats.running }}</div>
+            <button onclick="filterJobs('inprogress')" style="width: 100%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                📊 View Details
+            </button>
+        </div>
+
+        <!-- Success Rate -->
+        <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); transition: transform 0.2s, box-shadow 0.2s;"
+             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(139, 92, 246, 0.4)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)';">
+            <div style="font-size: 1rem; opacity: 0.9; margin-bottom: 8px; font-weight: 500;">📈 SUCCESS RATE</div>
+            <div style="font-size: 3.5rem; font-weight: 800; line-height: 1;">{{ stats.success_rate }}%</div>
+            <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 12px;">Based on completed jobs</div>
+        </div>
+    </div>
+</div>
+
+
+<!-- JOBS TABLE -->
+<div style="margin-bottom: 40px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-size: 1.8rem; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 12px; margin: 0;">
+            <span style="font-size: 2rem;">📋</span>
+            <span id="tableTitle">ADF Job Details</span>
+            <span id="filterBadge" style="display: none; padding: 4px 12px; background: var(--primary-teal); color: white; border-radius: 6px; font-size: 14px; font-weight: 600;"></span>
+        </h2>
+        <button onclick="filterJobs('all')" id="clearFilterBtn" style="display: none; padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
+                onmouseover="this.style.background='#4b5563'"
+                onmouseout="this.style.background='#6b7280'">
+            ✕ Clear Filter
+        </button>
+    </div>
+    
+    <div style="background:white; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <div style="overflow-x:auto;">
+            <table id="jobsTable" style="width:100%; border-collapse:collapse;">
+                <thead style="background: var(--primary-teal); color:white;">
+                    <tr>
+                        <th style="padding:14px 16px; text-align:left; font-weight:700; border:1px solid #115e59;">Job Name</th>
+                        <th style="padding:14px 16px; text-align:center; font-weight:700; border:1px solid #115e59;">Job Type</th>
+                        <th style="padding:14px 16px; text-align:center; font-weight:700; border:1px solid #115e59;">Schedule</th>
+                        <th style="padding:14px 16px; text-align:center; font-weight:700; border:1px solid #115e59;">Status</th>
+                        <th style="padding:14px 16px; text-align:left; font-weight:700; border:1px solid #115e59;">Start Time (IST)</th>
+                        <th style="padding:14px 16px; text-align:left; font-weight:700; border:1px solid #115e59;">End Time (IST)</th>
+                        <th style="padding:14px 16px; text-align:left; font-weight:700; border:1px solid #115e59;">Error Message</th>
+                    </tr>
+                </thead>
+                <tbody id="jobsTableBody">
+                    {% for job in adf_jobs %}
+                    <tr class="job-row" data-status="{{ job.Run_Status|lower }}" style="border:1px solid #e5e7eb; {% if job.Run_Status|lower == 'failed' %}background:#fef2f2;{% elif job.Run_Status|lower == 'succeeded' %}background:#f0fdf4;{% else %}background:white;{% endif %} transition:all 0.2s;"
+                        onmouseover="this.style.background='#f9fafb'"
+                        onmouseout="{% if job.Run_Status|lower == 'failed' %}this.style.background='#fef2f2'{% elif job.Run_Status|lower == 'succeeded' %}this.style.background='#f0fdf4'{% else %}this.style.background='white'{% endif %}">
+                        <td style="padding:12px 16px; color:#374151; font-weight:500; border:1px solid #e5e7eb; font-size:13px;">{{ job.job_name }}</td>
+                        <td style="padding:12px 16px; text-align:center; border:1px solid #e5e7eb;">
+                            <span style="display:inline-block; padding:4px 10px; background:#ede9fe; color:#7c3aed; border-radius:4px; font-weight:600; font-size:11px;">{{ job.Job_Type }}</span>
+                        </td>
+                        <td style="padding:12px 16px; text-align:center; color:#6b7280; border:1px solid #e5e7eb; font-size:12px;">{{ job.Schedule_run_time|default:"—" }}</td>
+                        <td style="padding:12px 16px; text-align:center; border:1px solid #e5e7eb;">
+                            {% if job.Run_Status|lower == 'succeeded' %}
+                            <span style="display:inline-block; padding:6px 12px; background:#dcfce7; color:#16a34a; border-radius:6px; font-weight:700; font-size:12px;">✅ {{ job.Run_Status }}</span>
+                            {% elif job.Run_Status|lower == 'failed' %}
+                            <span style="display:inline-block; padding:6px 12px; background:#fef2f2; color:#dc2626; border-radius:6px; font-weight:700; font-size:12px;">❌ {{ job.Run_Status }}</span>
+                            {% elif job.Run_Status|lower == 'running' or job.Run_Status|lower == 'in progress' or job.Run_Status|lower == 'inprogress' %}
+                            <span style="display:inline-block; padding:6px 12px; background:#fef3c7; color:#d97706; border-radius:6px; font-weight:700; font-size:12px;">🔄 In Progress</span>
+                            {% else %}
+                            <span style="display:inline-block; padding:6px 12px; background:#f3f4f6; color:#6b7280; border-radius:6px; font-weight:600; font-size:12px;">{{ job.Run_Status }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:12px 16px; color:#6b7280; border:1px solid #e5e7eb; font-size:12px;">{{ job.Start_Time_IST|default:"—" }}</td>
+                        <td style="padding:12px 16px; color:#6b7280; border:1px solid #e5e7eb; font-size:12px;">{{ job.End_Time_IST|default:"—" }}</td>
+                        <td style="padding:12px 16px; color:#991b1b; border:1px solid #e5e7eb; font-size:11px; word-break:break-word; line-height:1.5;">
+                            {{ job.Error_Message|default:"—" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="noDataRow">
+                        <td colspan="7" style="padding:40px; text-align:center; color:#9ca3af;">
+                            <div style="font-size:48px; margin-bottom:16px;">📭</div>
+                            <div style="font-size:16px; font-weight:600; color:#6b7280;">No ADF jobs found for today</div>
+                            <div style="font-size:13px; color:#9ca3af; margin-top:8px;">Jobs will appear here when they start running</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filtering functionality
+function filterJobs(status) {
+    const rows = document.querySelectorAll('.job-row');
+    const tableTitle = document.getElementById('tableTitle');
+    const filterBadge = document.getElementById('filterBadge');
+    const clearFilterBtn = document.getElementById('clearFilterBtn');
+    
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        
+        if (status === 'all') {
+            row.style.display = '';
+            visibleCount++;
+        } else if (status === 'inprogress') {
+            if (rowStatus === 'running' || rowStatus === 'in progress' || rowStatus === 'inprogress') {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        } else if (rowStatus === status) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update title and badge
+    if (status === 'all') {
+        tableTitle.textContent = 'ADF Job Details';
+        filterBadge.style.display = 'none';
+        clearFilterBtn.style.display = 'none';
+    } else {
+        let statusText;
+        if (status === 'inprogress') {
+            statusText = 'In Progress';
+        } else {
+            statusText = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        tableTitle.textContent = 'ADF Job Details';
+        filterBadge.textContent = statusText + ' (' + visibleCount + ')';
+        filterBadge.style.display = 'inline-block';
+        clearFilterBtn.style.display = 'block';
+    }
+    
+    // Scroll to table
+    document.getElementById('jobsTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Auto-refresh functionality
+let refreshInterval = 15 * 60 * 1000; // 15 minutes in milliseconds
+let refreshTimer;
+let lastRefreshDate = new Date();
+
+function updateRefreshTimes() {
+    const now = new Date();
+    const lastRefreshElem = document.getElementById('lastRefreshTime');
+    const nextRefreshElem = document.getElementById('nextRefreshTime');
+    
+    // Format last refresh time
+    const timeDiff = Math.floor((now - lastRefreshDate) / 1000);
+    if (timeDiff < 60) {
+        lastRefreshElem.textContent = 'Just now';
+    } else if (timeDiff < 3600) {
+        lastRefreshElem.textContent = Math.floor(timeDiff / 60) + ' min ago';
+    } else {
+        lastRefreshElem.textContent = lastRefreshDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Calculate next refresh time
+    const nextRefresh = new Date(lastRefreshDate.getTime() + refreshInterval);
+    const timeUntilRefresh = Math.floor((nextRefresh - now) / 1000);
+    
+    if (timeUntilRefresh > 60) {
+        nextRefreshElem.textContent = Math.floor(timeUntilRefresh / 60) + ' min';
+    } else if (timeUntilRefresh > 0) {
+        nextRefreshElem.textContent = timeUntilRefresh + ' sec';
+    } else {
+        nextRefreshElem.textContent = 'Now';
+    }
+}
+
+function changeRefreshInterval(minutes) {
+    refreshInterval = minutes * 60 * 1000;
+    clearInterval(refreshTimer);
+    startAutoRefresh();
+    updateRefreshTimes();
+}
+
+function manualRefresh() {
+    const icon = document.getElementById('manualRefreshIcon');
+    icon.style.animation = 'spin 1s linear';
+    
+    setTimeout(() => {
+        window.location.reload();
+    }, 300);
+}
+
+function startAutoRefresh() {
+    refreshTimer = setInterval(() => {
+        window.location.reload();
+    }, refreshInterval);
+    
+    // Update times every second
+    setInterval(updateRefreshTimes, 1000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    startAutoRefresh();
+    updateRefreshTimes();
+});
+
+// CSS animation for refresh icon
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+{% endblock %}

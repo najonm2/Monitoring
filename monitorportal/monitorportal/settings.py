@@ -244,3 +244,12 @@ INFORMATICA_USER_SECURITY_DOMAIN = os.getenv('INFORMATICA_USER_SECURITY_DOMAIN',
 
 # Default folder for workflows (can be overridden per restart request)
 INFORMATICA_DEFAULT_FOLDER = os.getenv('INFORMATICA_DEFAULT_FOLDER', 'Default')
+
+# -----------------------------------------------------------------------------
+# DATABRICKS ODBC CONFIGURATION (for ADF monitoring data)
+# -----------------------------------------------------------------------------
+# User DSN name configured in Windows ODBC Data Sources
+DATABRICKS_DSN = os.getenv('DATABRICKS_DSN', 'Databricks_Conn')
+
+# Table containing ADF/Databricks metadata
+DATABRICKS_ADF_TABLE = os.getenv('DATABRICKS_ADF_TABLE', 'asl.metadata_framework.ingestion_log')

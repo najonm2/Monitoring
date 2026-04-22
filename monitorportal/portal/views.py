@@ -170,6 +170,13 @@ def report_view(request, app_slug, report_slug):
         
         return render(request, "portal/level3_7day_insights.html", ctx)
     
+    # ADF Status Dashboard
+    elif view_type == "adf_status":
+        return adf_status(request)
+    
+    # Databricks & ADF Failed Jobs
+    elif view_type == "databricks_adf_failed":
+        return databricks_adf_failed(request)
     
     # Default: Generic report view with API data loading
     return render(request, "portal/report_view.html", ctx)
@@ -503,3 +510,138 @@ def manual_informatica_stop(request):
     Allows submitting stop/abort requests with Grid selection and Workflow
     """
     return render(request, "portal/manual_stop.html")
+
+
+def adf_status(request):
+    """
+    ADF Status Dashboard - Shows latest run status for all ADF jobs today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'adf_status_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        adf_jobs = cached_data['adf_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        adf_jobs = []
+        error = None
+        
+        try:
+            # Get ADF service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch ADF status for today
+            adf_jobs = service.get_adf_status_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'adf_jobs': adf_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] ADF status fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch ADF status: {e}")
+    
+    # Calculate statistics
+    total_jobs = len(adf_jobs)
+    succeeded = len([j for j in adf_jobs if j.get('Run_Status', '').lower() == 'succeeded'])
+    failed = len([j for j in adf_jobs if j.get('Run_Status', '').lower() == 'failed'])
+    running = len([j for j in adf_jobs if j.get('Run_Status', '').lower() in ['running', 'in progress', 'inprogress']])
+    
+    # Calculate success rate based on completed jobs only (succeeded + failed)
+    completed_jobs = succeeded + failed
+    
+    stats = {
+        'total': total_jobs,
+        'succeeded': succeeded,
+        'failed': failed,
+        'running': running,
+        'success_rate': round((succeeded / completed_jobs * 100), 1) if completed_jobs > 0 else 0
+    }
+    
+    return render(request, "portal/adf_status.html", {
+        "adf_jobs": adf_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })
+
+
+def databricks_adf_failed(request):
+    """
+    Databricks & ADF Failed Jobs Dashboard
+    Shows all failed jobs (both Databricks and ADF) for today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'databricks_adf_failed_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        failed_jobs = cached_data['failed_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        failed_jobs = []
+        error = None
+        
+        try:
+            # Get ADF service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch failed jobs for today
+            failed_jobs = service.get_failed_jobs_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'failed_jobs': failed_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] Failed jobs fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch failed jobs: {e}")
+    
+    # Calculate statistics
+    total_failed = len(failed_jobs)
+    adf_failed = len([j for j in failed_jobs if j.get('resource_type', '').upper() == 'ADF'])
+    databricks_failed = len([j for j in failed_jobs if j.get('resource_type', '').upper() in ['DATABRICKS', 'DBX']])
+    other_failed = total_failed - adf_failed - databricks_failed
+    
+    stats = {
+        'total_failed': total_failed,
+        'adf_failed': adf_failed,
+        'databricks_failed': databricks_failed,
+        'other_failed': other_failed,
+    }
+    
+    return render(request, "portal/databricks_adf_failed.html", {
+        "failed_jobs": failed_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })

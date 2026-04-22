@@ -155,7 +155,6 @@ class DatabricksODBCService:
         """
         try:
             conn = self.connect()
-            conn.row_factory = pyodbc.Row
             cursor = conn.cursor()
             
             if params:
@@ -300,9 +299,101 @@ class ADF_DatabricksService(DatabricksODBCService):
     """Service for querying ADF data stored in Databricks"""
     
     def __init__(self):
-        """Initialize ADF service using same DSN as SSRS"""
+        """Initialize ADF service using configured DSN"""
         super().__init__()
-        self.adf_database = getattr(settings, 'ADF_DATABRICKS_DATABASE', 'adf_monitoring')
+        # Use the table name from settings
+        self.adf_table = getattr(settings, 'DATABRICKS_ADF_TABLE', 'asl.metadata_framework.ingestion_log')
+    
+    def get_adf_status_today(self) -> List[Dict[str, Any]]:
+        """
+        Get ADF job status for today (latest run per job)
+        
+        Returns:
+            List[Dict]: ADF job status records
+        """
+        try:
+            query = f"""
+            WITH ranked_jobs AS (
+                SELECT 
+                    job_name,
+                    resource_type AS Job_Type,
+                    frequency AS Schedule_run_time,
+                    from_utc_timestamp(start_time, 'Asia/Kolkata') AS Start_Time_IST,
+                    from_utc_timestamp(end_time, 'Asia/Kolkata') AS End_Time_IST,
+                    job_status AS Run_Status,
+                    error_message AS Error_Message,
+                    ROW_NUMBER() OVER (PARTITION BY job_name ORDER BY start_time DESC) AS rn
+                FROM 
+                    {self.adf_table}
+                WHERE 
+                    CAST(start_time AS DATE) = CURRENT_DATE
+                    AND resource_type = 'ADF'
+            )
+            SELECT 
+                job_name,
+                Job_Type,
+                Schedule_run_time,
+                Start_Time_IST,
+                End_Time_IST,
+                Run_Status,
+                Error_Message
+            FROM 
+                ranked_jobs
+            WHERE 
+                rn = 1
+            ORDER BY 
+                Start_Time_IST
+            """
+            
+            results = self.execute_query_dict(query)
+            logger.info(f"✅ Retrieved {len(results)} ADF status records for today")
+            return results
+        
+        except Exception as e:
+            logger.error(f"Failed to get ADF status: {e}")
+            raise DatabricksQueryError(str(e))
+    
+    def get_failed_jobs_today(self) -> List[Dict[str, Any]]:
+        """
+        Get failed Databricks & ADF jobs for today (latest run per job)
+        
+        Returns:
+            List[Dict]: Failed job records
+        """
+        try:
+            query = f"""
+            WITH RankedJobs AS (
+                SELECT 
+                    job_name, 
+                    resource_type, 
+                    start_time, 
+                    end_time, 
+                    job_status, 
+                    error_message,
+                    ROW_NUMBER() OVER (PARTITION BY job_name ORDER BY start_time DESC) AS rn
+                FROM {self.adf_table}
+                WHERE DATE(start_time) = CURRENT_DATE()
+                  AND job_status = 'Failed'
+            )
+            SELECT 
+                job_name, 
+                resource_type, 
+                start_time, 
+                end_time, 
+                job_status, 
+                error_message
+            FROM RankedJobs
+            WHERE rn = 1
+            ORDER BY job_status DESC
+            """
+            
+            results = self.execute_query_dict(query)
+            logger.info(f"✅ Retrieved {len(results)} failed jobs for today")
+            return results
+        
+        except Exception as e:
+            logger.error(f"Failed to get failed jobs: {e}")
+            raise DatabricksQueryError(str(e))
     
     def get_recent_pipeline_runs(
         self,
