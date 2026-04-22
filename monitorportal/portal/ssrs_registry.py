@@ -95,6 +95,13 @@ APPS = [
                 "view_type": "adf_status",
             },
             {
+                "name": "Databricks Status",
+                "slug": "databricks-status",
+                "description": "Databricks Job Status Overview",
+                "ssrs_url": "http://usidcvssrs0005/Reports/report/DWBIPASE/ADF/DatabricksStatus",
+                "view_type": "databricks_status",
+            },
+            {
                 "name": "Databricks & ADF Failed Jobs",
                 "slug": "databricks-adf-failed",
                 "description": "Databricks and ADF Failed Jobs Combined Report",

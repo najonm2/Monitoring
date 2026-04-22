@@ -174,6 +174,10 @@ def report_view(request, app_slug, report_slug):
     elif view_type == "adf_status":
         return adf_status(request)
     
+    # Databricks Status Dashboard
+    elif view_type == "databricks_status":
+        return databricks_status(request)
+    
     # Databricks & ADF Failed Jobs
     elif view_type == "databricks_adf_failed":
         return databricks_adf_failed(request)
@@ -558,7 +562,7 @@ def adf_status(request):
     
     # Calculate statistics
     total_jobs = len(adf_jobs)
-    succeeded = len([j for j in adf_jobs if j.get('Run_Status', '').lower() == 'succeeded'])
+    succeeded = len([j for j in adf_jobs if j.get('Run_Status', '').lower() in ['succeeded', 'success']])
     failed = len([j for j in adf_jobs if j.get('Run_Status', '').lower() == 'failed'])
     running = len([j for j in adf_jobs if j.get('Run_Status', '').lower() in ['running', 'in progress', 'inprogress']])
     
@@ -575,6 +579,75 @@ def adf_status(request):
     
     return render(request, "portal/adf_status.html", {
         "adf_jobs": adf_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })
+
+
+def databricks_status(request):
+    """
+    Databricks Status Dashboard - Shows latest run status for all Databricks jobs today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'databricks_status_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        databricks_jobs = cached_data['databricks_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        databricks_jobs = []
+        error = None
+        
+        try:
+            # Get Databricks service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch Databricks status for today
+            databricks_jobs = service.get_databricks_status_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'databricks_jobs': databricks_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] Databricks status fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch Databricks status: {e}")
+    
+    # Calculate statistics
+    total_jobs = len(databricks_jobs)
+    succeeded = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() in ['succeeded', 'success']])
+    failed = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() == 'failed'])
+    running = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() in ['running', 'in progress', 'inprogress']])
+    
+    # Calculate success rate based on completed jobs only (succeeded + failed)
+    completed_jobs = succeeded + failed
+    
+    stats = {
+        'total': total_jobs,
+        'succeeded': succeeded,
+        'failed': failed,
+        'running': running,
+        'success_rate': round((succeeded / completed_jobs * 100), 1) if completed_jobs > 0 else 0
+    }
+    
+    return render(request, "portal/databricks_status.html", {
+        "databricks_jobs": databricks_jobs,
         "stats": stats,
         "data_source": data_source,
         "error": error,

@@ -353,6 +353,55 @@ class ADF_DatabricksService(DatabricksODBCService):
             logger.error(f"Failed to get ADF status: {e}")
             raise DatabricksQueryError(str(e))
     
+    def get_databricks_status_today(self) -> List[Dict[str, Any]]:
+        """
+        Get Databricks job status for today (latest run per job)
+        
+        Returns:
+            List[Dict]: Databricks job status records
+        """
+        try:
+            query = f"""
+            WITH ranked_jobs AS (
+                SELECT 
+                    job_name,
+                    resource_type AS Job_Type,
+                    frequency AS Schedule_run_time,
+                    from_utc_timestamp(start_time, 'Asia/Kolkata') AS Start_Time_IST,
+                    from_utc_timestamp(end_time, 'Asia/Kolkata') AS End_Time_IST,
+                    job_status AS Run_Status,
+                    error_message AS Error_Message,
+                    ROW_NUMBER() OVER (PARTITION BY job_name ORDER BY start_time DESC) AS rn
+                FROM 
+                    {self.adf_table}
+                WHERE 
+                    CAST(start_time AS DATE) = CURRENT_DATE
+                    AND resource_type = 'DBX'
+            )
+            SELECT 
+                job_name,
+                Job_Type,
+                Schedule_run_time,
+                Start_Time_IST,
+                End_Time_IST,
+                Run_Status,
+                Error_Message
+            FROM 
+                ranked_jobs
+            WHERE 
+                rn = 1
+            ORDER BY 
+                Start_Time_IST
+            """
+            
+            results = self.execute_query_dict(query)
+            logger.info(f"✅ Retrieved {len(results)} Databricks status records for today")
+            return results
+        
+        except Exception as e:
+            logger.error(f"Failed to get Databricks status: {e}")
+            raise DatabricksQueryError(str(e))
+    
     def get_failed_jobs_today(self) -> List[Dict[str, Any]]:
         """
         Get failed Databricks & ADF jobs for today (latest run per job)

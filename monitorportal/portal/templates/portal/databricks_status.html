@@ -1,6 +1,6 @@
 {% extends "portal/layout.html" %}
 
-{% block title %}ADF Status - Today | PASE Monitoring Portal{% endblock %}
+{% block title %}Databricks Status - Today | PASE Monitoring Portal{% endblock %}
 
 {% block content %}
 
@@ -43,9 +43,9 @@
 <div style="background: var(--primary-teal); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(19, 61, 60, 0.3);">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
         <div style="flex: 1; min-width: 300px;">
-            <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8; margin-bottom: 10px;">ADF APPLICATION</div>
-            <h1 style="margin: 0 0 12px 0; font-size: 2.5rem; font-weight: 800; line-height: 1.2;">ADF Job Status - Today</h1>
-            <p style="margin: 0; font-size: 1.1rem; opacity: 0.9; line-height: 1.5;">Latest run status for all ADF pipelines | Data Source: {{ data_source }}</p>
+            <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8; margin-bottom: 10px;">DATABRICKS APPLICATION</div>
+            <h1 style="margin: 0 0 12px 0; font-size: 2.5rem; font-weight: 800; line-height: 1.2;">Databricks Job Status - Today</h1>
+            <p style="margin: 0; font-size: 1.1rem; opacity: 0.9; line-height: 1.5;">Latest run status for all Databricks jobs | Data Source: {{ data_source }}</p>
         </div>
     </div>
 </div>
@@ -144,8 +144,8 @@
 <div style="margin-bottom: 40px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="font-size: 1.8rem; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 12px; margin: 0;">
-            <span style="font-size: 2rem;">📋</span>
-            <span id="tableTitle">ADF Job Details</span>
+            <span style="font-size: 2rem;">🧱</span>
+            <span id="tableTitle">Databricks Job Details</span>
             <span id="filterBadge" style="display: none; padding: 4px 12px; background: var(--primary-teal); color: white; border-radius: 6px; font-size: 14px; font-weight: 600;"></span>
         </h2>
         <button onclick="filterJobs('all')" id="clearFilterBtn" style="display: none; padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;"
@@ -170,13 +170,13 @@
                     </tr>
                 </thead>
                 <tbody id="jobsTableBody">
-                    {% for job in adf_jobs %}
+                    {% for job in databricks_jobs %}
                     <tr class="job-row" data-status="{{ job.Run_Status|lower }}" style="border:1px solid #e5e7eb; {% if job.Run_Status|lower == 'failed' %}background:#fef2f2;{% elif job.Run_Status|lower == 'succeeded' or job.Run_Status|lower == 'success' %}background:#f0fdf4;{% else %}background:white;{% endif %} transition:all 0.2s;"
                         onmouseover="this.style.background='#f9fafb'"
                         onmouseout="{% if job.Run_Status|lower == 'failed' %}this.style.background='#fef2f2'{% elif job.Run_Status|lower == 'succeeded' or job.Run_Status|lower == 'success' %}this.style.background='#f0fdf4'{% else %}this.style.background='white'{% endif %}">
                         <td style="padding:12px 16px; color:#374151; font-weight:500; border:1px solid #e5e7eb; font-size:13px;">{{ job.job_name }}</td>
                         <td style="padding:12px 16px; text-align:center; border:1px solid #e5e7eb;">
-                            <span style="display:inline-block; padding:4px 10px; background:#ede9fe; color:#7c3aed; border-radius:4px; font-weight:600; font-size:11px;">{{ job.Job_Type }}</span>
+                            <span style="display:inline-block; padding:4px 10px; background:#fed7aa; color:#d97706; border-radius:4px; font-weight:600; font-size:11px;">🧱 {{ job.Job_Type }}</span>
                         </td>
                         <td style="padding:12px 16px; text-align:center; color:#6b7280; border:1px solid #e5e7eb; font-size:12px;">{{ job.Schedule_run_time|default:"—" }}</td>
                         <td style="padding:12px 16px; text-align:center; border:1px solid #e5e7eb;">
@@ -200,7 +200,7 @@
                     <tr id="noDataRow">
                         <td colspan="7" style="padding:40px; text-align:center; color:#9ca3af;">
                             <div style="font-size:48px; margin-bottom:16px;">📭</div>
-                            <div style="font-size:16px; font-weight:600; color:#6b7280;">No ADF jobs found for today</div>
+                            <div style="font-size:16px; font-weight:600; color:#6b7280;">No Databricks jobs found for today</div>
                             <div style="font-size:13px; color:#9ca3af; margin-top:8px;">Jobs will appear here when they start running</div>
                         </td>
                     </tr>
@@ -253,19 +253,19 @@ function filterJobs(status) {
     
     // Update title and badge
     if (status === 'all') {
-        tableTitle.textContent = 'ADF Job Details';
+        tableTitle.textContent = 'Databricks Job Details';
         filterBadge.style.display = 'none';
         clearFilterBtn.style.display = 'none';
     } else {
         let statusText;
         if (status === 'inprogress') {
             statusText = 'In Progress';
-        } else if (status === 'succeeded') {
-            statusText = 'Success';
+        } else if (status === 'SUCCESS') {
+            statusText = 'SUCCESS';
         } else {
             statusText = status.charAt(0).toUpperCase() + status.slice(1);
         }
-        tableTitle.textContent = 'ADF Job Details';
+        tableTitle.textContent = 'Databricks Job Details';
         filterBadge.textContent = statusText + ' (' + visibleCount + ')';
         filterBadge.style.display = 'inline-block';
         clearFilterBtn.style.display = 'block';
