@@ -9,7 +9,7 @@
         <div class="hero-text">
             <span class="kicker">PASE MONITORING PORTAL</span>
             <h1>Welcome to PASE Job Monitoring Portal</h1>
-            <p>Centralized real-time monitoring for Informatica PowerCenter jobs with instant access to operational reports and Oracle database insights</p>
+            <p>Centralized real-time monitoring for Informatica PowerCenter jobs with instant access to operational reports, Oracle database insights, and Databricks data analytics</p>
             <div style="margin-top: 24px;">
                 <a href="{% url 'dashboards' %}" class="btn btn-orange" style="padding: 14px 32px; font-size: 15px;">
                     📊 View All Applications
@@ -61,16 +61,20 @@
         <div class="section-bar">🚀 Platform Capabilities</div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; padding: 24px 0;">
             <div style="text-align: center;">
-                <div style="font-size: 48px; font-weight: 800; color: var(--primary-orange); margin-bottom: 8px;">4</div>
+                <div style="font-size: 48px; font-weight: 800; color: var(--primary-orange); margin-bottom: 8px;">5</div>
                 <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Active Applications</div>
             </div>
             <div style="text-align: center;">
-                <div style="font-size: 48px; font-weight: 800; color: var(--success); margin-bottom: 8px;">8</div>
+                <div style="font-size: 48px; font-weight: 800; color: var(--success); margin-bottom: 8px;">11</div>
                 <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Monitoring Reports</div>
             </div>
             <div style="text-align: center;">
                 <div style="font-size: 48px; font-weight: 800; color: var(--primary-teal); margin-bottom: 8px;">2</div>
                 <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Oracle Databases</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 48px; font-weight: 800; color: #ff6b35; margin-bottom: 8px;">1</div>
+                <div style="color: var(--gray-600); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;">Databricks Lakehouse</div>
             </div>
             <div style="text-align: center;">
                 <div style="font-size: 48px; font-weight: 800; color: var(--warning); margin-bottom: 8px;">24/7</div>
@@ -98,6 +102,11 @@
             <div class="card" style="border-left: 4px solid var(--primary-orange);">
                 <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">💼 ERP Tracking</h4>
                 <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">Last 8 runs tracker with completion rates and status</p>
+                <a href="{% url 'dashboards' %}" class="btn" style="font-size: 12px; padding: 8px 16px;">View →</a>
+            </div>
+            <div class="card" style="border-left: 4px solid var(--primary-orange);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;">☁️ ADF & Databricks</h4>
+                <p style="color: var(--gray-600); font-size: 13px; line-height: 1.6; margin-bottom: 12px;">Azure Data Factory pipelines and Databricks job monitoring</p>
                 <a href="{% url 'dashboards' %}" class="btn" style="font-size: 12px; padding: 8px 16px;">View →</a>
             </div>
             <div class="card" style="border-left: 4px solid var(--primary-teal);">

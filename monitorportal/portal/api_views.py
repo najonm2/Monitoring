@@ -755,3 +755,587 @@ def stop_workflow(request):
             'success': False,
             'message': f'Error: {str(e)}'
         }, status=500)
+
+
+@require_http_methods(["POST"])
+def schedule_workflow(request):
+    """
+    API endpoint to schedule or unschedule a workflow
+    
+    POST body (JSON):
+    {
+        "workflow_name": "wkf_Load_CDW_ASL_ICG_GRANITE",
+        "folder_name": "B_CDW_ASL_ICG_GRANITE",
+        "integration_service": "IS_GRID_BI",
+        "schedule_action": "schedule"  // "schedule" or "unschedule"
+    }
+    """
+    import json
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    from django.conf import settings
+    
+    try:
+        body = json.loads(request.body)
+        workflow_name = body.get('workflow_name')
+        folder_name = body.get('folder_name', settings.INFORMATICA_DEFAULT_FOLDER)
+        integration_service = body.get('integration_service', settings.INFORMATICA_INTEGRATION_SERVICE)
+        schedule_action = body.get('schedule_action', 'schedule')
+        
+        if not workflow_name or not folder_name:
+            return JsonResponse({
+                'success': False,
+                'message': 'workflow_name and folder_name are required'
+            }, status=400)
+        
+        if schedule_action not in ['schedule', 'unschedule']:
+            return JsonResponse({
+                'success': False,
+                'message': 'schedule_action must be "schedule" or "unschedule"'
+            }, status=400)
+        
+        # Initialize restart service
+        service = InformaticaRestartService()
+        
+        # Check configuration
+        if not service.is_configured():
+            return JsonResponse({
+                'success': False,
+                'message': 'Informatica PowerCenter is not configured.'
+            }, status=503)
+        
+        # Execute schedule or unschedule
+        if schedule_action == 'schedule':
+            result = service.schedule_workflow(
+                workflow_name=workflow_name,
+                folder_name=folder_name,
+                integration_service=integration_service
+            )
+        else:  # unschedule
+            result = service.unschedule_workflow(
+                workflow_name=workflow_name,
+                folder_name=folder_name,
+                integration_service=integration_service
+            )
+        
+        status_code = 200 if result['success'] else 500
+        return JsonResponse(result, status=status_code)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON in request body'
+        }, status=400)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def test_informatica_connection(request):
+    """
+    API endpoint to test Informatica PowerCenter connection and authentication
+    Returns detailed connection status
+    """
+    from portal.services.informatica_restart_service import InformaticaRestartService
+    
+    try:
+        service = InformaticaRestartService()
+        
+        # Check configuration
+        if not service.is_configured():
+            return JsonResponse({
+                'success': False,
+                'message': 'Informatica PowerCenter is not configured',
+                'details': 'Check settings.py for INFORMATICA_* configuration'
+            }, status=503)
+        
+        # Test connection
+        result = service.establish_connection()
+        
+        if result['success']:
+            return JsonResponse({
+                'success': True,
+                'message': '✅ Connection successful! Authentication verified.',
+                'details': {
+                    'host': service.host,
+                    'port': service.port,
+                    'domain': service.domain,
+                    'repository': service.repository,
+                    'username': service.username,
+                    'user_security_domain': service.user_security_domain
+                }
+            })
+        else:
+            error_msg = result.get('error', result.get('message', 'Unknown error'))
+            
+            # Detect authentication errors
+            if 'CCM_10821' in str(error_msg) or 'Authentication failed' in str(error_msg):
+                return JsonResponse({
+                    'success': False,
+                    'message': '🔒 Authentication Failed (CCM_10821)',
+                    'error': error_msg,
+                    'troubleshooting': [
+                        'Your password may have expired - contact IT to reset',
+                        'Your account might be locked - try logging into Informatica Workflow Manager',
+                        'Verify username and password in settings.py',
+                        'Check if User Security Domain (CTL) is correct',
+                        'Ensure you have permissions on the Integration Service'
+                    ]
+                }, status=401)
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': '❌ Connection failed',
+                    'error': error_msg
+                }, status=500)
+                
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error testing connection: {str(e)}',
+            'error': str(e)
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_scheduled_workflows(request):
+    """
+    API endpoint to get list of recent workflows from Informatica repository
+    Returns workflows from last 30 days that you can test scheduling on
+    """
+    from portal.db.oracle_client import fetch_all
+    
+    try:
+        # Simple query: get all recent workflows from execution history
+        # This gives you a list of real workflows to test scheduling on
+        query = '''
+        SELECT 
+            WORKFLOW_NAME,
+            FOLDER_NAME,
+            LAST_RUN_TIME,
+            RUN_COUNT
+        FROM (
+            SELECT DISTINCT
+                WORKFLOW_NAME,
+                SUBJECT_AREA AS FOLDER_NAME,
+                MAX(START_TIME) AS LAST_RUN_TIME,
+                COUNT(*) AS RUN_COUNT,
+                ROW_NUMBER() OVER (PARTITION BY WORKFLOW_NAME, SUBJECT_AREA ORDER BY MAX(START_TIME) DESC) as rn
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE START_TIME >= TRUNC(SYSDATE) - 30
+            AND WORKFLOW_NAME IS NOT NULL
+            AND SUBJECT_AREA IS NOT NULL
+            GROUP BY WORKFLOW_NAME, SUBJECT_AREA
+        )
+        WHERE rn = 1
+        ORDER BY LAST_RUN_TIME DESC
+        '''
+        
+        workflows = fetch_all(query)
+        
+        # Format last run time for display
+        for wf in workflows:
+            if wf.get('last_run_time'):
+                wf['last_run_display'] = wf['last_run_time'].strftime('%Y-%m-%d %H:%M') if hasattr(wf['last_run_time'], 'strftime') else str(wf['last_run_time'])
+            else:
+                wf['last_run_display'] = 'N/A'
+        
+        return JsonResponse({
+            'success': True,
+            'workflows': workflows,
+            'count': len(workflows),
+            'message': f'Found {len(workflows)} workflows from last 30 days - pick any to test scheduling'
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching workflows: {str(e)}',
+            'workflows': [],
+            'error': str(e)
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_informatica_folders(request):
+    '''
+    API endpoint to get list of Informatica folders (SUBJECT_AREA)
+    Returns unique folder names from the repository
+    '''
+    from portal.db.oracle_client import fetch_all
+    
+    try:
+        query = '''
+        SELECT DISTINCT SUBJECT_AREA
+        FROM INFA_PCREPO.REP_TASK_INST_RUN
+        WHERE SUBJECT_AREA IS NOT NULL
+        AND START_TIME >= TRUNC(SYSDATE) - 30
+        ORDER BY SUBJECT_AREA
+        '''
+        
+        folders = fetch_all(query)
+        folder_names = [f.get('subject_area') for f in folders if f.get('subject_area')]
+        
+        return JsonResponse({
+            'success': True,
+            'folders': folder_names,
+            'count': len(folder_names)
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching folders: {str(e)}',
+            'folders': []
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_informatica_workflows(request):
+    '''
+    API endpoint to get list of workflows for a specific folder
+    Query parameter: folder_name
+    '''
+    from portal.db.oracle_client import fetch_all
+    
+    folder_name = request.GET.get('folder_name')
+    
+    if not folder_name:
+        return JsonResponse({
+            'success': False,
+            'message': 'folder_name query parameter is required',
+            'workflows': []
+        }, status=400)
+    
+    try:
+        query = '''
+        SELECT DISTINCT WORKFLOW_NAME
+        FROM INFA_PCREPO.REP_TASK_INST_RUN
+        WHERE SUBJECT_AREA = :folder_name
+        AND START_TIME >= TRUNC(SYSDATE) - 30
+        ORDER BY WORKFLOW_NAME
+        '''
+        
+        workflows = fetch_all(query, {'folder_name': folder_name})
+        workflow_names = [w.get('workflow_name') for w in workflows if w.get('workflow_name')]
+        
+        return JsonResponse({
+            'success': True,
+            'workflows': workflow_names,
+            'count': len(workflow_names),
+            'folder': folder_name
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching workflows: {str(e)}',
+            'workflows': []
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_informatica_tasks(request):
+    '''
+    API endpoint to get list of tasks/sessions for a specific workflow in a folder
+    Query parameters: folder_name, workflow_name
+    '''
+    from portal.db.oracle_client import fetch_all
+    
+    folder_name = request.GET.get('folder_name')
+    workflow_name = request.GET.get('workflow_name')
+    
+    if not folder_name or not workflow_name:
+        return JsonResponse({
+            'success': False,
+            'message': 'folder_name and workflow_name query parameters are required',
+            'tasks': []
+        }, status=400)
+    
+    try:
+        query = '''
+        SELECT DISTINCT INSTANCE_NAME
+        FROM INFA_PCREPO.REP_TASK_INST_RUN
+        WHERE SUBJECT_AREA = :folder_name
+        AND WORKFLOW_NAME = :workflow_name
+        AND TASK_TYPE_NAME = 'Session'
+        AND START_TIME >= TRUNC(SYSDATE) - 30
+        ORDER BY INSTANCE_NAME
+        '''
+        
+        tasks = fetch_all(query, {'folder_name': folder_name, 'workflow_name': workflow_name})
+        task_names = [t.get('instance_name') for t in tasks if t.get('instance_name')]
+        
+        return JsonResponse({
+            'success': True,
+            'tasks': task_names,
+            'count': len(task_names),
+            'folder': folder_name,
+            'workflow': workflow_name
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching tasks: {str(e)}',
+            'tasks': []
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_workflow_session_status(request):
+    '''
+    API endpoint to get detailed status of all sessions in a workflow
+    Query parameters: workflow_name, folder_name
+    Returns all sessions with their current status, start/end times, and error messages
+    '''
+    from portal.db.oracle_client import fetch_all
+    
+    workflow_name = request.GET.get('workflow_name')
+    folder_name = request.GET.get('folder_name')
+    
+    if not workflow_name or not folder_name:
+        return JsonResponse({
+            'success': False,
+            'message': 'workflow_name and folder_name query parameters are required',
+            'sessions': []
+        }, status=400)
+    
+    try:
+        # Enhanced query to show all workflow tasks including not-started ones and workflow structure
+        query = '''
+        WITH WorkflowTasks AS (
+            -- Get all tasks defined in the workflow from execution history
+            SELECT DISTINCT 
+                WORKFLOW_NAME,
+                SUBJECT_AREA,
+                INSTANCE_NAME,
+                TASK_TYPE_NAME
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE WORKFLOW_NAME = :workflow_name
+            AND SUBJECT_AREA = :folder_name
+        ),
+        LatestRuns AS (
+            SELECT 
+                WORKFLOW_NAME,
+                SUBJECT_AREA,
+                INSTANCE_NAME,
+                TASK_TYPE_NAME,
+                START_TIME,
+                END_TIME,
+                RUN_STATUS_CODE,
+                SUBSTR(RUN_ERR_MSG, 1, 500) AS RUN_ERROR_MESSAGE,
+                DECODE(RUN_STATUS_CODE, 
+                    1, 'Success',
+                    2, 'Disabled',
+                    3, 'Failed',
+                    4, 'Stopped',
+                    5, 'Aborted',
+                    6, 'Running',
+                    7, 'Suspending',
+                    8, 'Suspended',
+                    9, 'Stopping',
+                    10, 'Aborting',
+                    11, 'Waiting',
+                    12, 'Scheduled',
+                    13, 'Unscheduled',
+                    14, 'Unknown',
+                    15, 'Terminated',
+                    'Unknown'
+                ) AS STATUS,
+                ROW_NUMBER() OVER (
+                    PARTITION BY INSTANCE_NAME 
+                    ORDER BY START_TIME DESC
+                ) AS rn
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE WORKFLOW_NAME = :workflow_name
+            AND SUBJECT_AREA = :folder_name
+            AND START_TIME >= TRUNC(SYSDATE) - 30
+        )
+        SELECT 
+            wt.WORKFLOW_NAME,
+            wt.SUBJECT_AREA AS FOLDER_NAME,
+            wt.INSTANCE_NAME AS SESSION_NAME,
+            wt.TASK_TYPE_NAME,
+            TO_CHAR(lr.START_TIME, 'YYYY-MM-DD HH24:MI:SS') AS START_TIME,
+            TO_CHAR(lr.END_TIME, 'YYYY-MM-DD HH24:MI:SS') AS END_TIME,
+            lr.RUN_STATUS_CODE,
+            lr.RUN_ERROR_MESSAGE,
+            CASE 
+                WHEN lr.START_TIME IS NULL THEN 'Not Started'
+                ELSE lr.STATUS
+            END AS STATUS,
+            CASE 
+                WHEN lr.END_TIME IS NOT NULL THEN 
+                    ROUND((lr.END_TIME - lr.START_TIME) * 24 * 60, 2)
+                WHEN lr.START_TIME IS NOT NULL THEN 
+                    ROUND((SYSDATE - lr.START_TIME) * 24 * 60, 2)
+                ELSE NULL
+            END AS DURATION_MINUTES,
+            CASE 
+                WHEN lr.START_TIME IS NULL THEN 1
+                ELSE 0
+            END AS IS_NOT_STARTED
+        FROM WorkflowTasks wt
+        LEFT JOIN LatestRuns lr ON wt.INSTANCE_NAME = lr.INSTANCE_NAME 
+            AND lr.rn = 1
+        ORDER BY 
+            IS_NOT_STARTED ASC,
+            CASE WHEN lr.START_TIME IS NOT NULL THEN lr.START_TIME ELSE TO_DATE('2099-12-31', 'YYYY-MM-DD') END DESC,
+            wt.INSTANCE_NAME
+        '''
+        
+        sessions = fetch_all(query, {
+            'workflow_name': workflow_name,
+            'folder_name': folder_name
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'sessions': sessions,
+            'count': len(sessions),
+            'workflow': workflow_name,
+            'folder': folder_name
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching workflow status: {str(e)}',
+            'sessions': []
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_workflow_session_status_any_folder(request):
+    '''
+    API endpoint to get detailed status of all sessions in a workflow
+    Searches across ALL folders (faster for command task lookups)
+    Query parameter: workflow_name
+    Returns all sessions with their current status, start/end times, and error messages
+    '''
+    from portal.db.oracle_client import fetch_all
+    
+    workflow_name = request.GET.get('workflow_name')
+    
+    if not workflow_name:
+        return JsonResponse({
+            'success': False,
+            'message': 'workflow_name query parameter is required',
+            'sessions': []
+        }, status=400)
+    
+    try:
+        # Search for workflow across all folders in one query
+        query = '''
+        WITH WorkflowTasks AS (
+            -- Get all tasks defined in the workflow from execution history
+            SELECT DISTINCT 
+                WORKFLOW_NAME,
+                SUBJECT_AREA,
+                INSTANCE_NAME,
+                TASK_TYPE_NAME
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE WORKFLOW_NAME = :workflow_name
+        ),
+        LatestRuns AS (
+            SELECT 
+                WORKFLOW_NAME,
+                SUBJECT_AREA,
+                INSTANCE_NAME,
+                TASK_TYPE_NAME,
+                START_TIME,
+                END_TIME,
+                RUN_STATUS_CODE,
+                SUBSTR(RUN_ERR_MSG, 1, 500) AS RUN_ERROR_MESSAGE,
+                DECODE(RUN_STATUS_CODE, 
+                    1, 'Success',
+                    2, 'Disabled',
+                    3, 'Failed',
+                    4, 'Stopped',
+                    5, 'Aborted',
+                    6, 'Running',
+                    7, 'Suspending',
+                    8, 'Suspended',
+                    9, 'Stopping',
+                    10, 'Aborting',
+                    11, 'Waiting',
+                    12, 'Scheduled',
+                    13, 'Unscheduled',
+                    14, 'Unknown',
+                    15, 'Terminated',
+                    'Unknown'
+                ) AS STATUS,
+                ROW_NUMBER() OVER (
+                    PARTITION BY INSTANCE_NAME 
+                    ORDER BY START_TIME DESC
+                ) AS rn
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE WORKFLOW_NAME = :workflow_name
+            AND START_TIME >= TRUNC(SYSDATE) - 30
+        )
+        SELECT 
+            wt.WORKFLOW_NAME,
+            wt.SUBJECT_AREA AS FOLDER_NAME,
+            wt.INSTANCE_NAME AS SESSION_NAME,
+            wt.TASK_TYPE_NAME,
+            TO_CHAR(lr.START_TIME, 'YYYY-MM-DD HH24:MI:SS') AS START_TIME,
+            TO_CHAR(lr.END_TIME, 'YYYY-MM-DD HH24:MI:SS') AS END_TIME,
+            lr.RUN_STATUS_CODE,
+            lr.RUN_ERROR_MESSAGE,
+            CASE 
+                WHEN lr.START_TIME IS NULL THEN 'Not Started'
+                ELSE lr.STATUS
+            END AS STATUS,
+            CASE 
+                WHEN lr.END_TIME IS NOT NULL THEN 
+                    ROUND((lr.END_TIME - lr.START_TIME) * 24 * 60, 2)
+                WHEN lr.START_TIME IS NOT NULL THEN 
+                    ROUND((SYSDATE - lr.START_TIME) * 24 * 60, 2)
+                ELSE NULL
+            END AS DURATION_MINUTES,
+            CASE 
+                WHEN lr.START_TIME IS NULL THEN 1
+                ELSE 0
+            END AS IS_NOT_STARTED
+        FROM WorkflowTasks wt
+        LEFT JOIN LatestRuns lr ON wt.INSTANCE_NAME = lr.INSTANCE_NAME 
+            AND lr.rn = 1
+        WHERE ROWNUM <= 1000
+        ORDER BY 
+            IS_NOT_STARTED ASC,
+            CASE WHEN lr.START_TIME IS NOT NULL THEN lr.START_TIME ELSE TO_DATE('2099-12-31', 'YYYY-MM-DD') END DESC,
+            wt.INSTANCE_NAME
+        '''
+        
+        sessions = fetch_all(query, {'workflow_name': workflow_name})
+        
+        # Get the folder name from the first session (they should all be in the same folder)
+        folder_name = sessions[0].get('folder_name') if sessions else None
+        
+        return JsonResponse({
+            'success': True,
+            'sessions': sessions,
+            'count': len(sessions),
+            'workflow': workflow_name,
+            'folder': folder_name
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching workflow status: {str(e)}',
+            'sessions': []
+        }, status=500)

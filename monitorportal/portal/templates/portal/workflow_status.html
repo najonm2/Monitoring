@@ -1,0 +1,811 @@
+{% extends "portal/layout.html" %}
+
+{% block title %}Workflow Status Checker | PASE Monitoring Portal{% endblock %}
+
+{% block content %}
+<div style="padding:30px; max-width:1400px; margin:0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom:30px;">
+        <h1 style="color:#1f2937; font-size:28px; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:32px;">🔍</span>
+            Workflow Status Checker
+        </h1>
+        <p style="color:#6b7280; font-size:15px; margin:0;">
+            Check the detailed status of all sessions/tasks in a specific workflow
+        </p>
+    </div>
+
+    <!-- Search Form Card -->
+    <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:30px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:30px;">
+        
+        <form id="workflowSearchForm">
+            <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:20px; align-items:end;">
+                
+                <!-- Folder Name -->
+                <div>
+                    <label for="folderName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                        Folder Name <span style="color:#0891b2;">*</span>
+                    </label>
+                    <input type="text" id="folderName" name="folder_name" required 
+                           list="folderList"
+                           placeholder="e.g., B_CDW_ASL_ICG_GRANITE"
+                           style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                           onfocus="this.style.borderColor='#0891b2'; this.style.boxShadow='0 0 0 3px rgba(8,145,178,0.1)'"
+                           onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                           onchange="loadWorkflows()">
+                    <datalist id="folderList"></datalist>
+                </div>
+
+                <!-- Workflow Name -->
+                <div>
+                    <label for="workflowName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                        Workflow Name <span style="color:#0891b2;">*</span>
+                    </label>
+                    <input type="text" id="workflowName" name="workflow_name" required 
+                           list="workflowList"
+                           placeholder="e.g., wkf_Load_CDW_ASL_ICG_GRANITE"
+                           style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                           onfocus="this.style.borderColor='#0891b2'; this.style.boxShadow='0 0 0 3px rgba(8,145,178,0.1)'"
+                           onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                    <datalist id="workflowList"></datalist>
+                </div>
+
+                <!-- Search Button -->
+                <div>
+                    <button type="submit" 
+                            style="padding:11px 32px; background:linear-gradient(135deg, #0891b2, #0e7490); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:15px; box-shadow:0 2px 8px rgba(8,145,178,0.3); transition:all 0.2s; white-space:nowrap;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(8,145,178,0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(8,145,178,0.3)'">
+                        🔍 Check Status
+                    </button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Command Workflow Modal -->
+    <div id="commandWorkflowModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow:auto;">
+        <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;">
+            <div style="background:white; border-radius:12px; max-width:900px; width:100%; max-height:90vh; overflow:auto; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+                <!-- Modal Header -->
+                <div style="background:linear-gradient(135deg, var(--primary-teal), #0e7490); padding:20px 24px; border-bottom:2px solid #0e7490; position:sticky; top:0; z-index:10;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="color:white; font-size:18px; font-weight:700; margin:0;">
+                            🔗 Command Workflow Details
+                        </h3>
+                        <button onclick="closeCommandModal()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;"
+                                onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                                onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            ×
+                        </button>
+                    </div>
+                    <div id="commandModalWorkflowInfo" style="color:#e0f2fe; font-size:13px; margin-top:8px;">
+                        <!-- Workflow info will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Modal Body -->
+                <div id="commandModalContent" style="padding:24px;">
+                    <!-- Content will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" style="display:none;">
+        
+        <!-- Summary Card -->
+        <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div>
+                    <h2 style="color:#1f2937; font-size:20px; font-weight:700; margin:0 0 4px 0;">
+                        Workflow: <span id="displayWorkflowName" style="color:#0891b2;"></span>
+                    </h2>
+                    <p style="color:#6b7280; font-size:14px; margin:0;">
+                        Folder: <span id="displayFolderName" style="font-weight:600;"></span>
+                    </p>
+                </div>
+                <button onclick="refreshStatus()" 
+                        style="padding:8px 20px; background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; transition:all 0.2s;"
+                        onmouseover="this.style.background='#e5e7eb'"
+                        onmouseout="this.style.background='#f3f4f6'">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:16px;" id="statsCards">
+                <div id="cardAll" onclick="filterSessions('all')" style="padding:16px; background:#f0fdf4; border:2px solid #86efac; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                     onmouseover="if(window.currentFilter !== 'all') this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                     onmouseout="if(window.currentFilter !== 'all') this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="font-size:13px; color:#15803d; font-weight:600; margin-bottom:4px;">Total Sessions</div>
+                    <div style="font-size:28px; font-weight:700; color:#166534;" id="totalSessions">0</div>
+                    <div style="font-size:11px; color:#15803d; margin-top:4px; opacity:0.8;">Click to view all</div>
+                </div>
+                <div id="cardSuccess" onclick="filterSessions('success')" style="padding:16px; background:#ecfdf5; border:2px solid #6ee7b7; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                     onmouseover="if(window.currentFilter !== 'success') this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                     onmouseout="if(window.currentFilter !== 'success') this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="font-size:13px; color:#047857; font-weight:600; margin-bottom:4px;">Success</div>
+                    <div style="font-size:28px; font-weight:700; color:#065f46;" id="successSessions">0</div>
+                    <div style="font-size:11px; color:#047857; margin-top:4px; opacity:0.8;">Click to view</div>
+                </div>
+                <div id="cardFailed" onclick="filterSessions('failed')" style="padding:16px; background:#fef2f2; border:2px solid #fca5a5; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                     onmouseover="if(window.currentFilter !== 'failed') this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                     onmouseout="if(window.currentFilter !== 'failed') this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="font-size:13px; color:#b91c1c; font-weight:600; margin-bottom:4px;">Failed</div>
+                    <div style="font-size:28px; font-weight:700; color:#991b1b;" id="failedSessions">0</div>
+                    <div style="font-size:11px; color:#b91c1c; margin-top:4px; opacity:0.8;">Click to view</div>
+                </div>
+                <div id="cardRunning" onclick="filterSessions('running')" style="padding:16px; background:#eff6ff; border:2px solid #93c5fd; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                     onmouseover="if(window.currentFilter !== 'running') this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                     onmouseout="if(window.currentFilter !== 'running') this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="font-size:13px; color:#1e40af; font-weight:600; margin-bottom:4px;">In Progress</div>
+                    <div style="font-size:28px; font-weight:700; color:#1e3a8a;" id="runningSessions">0</div>
+                    <div style="font-size:11px; color:#1e40af; margin-top:4px; opacity:0.8;">Click to view</div>
+                </div>
+                <div id="cardNotStarted" onclick="filterSessions('notstarted')" style="padding:16px; background:#fef3c7; border:2px solid #fcd34d; border-radius:8px; cursor:pointer; transition:all 0.2s;"
+                     onmouseover="if(window.currentFilter !== 'notstarted') this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'"
+                     onmouseout="if(window.currentFilter !== 'notstarted') this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="font-size:13px; color:#92400e; font-weight:600; margin-bottom:4px;">Not Started</div>
+                    <div style="font-size:28px; font-weight:700; color:#78350f;" id="notStartedSessions">0</div>
+                    <div style="font-size:11px; color:#92400e; margin-top:4px; opacity:0.8;">Click to view</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Structure -->
+        <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:24px;">
+            <div style="background:linear-gradient(135deg, var(--primary-teal), #0e7490); padding:16px 20px; border-bottom:2px solid #0e7490;">
+                <h3 style="color:white; font-size:16px; font-weight:700; margin:0;">
+                    📊 Workflow Structure
+                </h3>
+            </div>
+            <div id="workflowStructure" style="padding:20px;">
+                <!-- Workflow structure will be populated here -->
+            </div>
+        </div>
+
+        <!-- Sessions Table -->
+        <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-top:24px;">
+            
+            <!-- Table Header -->
+            <div style="background:linear-gradient(135deg, var(--primary-teal), #0e7490); padding:16px 20px; border-bottom:2px solid #0e7490;">
+                <h3 style="color:white; font-size:16px; font-weight:700; margin:0;">
+                    Session Details
+                </h3>
+            </div>
+
+            <!-- Table Container -->
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr style="background:#f9fafb; border-bottom:2px solid #e5e7eb;">
+                            <th style="padding:12px 16px; text-align:left; font-weight:700; color:#374151;">Session/Task Name</th>
+                            <th style="padding:12px 16px; text-align:left; font-weight:700; color:#374151;">Type</th>
+                            <th style="padding:12px 16px; text-align:center; font-weight:700; color:#374151;">Status</th>
+                            <th style="padding:12px 16px; text-align:left; font-weight:700; color:#374151;">Start Time</th>
+                            <th style="padding:12px 16px; text-align:left; font-weight:700; color:#374151;">End Time</th>
+                            <th style="padding:12px 16px; text-align:right; font-weight:700; color:#374151;">Duration (min)</th>
+                            <th style="padding:12px 16px; text-align:left; font-weight:700; color:#374151;">Error Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionsTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:60px 30px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <div style="font-size:64px; margin-bottom:16px;">🔍</div>
+        <h3 style="color:#6b7280; font-size:18px; font-weight:600; margin:0 0 8px 0;">No Results Yet</h3>
+        <p style="color:#9ca3af; font-size:14px; margin:0;">
+            Enter a folder and workflow name above to check session statuses
+        </p>
+    </div>
+
+</div>
+
+<script>
+// Load folders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFolders();
+});
+
+// Load folders from API
+function loadFolders() {
+    fetch('/api/informatica/folders/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.folders) {
+                const datalist = document.getElementById('folderList');
+                datalist.innerHTML = '';
+                data.folders.forEach(folder => {
+                    const option = document.createElement('option');
+                    option.value = folder;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading folders:', error));
+}
+
+// Load workflows based on selected folder
+function loadWorkflows() {
+    const folderName = document.getElementById('folderName').value.trim();
+    if (!folderName) {
+        document.getElementById('workflowList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/workflows/?folder_name=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.workflows) {
+                const datalist = document.getElementById('workflowList');
+                datalist.innerHTML = '';
+                data.workflows.forEach(workflow => {
+                    const option = document.createElement('option');
+                    option.value = workflow;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading workflows:', error));
+}
+
+// Form submission handler
+document.getElementById('workflowSearchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    checkWorkflowStatus();
+});
+
+// Check workflow status
+function checkWorkflowStatus() {
+    const folderName = document.getElementById('folderName').value.trim();
+    const workflowName = document.getElementById('workflowName').value.trim();
+    
+    if (!folderName || !workflowName) {
+        alert('⚠️ Please enter both Folder Name and Workflow Name');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('emptyState').innerHTML = '<div style="font-size:48px; margin-bottom:16px;">⏳</div><h3 style="color:#6b7280; font-size:18px; font-weight:600; margin:0;">Loading...</h3>';
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    
+    fetch(`/api/informatica/workflow-status/?workflow_name=${encodeURIComponent(workflowName)}&folder_name=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayResults(data);
+            } else {
+                alert(`❌ Error: ${data.message}`);
+                document.getElementById('emptyState').innerHTML = '<div style="font-size:64px; margin-bottom:16px;">❌</div><h3 style="color:#dc2626; font-size:18px; font-weight:600; margin:0 0 8px 0;">Error</h3><p style="color:#9ca3af; font-size:14px; margin:0;">' + data.message + '</p>';
+            }
+        })
+        .catch(error => {
+            alert(`❌ Error fetching workflow status: ${error.message}`);
+            document.getElementById('emptyState').innerHTML = '<div style="font-size:64px; margin-bottom:16px;">❌</div><h3 style="color:#dc2626; font-size:18px; font-weight:600; margin:0 0 8px 0;">Connection Error</h3><p style="color:#9ca3af; font-size:14px; margin:0;">' + error.message + '</p>';
+        });
+}
+
+// Display results
+function displayResults(data) {
+    const sessions = data.sessions || [];
+    
+    if (sessions.length === 0) {
+        document.getElementById('emptyState').innerHTML = '<div style="font-size:64px; margin-bottom:16px;">📭</div><h3 style="color:#6b7280; font-size:18px; font-weight:600; margin:0 0 8px 0;">No Sessions Found</h3><p style="color:#9ca3af; font-size:14px; margin:0;">No sessions found for this workflow in the last 7 days</p>';
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('resultsSection').style.display = 'none';
+        return;
+    }
+    
+    // Update header
+    document.getElementById('displayWorkflowName').textContent = data.workflow;
+    document.getElementById('displayFolderName').textContent = data.folder;
+    
+    // Calculate stats
+    const total = sessions.length;
+    const success = sessions.filter(s => s.status === 'Success').length;
+    const failed = sessions.filter(s => ['Failed', 'Stopped', 'Aborted', 'Terminated'].includes(s.status)).length;
+    const running = sessions.filter(s => ['Running', 'Suspending', 'Suspended', 'Stopping', 'Aborting', 'Waiting', 'Scheduled'].includes(s.status)).length;
+    const notStarted = sessions.filter(s => s.status === 'Not Started').length;
+    
+    document.getElementById('totalSessions').textContent = total;
+    document.getElementById('successSessions').textContent = success;
+    document.getElementById('failedSessions').textContent = failed;
+    document.getElementById('runningSessions').textContent = running;
+    document.getElementById('notStartedSessions').textContent = notStarted;
+    
+    // Display workflow structure
+    displayWorkflowStructure(sessions, data.workflow, data.folder);
+    
+    // Populate table
+    const tbody = document.getElementById('sessionsTableBody');
+    tbody.innerHTML = '';
+    
+    sessions.forEach(session => {
+        const row = document.createElement('tr');
+        row.style.borderBottom = '1px solid #e5e7eb';
+        row.style.transition = 'background 0.2s';
+        row.onmouseover = function() { this.style.background = '#f9fafb'; };
+        row.onmouseout = function() { this.style.background = 'white'; };
+        
+        // Status badge
+        let statusBadge = '';
+        const status = session.status;
+        
+        if (status === 'Success') {
+            statusBadge = '<span style="display:inline-block; padding:4px 12px; background:#d1fae5; color:#065f46; border-radius:12px; font-weight:600; font-size:12px;">✓ Success</span>';
+        } else if (['Failed', 'Aborted', 'Terminated'].includes(status)) {
+            statusBadge = `<span style="display:inline-block; padding:4px 12px; background:#fee2e2; color:#991b1b; border-radius:12px; font-weight:600; font-size:12px;">✗ ${status}</span>`;
+        } else if (status === 'Stopped') {
+            statusBadge = '<span style="display:inline-block; padding:4px 12px; background:#fef3c7; color:#92400e; border-radius:12px; font-weight:600; font-size:12px;">⏸ Stopped</span>';
+        } else if (['Running', 'Suspending', 'Stopping', 'Aborting'].includes(status)) {
+            statusBadge = `<span style="display:inline-block; padding:4px 12px; background:#dbeafe; color:#1e3a8a; border-radius:12px; font-weight:600; font-size:12px;">⟳ ${status}</span>`;
+        } else if (['Suspended', 'Waiting', 'Scheduled'].includes(status)) {
+            statusBadge = `<span style="display:inline-block; padding:4px 12px; background:#f3f4f6; color:#374151; border-radius:12px; font-weight:600; font-size:12px;">⏳ ${status}</span>`;
+        } else if (status === 'Disabled') {
+            statusBadge = '<span style="display:inline-block; padding:4px 12px; background:#e5e7eb; color:#6b7280; border-radius:12px; font-weight:600; font-size:12px;">⊘ Disabled</span>';
+        } else if (status === 'Not Started') {
+            statusBadge = '<span style="display:inline-block; padding:4px 12px; background:#fef3c7; color:#92400e; border-radius:12px; font-weight:600; font-size:12px;">○ Not Started</span>';
+        } else {
+            statusBadge = `<span style="display:inline-block; padding:4px 12px; background:#f3f4f6; color:#6b7280; border-radius:12px; font-weight:600; font-size:12px;">${status}</span>`;
+        }
+        
+        // Add data attribute for filtering
+        row.setAttribute('data-status', status);
+        
+        row.innerHTML = `
+            <td style="padding:12px 16px; color:#1f2937; font-weight:500;">${session.session_name || 'N/A'}</td>
+            <td style="padding:12px 16px; color:#6b7280;">${session.task_type_name || 'N/A'}</td>
+            <td style="padding:12px 16px; text-align:center;">${statusBadge}</td>
+            <td style="padding:12px 16px; color:#6b7280; font-family:monospace; font-size:12px;">${session.start_time || 'N/A'}</td>
+            <td style="padding:12px 16px; color:#6b7280; font-family:monospace; font-size:12px;">${session.end_time || '—'}</td>
+            <td style="padding:12px 16px; text-align:right; color:#374151; font-weight:600;">${session.duration_minutes || '—'}</td>
+            <td style="padding:12px 16px; color:#dc2626; font-size:12px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${session.run_error_message || ''}">${session.run_error_message || '—'}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+    
+    // Show results
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'block';
+    
+    // Initialize filter to 'all'
+    window.currentFilter = 'all';
+    updateCardHighlight('all');
+}
+
+// Filter sessions by status
+function filterSessions(filterType) {
+    window.currentFilter = filterType;
+    
+    const rows = document.querySelectorAll('#sessionsTableBody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        let shouldShow = false;
+        
+        if (filterType === 'all') {
+            shouldShow = true;
+        } else if (filterType === 'success') {
+            shouldShow = (status === 'Success');
+        } else if (filterType === 'failed') {
+            shouldShow = ['Failed', 'Stopped', 'Aborted', 'Terminated'].includes(status);
+        } else if (filterType === 'running') {
+            shouldShow = ['Running', 'Suspending', 'Suspended', 'Stopping', 'Aborting', 'Waiting', 'Scheduled'].includes(status);
+        } else if (filterType === 'notstarted') {
+            shouldShow = (status === 'Not Started');
+        }
+        
+        if (shouldShow) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update card highlighting
+    updateCardHighlight(filterType);
+    
+    // Show message if no results
+    if (visibleCount === 0) {
+        const tbody = document.getElementById('sessionsTableBody');
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="7" style="padding:40px; text-align:center; color:#9ca3af; font-size:14px;">No sessions match the selected filter</td>';
+        tbody.appendChild(emptyRow);
+    }
+}
+
+// Update card highlighting
+function updateCardHighlight(filterType) {
+    // Reset all cards
+    const cards = {
+        'all': document.getElementById('cardAll'),
+        'success': document.getElementById('cardSuccess'),
+        'failed': document.getElementById('cardFailed'),
+        'running': document.getElementById('cardRunning'),
+        'notstarted': document.getElementById('cardNotStarted')
+    };
+    
+    // Reset styles
+    Object.keys(cards).forEach(key => {
+        const card = cards[key];
+        card.style.boxShadow = 'none';
+        card.style.transform = 'translateY(0)';
+        if (key === 'all') {
+            card.style.borderColor = '#86efac';
+            card.style.borderWidth = '2px';
+        } else if (key === 'success') {
+            card.style.borderColor = '#6ee7b7';
+            card.style.borderWidth = '2px';
+        } else if (key === 'failed') {
+            card.style.borderColor = '#fca5a5';
+            card.style.borderWidth = '2px';
+        } else if (key === 'running') {
+            card.style.borderColor = '#93c5fd';
+            card.style.borderWidth = '2px';
+        } else if (key === 'notstarted') {
+            card.style.borderColor = '#fcd34d';
+            card.style.borderWidth = '2px';
+        }
+    });
+    
+    // Highlight active card
+    const activeCard = cards[filterType];
+    if (activeCard) {
+        activeCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        activeCard.style.transform = 'translateY(-4px)';
+        activeCard.style.borderWidth = '3px';
+    }
+}
+
+// Refresh status
+function refreshStatus() {
+    checkWorkflowStatus();
+}
+
+// Display workflow structure
+function displayWorkflowStructure(sessions, workflowName, folderName) {
+    const container = document.getElementById('workflowStructure');
+    
+    // Create workflow header
+    let html = `
+        <div style="margin-bottom:20px; padding:16px; background:#f0f9ff; border-left:4px solid var(--primary-teal); border-radius:8px;">
+            <div style="font-size:14px; font-weight:700; color:#0c4a6e; margin-bottom:8px;">
+                🔄 Workflow: ${workflowName}
+            </div>
+            <div style="font-size:12px; color:#075985;">
+                Total Tasks: ${sessions.length} | Organized by task type and status
+            </div>
+            <div style="font-size:11px; color:#0369a1; margin-top:8px; padding:8px; background:#e0f2fe; border-radius:4px;">
+                💡 <strong>Tip:</strong> Command tasks starting with <code style="background:white; padding:2px 6px; border-radius:3px; font-family:monospace;">cmd_</code> or <code style="background:white; padding:2px 6px; border-radius:3px; font-family:monospace;">cmd_Invoke_</code> are clickable to view linked workflows.
+            </div>
+        </div>
+        
+        <div style="display:grid; gap:12px;">
+    `;
+    
+    // Group sessions by task type
+    const taskTypes = {};
+    sessions.forEach(session => {
+        const type = session.task_type_name || 'Unknown';
+        if (!taskTypes[type]) {
+            taskTypes[type] = [];
+        }
+        taskTypes[type].push(session);
+    });
+    
+    // Display tasks grouped by type
+    Object.keys(taskTypes).sort().forEach(taskType => {
+        const tasks = taskTypes[taskType];
+        html += `
+            <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fafafa;">
+                <div style="font-weight:600; color:#374151; margin-bottom:8px; font-size:13px;">
+                    📦 ${taskType} (${tasks.length})
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:8px;">
+        `;
+        
+        tasks.forEach(task => {
+            const status = task.status;
+            let statusColor, statusBg, statusIcon;
+            
+            if (status === 'Success') {
+                statusColor = '#065f46';
+                statusBg = '#d1fae5';
+                statusIcon = '✓';
+            } else if (['Failed', 'Aborted', 'Terminated'].includes(status)) {
+                statusColor = '#991b1b';
+                statusBg = '#fee2e2';
+                statusIcon = '✗';
+            } else if (status === 'Not Started') {
+                statusColor = '#92400e';
+                statusBg = '#fef3c7';
+                statusIcon = '○';
+            } else if (['Running', 'Suspending', 'Stopping', 'Aborting'].includes(status)) {
+                statusColor = '#1e3a8a';
+                statusBg = '#dbeafe';
+                statusIcon = '⟳';
+            } else {
+                statusColor = '#6b7280';
+                statusBg = '#f3f4f6';
+                statusIcon = '●';
+            }
+            
+            // Check if this is a command task that references another workflow
+            const isCommandTask = task.session_name && task.session_name.toLowerCase().startsWith('cmd_');
+            
+            // Extract workflow name - handle both cmd_Invoke_ and cmd_ prefixes
+            let linkedWorkflow = null;
+            if (isCommandTask) {
+                const taskName = task.session_name;
+                if (taskName.toLowerCase().startsWith('cmd_invoke_')) {
+                    linkedWorkflow = taskName.substring(11); // Remove 'cmd_Invoke_'
+                } else {
+                    linkedWorkflow = taskName.substring(4); // Remove 'cmd_'
+                }
+            }
+            
+            // Add special styling for command tasks
+            const borderColor = isCommandTask ? '#0891b2' : '#e5e7eb';
+            const clickHandler = isCommandTask ? 
+                `onclick="showCommandWorkflow('${linkedWorkflow.replace(/'/g, "\\'")}')"` : '';
+            const cursorStyle = isCommandTask ? 'cursor:pointer;' : 'cursor:default;';
+            const titleText = isCommandTask ? 
+                `${task.session_name} (Click to view workflow: ${linkedWorkflow})` : 
+                task.session_name;
+            
+            html += `
+                <div style="padding:8px 12px; background:white; border:2px solid ${borderColor}; border-radius:6px; display:flex; align-items:center; justify-content:space-between; ${cursorStyle} transition:all 0.2s;"
+                     ${clickHandler}
+                     onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'; this.style.transform='translateY(-1px)'; ${isCommandTask ? "this.style.borderColor='#06b6d4';" : ""}"
+                     onmouseout="this.style.boxShadow='none'; this.style.transform='translateY(0)'; ${isCommandTask ? "this.style.borderColor='#0891b2';" : ""}">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:12px; color:#1f2937; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${titleText}">
+                            ${isCommandTask ? '🔗 ' : ''}${task.session_name}
+                        </div>
+                    </div>
+                    <div style="margin-left:8px;">
+                        <span style="display:inline-block; padding:2px 8px; background:${statusBg}; color:${statusColor}; border-radius:10px; font-weight:600; font-size:10px; white-space:nowrap;">
+                            ${statusIcon} ${status}
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    container.innerHTML = html;
+}
+
+// Show command workflow details in modal
+function showCommandWorkflow(workflowName) {
+    // Show modal with loading state
+    const modal = document.getElementById('commandWorkflowModal');
+    const modalContent = document.getElementById('commandModalContent');
+    const modalInfo = document.getElementById('commandModalWorkflowInfo');
+    
+    modalInfo.innerHTML = `Workflow: <strong>${workflowName}</strong> | Loading...`;
+    modalContent.innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:48px; margin-bottom:16px;">⏳</div><h3 style="color:#6b7280; font-size:16px;">Loading workflow details...</h3><p style="color:#9ca3af; font-size:13px; margin-top:8px;">Searching across all folders (fast query)</p></div>`;
+    modal.style.display = 'block';
+    
+    // Use the fast any-folder endpoint (single database query)
+    fetch(`/api/informatica/workflow-status-any-folder/?workflow_name=${encodeURIComponent(workflowName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sessions && data.sessions.length > 0) {
+                modalInfo.innerHTML = `Workflow: <strong>${workflowName}</strong> | Folder: <strong>${data.folder || 'Multiple'}</strong>`;
+                displayCommandWorkflowDetails(data);
+            } else {
+                modalContent.innerHTML = `
+                    <div style="text-align:center; padding:40px;">
+                        <div style="font-size:64px; margin-bottom:16px;">📭</div>
+                        <h3 style="color:#6b7280; font-size:18px; font-weight:600; margin:0 0 8px 0;">Workflow Not Found</h3>
+                        <p style="color:#9ca3af; font-size:14px; margin:0;">Workflow "<strong>${workflowName}</strong>" was not found in any folder</p>
+                        <div style="margin-top:20px; padding:12px; background:#fef3c7; border-radius:8px; text-align:left;">
+                            <p style="color:#92400e; font-size:12px; margin:0 0 8px 0;"><strong>💡 Possible reasons:</strong></p>
+                            <ul style="color:#92400e; font-size:11px; margin:0; padding-left:20px;">
+                                <li>The workflow hasn't run in the last 30 days</li>
+                                <li>The workflow name might be slightly different</li>
+                                <li>The command task reference might be incorrect</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            modalContent.innerHTML = `
+                <div style="text-align:center; padding:40px;">
+                    <div style="font-size:64px; margin-bottom:16px;">❌</div>
+                    <h3 style="color:#dc2626; font-size:18px; font-weight:600; margin:0 0 8px 0;">Connection Error</h3>
+                    <p style="color:#9ca3af; font-size:14px; margin:0;">${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// Display command workflow details in modal
+function displayCommandWorkflowDetails(data) {
+    const modalContent = document.getElementById('commandModalContent');
+    const sessions = data.sessions || [];
+    
+    if (sessions.length === 0) {
+        modalContent.innerHTML = `
+            <div style="text-align:center; padding:40px;">
+                <div style="font-size:64px; margin-bottom:16px;">📭</div>
+                <h3 style="color:#6b7280; font-size:18px; font-weight:600; margin:0 0 8px 0;">No Sessions Found</h3>
+                <p style="color:#9ca3af; font-size:14px; margin:0;">No sessions found for this workflow</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calculate stats
+    const total = sessions.length;
+    const success = sessions.filter(s => s.status === 'Success').length;
+    const failed = sessions.filter(s => ['Failed', 'Stopped', 'Aborted', 'Terminated'].includes(s.status)).length;
+    const running = sessions.filter(s => ['Running', 'Suspending', 'Suspended', 'Stopping', 'Aborting', 'Waiting', 'Scheduled'].includes(s.status)).length;
+    const notStarted = sessions.filter(s => s.status === 'Not Started').length;
+    
+    // Check if there are any command tasks
+    const commandTasks = sessions.filter(s => s.session_name && s.session_name.toLowerCase().startsWith('cmd_'));
+    const hasCommandTasks = commandTasks.length > 0;
+    
+    let html = `
+        <!-- Summary Stats -->
+        <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:${hasCommandTasks ? '12px' : '20px'};">
+            <div style="padding:12px; background:#f0fdf4; border:2px solid #86efac; border-radius:8px; text-align:center;">
+                <div style="font-size:11px; color:#15803d; font-weight:600; margin-bottom:2px;">Total</div>
+                <div style="font-size:24px; font-weight:700; color:#166534;">${total}</div>
+            </div>
+            <div style="padding:12px; background:#ecfdf5; border:2px solid #6ee7b7; border-radius:8px; text-align:center;">
+                <div style="font-size:11px; color:#047857; font-weight:600; margin-bottom:2px;">Success</div>
+                <div style="font-size:24px; font-weight:700; color:#065f46;">${success}</div>
+            </div>
+            <div style="padding:12px; background:#fef2f2; border:2px solid #fca5a5; border-radius:8px; text-align:center;">
+                <div style="font-size:11px; color:#b91c1c; font-weight:600; margin-bottom:2px;">Failed</div>
+                <div style="font-size:24px; font-weight:700; color:#991b1b;">${failed}</div>
+            </div>
+            <div style="padding:12px; background:#eff6ff; border:2px solid #93c5fd; border-radius:8px; text-align:center;">
+                <div style="font-size:11px; color:#1e40af; font-weight:600; margin-bottom:2px;">Running</div>
+                <div style="font-size:24px; font-weight:700; color:#1e3a8a;">${running}</div>
+            </div>
+            <div style="padding:12px; background:#fef3c7; border:2px solid #fcd34d; border-radius:8px; text-align:center;">
+                <div style="font-size:11px; color:#92400e; font-weight:600; margin-bottom:2px;">Not Started</div>
+                <div style="font-size:24px; font-weight:700; color:#78350f;">${notStarted}</div>
+            </div>
+        </div>
+        
+        ${hasCommandTasks ? `
+        <!-- Command Tasks Info -->
+        <div style="margin-bottom:20px; padding:10px 12px; background:#e0f2fe; border-left:3px solid #0891b2; border-radius:6px; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">🔗</span>
+            <div style="font-size:11px; color:#0c4a6e;">
+                <strong>${commandTasks.length} command task${commandTasks.length > 1 ? 's' : ''} detected.</strong> 
+                Click on any <code style="background:white; padding:1px 4px; border-radius:3px; font-family:monospace; color:#0891b2;">cmd_</code> or <code style="background:white; padding:1px 4px; border-radius:3px; font-family:monospace; color:#0891b2;">cmd_Invoke_</code> task name below to explore nested workflows.
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- Sessions Table -->
+        <div style="border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                <thead>
+                    <tr style="background:#f9fafb; border-bottom:2px solid #e5e7eb;">
+                        <th style="padding:10px 12px; text-align:left; font-weight:700; color:#374151;">Session/Task</th>
+                        <th style="padding:10px 12px; text-align:left; font-weight:700; color:#374151;">Type</th>
+                        <th style="padding:10px 12px; text-align:center; font-weight:700; color:#374151;">Status</th>
+                        <th style="padding:10px 12px; text-align:left; font-weight:700; color:#374151;">Start Time</th>
+                        <th style="padding:10px 12px; text-align:right; font-weight:700; color:#374151;">Duration (min)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    sessions.forEach(session => {
+        const status = session.status;
+        let statusBadge = '';
+        
+        if (status === 'Success') {
+            statusBadge = '<span style="display:inline-block; padding:3px 10px; background:#d1fae5; color:#065f46; border-radius:10px; font-weight:600; font-size:11px;">✓ Success</span>';
+        } else if (['Failed', 'Aborted', 'Terminated'].includes(status)) {
+            statusBadge = `<span style="display:inline-block; padding:3px 10px; background:#fee2e2; color:#991b1b; border-radius:10px; font-weight:600; font-size:11px;">✗ ${status}</span>`;
+        } else if (status === 'Stopped') {
+            statusBadge = '<span style="display:inline-block; padding:3px 10px; background:#fef3c7; color:#92400e; border-radius:10px; font-weight:600; font-size:11px;">⏸ Stopped</span>';
+        } else if (['Running', 'Suspending', 'Stopping', 'Aborting'].includes(status)) {
+            statusBadge = `<span style="display:inline-block; padding:3px 10px; background:#dbeafe; color:#1e3a8a; border-radius:10px; font-weight:600; font-size:11px;">⟳ ${status}</span>`;
+        } else if (status === 'Not Started') {
+            statusBadge = '<span style="display:inline-block; padding:3px 10px; background:#fef3c7; color:#92400e; border-radius:10px; font-weight:600; font-size:11px;">○ Not Started</span>';
+        } else {
+            statusBadge = `<span style="display:inline-block; padding:3px 10px; background:#f3f4f6; color:#6b7280; border-radius:10px; font-weight:600; font-size:11px;">${status}</span>`;
+        }
+        
+        // Check if this is a command task (for nested exploration)
+        const sessionName = session.session_name || '';
+        const isCommandTask = sessionName.toLowerCase().startsWith('cmd_');
+        
+        // Extract workflow name - handle both cmd_Invoke_ and cmd_ prefixes
+        let linkedWorkflow = null;
+        if (isCommandTask) {
+            if (sessionName.toLowerCase().startsWith('cmd_invoke_')) {
+                linkedWorkflow = sessionName.substring(11); // Remove 'cmd_Invoke_'
+            } else {
+                linkedWorkflow = sessionName.substring(4); // Remove 'cmd_'
+            }
+        }
+        
+        // Build session name cell with click handler for command tasks
+        let sessionNameCell = '';
+        if (isCommandTask) {
+            sessionNameCell = `
+                <span onclick="showCommandWorkflow('${linkedWorkflow.replace(/'/g, "\\'")}')" 
+                      style="color:#0891b2; cursor:pointer; text-decoration:underline; font-weight:600;"
+                      onmouseover="this.style.color='#06b6d4'"
+                      onmouseout="this.style.color='#0891b2'"
+                      title="Click to view workflow: ${linkedWorkflow}">
+                    🔗 ${sessionName}
+                </span>
+            `;
+        } else {
+            sessionNameCell = sessionName;
+        }
+        
+        html += `
+            <tr style="border-bottom:1px solid #e5e7eb; transition:background 0.2s;"
+                onmouseover="this.style.background='#f9fafb'"
+                onmouseout="this.style.background='white'">
+                <td style="padding:10px 12px; color:#1f2937; font-weight:500;">${sessionNameCell}</td>
+                <td style="padding:10px 12px; color:#6b7280;">${session.task_type_name || 'N/A'}</td>
+                <td style="padding:10px 12px; text-align:center;">${statusBadge}</td>
+                <td style="padding:10px 12px; color:#6b7280; font-family:monospace; font-size:11px;">${session.start_time || 'N/A'}</td>
+                <td style="padding:10px 12px; text-align:right; color:#374151; font-weight:600;">${session.duration_minutes || '—'}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    modalContent.innerHTML = html;
+}
+
+// Close command workflow modal
+function closeCommandModal() {
+    document.getElementById('commandWorkflowModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('commandWorkflowModal');
+    if (event.target === modal) {
+        closeCommandModal();
+    }
+});
+</script>
+
+{% endblock %}

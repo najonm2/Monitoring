@@ -838,6 +838,150 @@ class InformaticaRestartService:
                 'message': f'Error: {str(e)}',
                 'error': str(e)
             }
+    
+    def schedule_workflow(
+        self,
+        workflow_name: str,
+        folder_name: str,
+        integration_service: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Schedule a workflow for automatic execution
+        
+        Args:
+            workflow_name: Name of the workflow to schedule
+            folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
+            
+        Returns:
+            dict: Status of the operation
+        """
+        if not self.is_configured():
+            return {
+                'success': False,
+                'message': 'Informatica connection not configured'
+            }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
+        try:
+            is_service = integration_service if integration_service else self.integration_service
+            
+            cmd = [
+                self.pmcmd_path,
+                'scheduleworkflow',
+                '-sv', is_service,
+                '-d', self.domain,
+                '-u', self.username,
+                '-p', self.password,
+                '-f', folder_name,
+                workflow_name
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                return {
+                    'success': True,
+                    'message': f'Workflow "{workflow_name}" scheduled successfully',
+                    'workflow': workflow_name,
+                    'action': 'scheduled'
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Failed to schedule workflow "{workflow_name}"',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error scheduling workflow: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}',
+                'error': str(e)
+            }
+    
+    def unschedule_workflow(
+        self,
+        workflow_name: str,
+        folder_name: str,
+        integration_service: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Unschedule a workflow (disable automatic execution)
+        
+        Args:
+            workflow_name: Name of the workflow to unschedule
+            folder_name: Folder containing the workflow
+            integration_service: Integration Service name (defaults to settings if not provided)
+            
+        Returns:
+            dict: Status of the operation
+        """
+        if not self.is_configured():
+            return {
+                'success': False,
+                'message': 'Informatica connection not configured'
+            }
+        
+        # Establish gateway connection first
+        conn_result = self.establish_connection()
+        if not conn_result['success']:
+            return conn_result
+        
+        try:
+            is_service = integration_service if integration_service else self.integration_service
+            
+            cmd = [
+                self.pmcmd_path,
+                'unscheduleworkflow',
+                '-sv', is_service,
+                '-d', self.domain,
+                '-u', self.username,
+                '-p', self.password,
+                '-f', folder_name,
+                workflow_name
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=self._get_env()
+            )
+            
+            if result.returncode == 0:
+                return {
+                    'success': True,
+                    'message': f'Workflow "{workflow_name}" unscheduled successfully',
+                    'workflow': workflow_name,
+                    'action': 'unscheduled'
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'Failed to unschedule workflow "{workflow_name}"',
+                    'error': result.stderr or result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Error unscheduling workflow: {str(e)}")
+            return {
+                'success': False,
+                'message': f'Error: {str(e)}',
+                'error': str(e)
+            }
 
 
 # Helper function for easy access

@@ -25,10 +25,20 @@ urlpatterns = [
     path("api/informatica/check-workflow-status/", api_views.check_workflow_status, name="check_workflow_status"),
     path("api/informatica/restart-with-options/", api_views.restart_workflow_with_options, name="restart_workflow_with_options"),
     path("api/informatica/stop-workflow/", api_views.stop_workflow, name="stop_workflow"),
+    path("api/informatica/schedule-workflow/", api_views.schedule_workflow, name="schedule_workflow"),
+    path("api/informatica/scheduled-workflows/", api_views.get_scheduled_workflows, name="get_scheduled_workflows"),
+    path("api/informatica/test-connection/", api_views.test_informatica_connection, name="test_informatica_connection"),
+    path("api/informatica/folders/", api_views.get_informatica_folders, name="get_informatica_folders"),
+    path("api/informatica/workflows/", api_views.get_informatica_workflows, name="get_informatica_workflows"),
+    path("api/informatica/tasks/", api_views.get_informatica_tasks, name="get_informatica_tasks"),
+    path("api/informatica/workflow-status/", api_views.get_workflow_session_status, name="get_workflow_session_status"),
+    path("api/informatica/workflow-status-any-folder/", api_views.get_workflow_session_status_any_folder, name="get_workflow_session_status_any_folder"),
     
     # Informatica Manual Restart and Stop Pages
     path("informatica/manual-restart/", views.manual_informatica_restart, name="manual_informatica_restart"),
     path("informatica/manual-stop/", views.manual_informatica_stop, name="manual_informatica_stop"),
+    path("informatica/schedule-workflow/", views.schedule_workflow_page, name="schedule_workflow_page"),
+    path("informatica/workflow-status/", views.workflow_status_checker, name="workflow_status_checker"),
     
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),

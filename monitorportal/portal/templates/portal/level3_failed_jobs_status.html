@@ -50,25 +50,15 @@
             <p style="margin: 0; font-size: 1.1rem; opacity: 0.9; line-height: 1.5;">{{ report.description }}</p>
         </div>
         
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            {% if report.ssrs_url %}
+        {% if report.ssrs_url %}
+        <div>
             <a href="{{ report.ssrs_url }}" target="_blank" rel="noopener" style="display: inline-block; background: var(--primary-orange); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);"
                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 106, 19, 0.4)'"
                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 106, 19, 0.3)'">
                 🔗 Open SSRS Report
             </a>
-            {% endif %}
-            <a href="/informatica/manual-restart/" style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);"
-               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.4)'"
-               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
-                🔧 Manual Restart
-            </a>
-            <a href="/informatica/manual-stop/" style="display: inline-block; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);"
-               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)'"
-               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)'">
-                🛑 Stop Workflow
-            </a>
         </div>
+        {% endif %}
     </div>
 </div>
 
@@ -142,24 +132,80 @@
     </div>
 </div>
 
-<!-- QUICK ACTIONS BANNER -->
-<div style="margin: 40px 0;">
-    <a href="/informatica/manual-restart/" style="display: block; text-decoration: none; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 24px 32px; border-radius: 12px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;"
-       onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)'"
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(16, 185, 129, 0.3)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 16px;">
+<!-- INFORMATICA ACTIONS SECTION -->
+<div style="margin-bottom: 40px;">
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px; color: #1f2937; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 2rem;">⚙️</span>
+        <span>Informatica Actions</span>
+    </h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        
+        <!-- Workflow Status Checker -->
+        <a href="/informatica/workflow-status/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(8, 145, 178, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(8, 145, 178, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(8, 145, 178, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">🔍</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Workflow Status</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Check detailed session status for any workflow. View all tasks, their statuses, start/end times, and error messages.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Status Checker →
+            </div>
+        </a>
+        
+        <!-- Manual Restart -->
+        <a href="/informatica/manual-restart/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(16, 185, 129, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
                 <span style="font-size: 2.5rem;">🔧</span>
-                <div>
-                    <h3 style="margin: 0 0 6px 0; font-size: 1.5rem; font-weight: 700;">Manual Informatica Restart</h3>
-                    <p style="margin: 0; font-size: 0.95rem; opacity: 0.9;">Submit manual restart requests for workflows/tasks not in the failed jobs list (Developer Special Requests)</p>
-                </div>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Manual Restart</h3>
             </div>
-            <div style="background: rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; white-space: nowrap;">
-                Open Form →
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Submit manual restart requests for workflows or tasks. Supports 4 restart options including recovery mode.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Restart Form →
             </div>
-        </div>
-    </a>
+        </a>
+        
+        <!-- Stop Workflow -->
+        <a href="/informatica/manual-stop/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(220, 38, 38, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(220, 38, 38, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">🛑</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Stop Workflow</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Stop or abort running workflows and tasks. Choose between graceful stop or forceful abort operations.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Stop Form →
+            </div>
+        </a>
+        
+        <!-- Schedule/Unschedule Workflow -->
+        <a href="/informatica/schedule-workflow/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(245, 158, 11, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(245, 158, 11, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">📅</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Schedule Workflow</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Schedule or unschedule workflows for automatic execution. Manage workflow scheduling status easily.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Schedule Form →
+            </div>
+        </a>
+        
+    </div>
 </div>
 
 <!-- FAILED JOBS TABLE -->

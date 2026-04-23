@@ -516,6 +516,22 @@ def manual_informatica_stop(request):
     return render(request, "portal/manual_stop.html")
 
 
+def schedule_workflow_page(request):
+    """
+    Schedule/Unschedule Workflow page for managing workflow schedules
+    Allows enabling or disabling automatic execution schedules
+    """
+    return render(request, "portal/schedule_workflow.html")
+
+
+def workflow_status_checker(request):
+    """
+    Workflow Status Checker page - Check detailed status of all sessions in a workflow
+    Allows searching by workflow name and folder to view all task/session statuses
+    """
+    return render(request, "portal/workflow_status.html")
+
+
 def adf_status(request):
     """
     ADF Status Dashboard - Shows latest run status for all ADF jobs today

@@ -51,12 +51,15 @@
                     Folder Name <span style="color:#dc2626;">*</span>
                 </label>
                 <input type="text" id="folderName" name="folder_name" required 
+                       list="folderList"
                        placeholder="e.g., B_CDW_ASL_ICG_GRANITE"
                        style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
                        onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
-                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadWorkflows()">
+                <datalist id="folderList"></datalist>
                 <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-                    Enter the Informatica folder containing the workflow
+                    Enter or select the Informatica folder containing the workflow
                 </div>
             </div>
 
@@ -66,12 +69,15 @@
                     Workflow Name <span style="color:#dc2626;">*</span>
                 </label>
                 <input type="text" id="workflowName" name="workflow_name" required 
+                       list="workflowList"
                        placeholder="e.g., wkf_Load_CDW_ASL_ICG_GRANITE"
                        style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
                        onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
-                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadTasks()">
+                <datalist id="workflowList"></datalist>
                 <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-                    Enter the workflow name to stop
+                    Enter or select the workflow name to stop
                 </div>
             </div>
 
@@ -112,12 +118,14 @@
                     Session/Task Name <span style="color:#dc2626;">*</span>
                 </label>
                 <input type="text" id="sessionName" name="session_name" 
+                       list="taskList"
                        placeholder="e.g., m_Load_CDW_ASL_ICG_GRANITE"
                        style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
                        onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                <datalist id="taskList"></datalist>
                 <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-                    Enter the specific session/task name to stop (required for task-level operations)
+                    Enter or select the specific session/task name to stop (required for task-level operations)
                 </div>
             </div>
 
@@ -186,6 +194,82 @@
 </div>
 
 <script>
+// Load folders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFolders();
+});
+
+// Load folders from API
+function loadFolders() {
+    fetch('/api/informatica/folders/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.folders) {
+                const datalist = document.getElementById('folderList');
+                datalist.innerHTML = '';
+                data.folders.forEach(folder => {
+                    const option = document.createElement('option');
+                    option.value = folder;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading folders:', error));
+}
+
+// Load workflows based on selected folder
+function loadWorkflows() {
+    const folderName = document.getElementById('folderName').value.trim();
+    if (!folderName) {
+        document.getElementById('workflowList').innerHTML = '';
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/workflows/?folder_name=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.workflows) {
+                const datalist = document.getElementById('workflowList');
+                datalist.innerHTML = '';
+                data.workflows.forEach(workflow => {
+                    const option = document.createElement('option');
+                    option.value = workflow;
+                    datalist.appendChild(option);
+                });
+            }
+            // Clear tasks when folder changes
+            document.getElementById('taskList').innerHTML = '';
+        })
+        .catch(error => console.error('Error loading workflows:', error));
+}
+
+// Load tasks based on selected folder and workflow
+function loadTasks() {
+    const folderName = document.getElementById('folderName').value.trim();
+    const workflowName = document.getElementById('workflowName').value.trim();
+    
+    if (!folderName || !workflowName) {
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/tasks/?folder_name=${encodeURIComponent(folderName)}&workflow_name=${encodeURIComponent(workflowName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tasks) {
+                const datalist = document.getElementById('taskList');
+                datalist.innerHTML = '';
+                data.tasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading tasks:', error));
+}
+
 function toggleSessionField() {
     const levelTask = document.getElementById('levelTask').checked;
     const sessionField = document.getElementById('sessionNameField');
