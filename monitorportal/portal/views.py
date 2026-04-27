@@ -734,3 +734,12 @@ def databricks_adf_failed(request):
         "data_source": data_source,
         "error": error,
     })
+
+
+def application_monitoring(request):
+    """
+    Application-wise Monitoring Page
+    Shows Level3 workflows by application with dropdown selector
+    Ignores priority levels (P1, P2, P3) - only filters by application
+    """
+    return render(request, "portal/application_monitoring.html")

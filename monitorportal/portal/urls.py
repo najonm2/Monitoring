@@ -19,6 +19,10 @@ urlpatterns = [
     path("api/reports/<slug:app_slug>/<slug:report_slug>/", api_views.api_report_data, name="api_report_data"),
     path("api/level3/today-job-details/", api_views.level3_today_job_details, name="level3_today_job_details"),
     path("api/level3/failed-jobs-details/", api_views.level3_failed_jobs_details, name="level3_failed_jobs_details"),
+    path("api/level3/application-monitoring/", api_views.application_monitoring_data, name="application_monitoring_data"),
+    
+    # ICSM API
+    path("api/icsm/check-entry/", api_views.icsm_check_entry, name="icsm_check_entry"),
     
     # Informatica Workflow Restart API
     path("api/informatica/restart-workflow/", api_views.restart_workflow, name="restart_workflow"),
@@ -42,6 +46,9 @@ urlpatterns = [
     
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),
+    
+    # Application-wise Monitoring
+    path("application-monitoring/", views.application_monitoring, name="application_monitoring"),
     
     # DH Health Dashboard
     path("dh-health/", views.dh_health_dashboard, name="dh_health_dashboard"),

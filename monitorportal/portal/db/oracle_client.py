@@ -237,3 +237,34 @@ def fetch_all_mapdqprd(sql: str, params: dict | None = None) -> list[dict]:
         cur.execute(sql, params or {})
         cols = [c[0].lower() for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def execute_query(sql: str, params: dict | None = None) -> None:
+    """
+    Execute an INSERT, UPDATE, or DELETE query with auto-commit.
+    Use this for DML operations that modify data.
+    
+    Args:
+        sql: SQL query to execute (INSERT, UPDATE, DELETE)
+        params: Dictionary of bind variables
+        
+    Example:
+        execute_query(
+            "INSERT INTO ICSM.APP_CONTROL_STATUS (APPLICATION_NAME, DEPENDENCY_NAME) VALUES (:app, :dep)",
+            {'app': 'MyApp', 'dep': 'MyDependency'}
+        )
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(sql, params or {})
+        conn.commit()
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
