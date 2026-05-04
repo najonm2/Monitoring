@@ -24,6 +24,11 @@ urlpatterns = [
     # ICSM API
     path("api/icsm/check-entry/", api_views.icsm_check_entry, name="icsm_check_entry"),
     
+    # BI Report Comments API
+    path("api/bi-report/comments/", api_views.bi_report_comments, name="bi_report_comments"),
+    path("api/bi-report/comment/save/", api_views.save_bi_report_comment, name="save_bi_report_comment"),
+    path("api/bi-report/comment/delete/", api_views.delete_bi_report_comment, name="delete_bi_report_comment"),
+    
     # Informatica Workflow Restart API
     path("api/informatica/restart-workflow/", api_views.restart_workflow, name="restart_workflow"),
     path("api/informatica/check-workflow-status/", api_views.check_workflow_status, name="check_workflow_status"),

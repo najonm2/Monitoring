@@ -145,31 +145,6 @@
     <div id="resultMessage" style="margin-top:20px; display:none;"></div>
 </div>
 
-<!-- Scheduled Workflows List Section -->
-<div style="max-width:1200px; margin:30px auto; padding:0 20px;">
-    <div style="background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:30px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <div>
-                <h3 style="margin:0 0 4px 0; color:#111827; font-size:20px; font-weight:600;">📋 Recent Workflows (Available for Testing)</h3>
-                <p style="margin:0; color:#6b7280; font-size:13px;">Pick any workflow below to test scheduling functionality</p>
-            </div>
-            <button onclick="loadScheduledWorkflows()" 
-                    style="padding:8px 20px; background:linear-gradient(135deg, var(--primary-teal), #0891b2); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:13px; transition:all 0.2s;"
-                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(6,182,212,0.4)'"
-                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
-                🔄 Load Workflows
-            </button>
-        </div>
-        
-        <div id="scheduledWorkflowsList" style="min-height:200px;">
-            <div style="text-align:center;padding:40px 20px;color:#6b7280;">
-                <div style="font-size:48px;margin-bottom:16px;">🔍</div>
-                <div style="font-size:14px;">Click <strong>"Load Workflows"</strong> to see recent workflows available for testing</div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 // Load folders on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -388,85 +363,6 @@ function testConnection() {
                 </div>
             `;
         });
-}
-
-// Load scheduled workflows list
-function loadScheduledWorkflows() {
-    const listDiv = document.getElementById('scheduledWorkflowsList');
-    listDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">⏳ Loading...</div>';
-    
-    fetch('/api/informatica/scheduled-workflows/')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.workflows.length > 0) {
-                let html = '<div style="margin-bottom:12px;padding:12px;background:#f0f9ff;border-left:4px solid #0ea5e9;border-radius:6px;">';
-                html += `<strong style="color:#0369a1;">✅ Found ${data.count} workflows</strong>`;
-                if (data.message) {
-                    html += `<span style="color:#0369a1;margin-left:8px;"> - ${data.message}</span>`;
-                }
-                html += '</div>';
-                
-                html += '<div style="overflow-x:auto;">';
-                html += '<table style="width:100%;border-collapse:collapse;">';
-                html += '<thead><tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">';
-                html += '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#374151;">#</th>';
-                html += '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#374151;">Folder</th>';
-                html += '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#374151;">Workflow Name</th>';
-                html += '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#374151;">Last Run</th>';
-                html += '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#374151;">Runs (30d)</th>';
-                html += '<th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#374151;">Action</th>';
-                html += '</tr></thead><tbody>';
-                
-                data.workflows.forEach((wf, index) => {
-                    const bgColor = index % 2 === 0 ? 'white' : '#f9fafb';
-                    html += `<tr style="background:${bgColor};border-bottom:1px solid #e5e7eb;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">`;
-                    html += `<td style="padding:12px 16px;font-size:12px;color:#6b7280;font-weight:600;">${index + 1}</td>`;
-                    html += `<td style="padding:12px 16px;font-size:13px;color:#111827;">${wf.folder_name || 'N/A'}</td>`;
-                    html += `<td style="padding:12px 16px;font-size:13px;color:#111827;font-weight:500;">${wf.workflow_name}</td>`;
-                    html += `<td style="padding:12px 16px;font-size:12px;color:#6b7280;">${wf.last_run_display || 'N/A'}</td>`;
-                    html += `<td style="padding:12px 16px;font-size:12px;color:#6b7280;text-align:center;">${wf.run_count || 0}</td>`;
-                    html += `<td style="padding:12px 16px;text-align:center;"><button onclick="selectWorkflow('${wf.folder_name}', '${wf.workflow_name}')" style="padding:6px 16px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;box-shadow:0 2px 4px rgba(16,185,129,0.2);" onmouseover="this.style.background='#059669';this.style.transform='scale(1.05)'" onmouseout="this.style.background='#10b981';this.style.transform='scale(1)'">✅ Select</button></td>`;
-                    html += '</tr>';
-                });
-                
-                html += '</tbody></table>';
-                html += '</div>';
-                listDiv.innerHTML = html;
-            } else {
-                listDiv.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">📋 No workflows found in the last 30 days</div>';
-            }
-        })
-        .catch(error => {
-            listDiv.innerHTML = `<div style="text-align:center;padding:20px;color:#dc2626;">❌ Error loading workflows: ${error.message}</div>`;
-        });
-}
-
-// Select workflow from list and populate form
-function selectWorkflow(folderName, workflowName) {
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Populate form fields
-    document.getElementById('folder_name').value = folderName;
-    document.getElementById('workflow_name').value = workflowName;
-    
-    // Select 'schedule' option by default
-    document.getElementById('schedule_radio').checked = true;
-    updateScheduleOption(document.getElementById('schedule_radio'));
-    
-    // Show success message
-    const resultDiv = document.getElementById('resultMessage');
-    resultDiv.innerHTML = `
-        <div style="padding:12px 20px; background:#eff6ff; border:2px solid #3b82f6; border-radius:8px; color:#1e40af; font-weight:500;">
-            ℹ️ Workflow selected: <strong>${workflowName}</strong> from folder <strong>${folderName}</strong>. Select Integration Service and submit to schedule.
-        </div>
-    `;
-    resultDiv.style.display = 'block';
-    
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        resultDiv.style.display = 'none';
-    }, 5000);
 }
 </script>
 

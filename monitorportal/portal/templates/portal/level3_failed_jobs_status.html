@@ -1022,8 +1022,8 @@ function restartWorkflow(workflowName, folderName, sessionName) {
             </label>
             <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
                 <input type="radio" name="restartOption" value="4" style="margin-right:8px;">
-                <strong style="color:#1f2937;">4. Recover Workflow from Task</strong>
-                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Recovers workflow from this task in recovery mode</div>
+                <strong style="color:#1f2937;">4. Recover Workflow</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Recovers the entire workflow in recovery mode (resumes from last saved state)</div>
             </label>
         </div>
         
@@ -1093,11 +1093,36 @@ function executeRestart() {
             alert(`✅ SUCCESS!\n\n${result.message}\n\nWorkflow: ${data.workflow_name}\nOption: ${optionNames[selectedOption]}`);
             location.reload();
         } else {
-            alert(`❌ FAILED!\n\n${result.message}\n\nWorkflow: ${data.workflow_name}`);
+            // Build detailed error message
+            let errorMsg = `❌ RESTART FAILED!\n\n`;
+            errorMsg += `Workflow: ${data.workflow_name}\n`;
+            errorMsg += `Folder: ${data.folder_name}\n`;
+            errorMsg += `Option: ${optionNames[selectedOption]}\n\n`;
+            errorMsg += `Error Message:\n${result.message}\n\n`;
+            
+            // Include detailed error output if available
+            if (result.error) {
+                errorMsg += `pmcmd Output:\n${result.error}\n\n`;
+            }
+            
+            // Include command if available (for debugging)
+            if (result.command) {
+                errorMsg += `Command: ${result.command}\n\n`;
+            }
+            
+            if (result.error_details) {
+                errorMsg += `Details: ${result.error_details}`;
+            }
+            
+            alert(errorMsg);
+            
+            // Also log to console for easier debugging
+            console.error('Restart failed:', result);
         }
     })
     .catch(error => {
-        alert(`❌ ERROR!\n\nFailed to execute restart.\n\n${error.message}`);
+        alert(`❌ NETWORK ERROR!\n\nFailed to communicate with server.\n\nError: ${error.message}`);
+        console.error('Restart request failed:', error);
     });
 }
 

@@ -343,7 +343,7 @@ class InformaticaRestartService:
             workflow_name: Name of the workflow
             folder_name: Folder containing the workflow
             restart_option: 1=Restart Task, 2=Restart from Task, 3=Restart Workflow, 4=Recover Workflow
-            session_name: Session/task name (required for options 1, 2, 4)
+            session_name: Session/task name (required for options 1 and 2)
             integration_service: Integration Service name (defaults to settings if not provided)
             
         Returns:
@@ -405,17 +405,14 @@ class InformaticaRestartService:
                 cmd = [self.pmcmd_path, 'startworkflow'] + base_args + [workflow_name]
                 action = f'Restarting entire workflow: {workflow_name}'
                 
-            # Option 4: Recover Workflow from Task
+            # Option 4: Recover Workflow (in recovery mode)
             elif restart_option == 4:
-                if not session_name:
-                    return {'success': False, 'message': 'Session name required for option 4'}
-                    
                 cmd = [self.pmcmd_path, 'startworkflow'] + base_args + [
-                    '-startfrom', session_name,
                     '-recovery',
                     workflow_name
                 ]
-                action = f'Recovering workflow from task: {session_name}'
+                action = f'Recovering workflow: {workflow_name}'
+                logger.info(f"[Option 4] Recover Workflow selected - workflow: {workflow_name}, folder: {folder_name}")
                 
             else:
                 return {
@@ -429,7 +426,7 @@ class InformaticaRestartService:
             cmd_display = cmd.copy()
             pwd_index = cmd_display.index('-p') + 1
             cmd_display[pwd_index] = '****'
-            logger.debug(f"Command: {' '.join(cmd_display)}")
+            logger.info(f"Executing pmcmd command: {' '.join(cmd_display)}")
             
             # Run command
             result = subprocess.run(
@@ -439,6 +436,10 @@ class InformaticaRestartService:
                 timeout=300,  # 5 minute timeout
                 env=self._get_env()
             )
+            
+            logger.info(f"pmcmd return code: {result.returncode}")
+            logger.info(f"pmcmd stdout: {result.stdout}")
+            logger.info(f"pmcmd stderr: {result.stderr}")
             
             if result.returncode == 0:
                 return {
@@ -451,13 +452,17 @@ class InformaticaRestartService:
                     'option': restart_option
                 }
             else:
+                error_output = result.stderr or result.stdout or 'No error details available'
+                logger.error(f"pmcmd failed for {action}: {error_output}")
                 return {
                     'success': False,
-                    'message': f'Failed: {action}',
-                    'error': result.stderr or result.stdout,
+                    'message': f'Failed to {action.lower()}',
+                    'error': error_output,
+                    'error_details': f'Return code: {result.returncode}',
                     'workflow': workflow_name,
                     'session': session_name,
-                    'folder': folder_name
+                    'folder': folder_name,
+                    'command': ' '.join(cmd_display)
                 }
                 
         except subprocess.TimeoutExpired:

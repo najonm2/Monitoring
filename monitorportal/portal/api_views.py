@@ -580,12 +580,15 @@ def restart_workflow_with_options(request):
         "workflow_name": "wkf_Load_CDW_ASL_ICG_GRANITE",
         "folder_name": "B_CDW_ASL_ICG_GRANITE",
         "restart_option": 1,  // 1=Task, 2=From Task, 3=Workflow, 4=Recover
-        "session_name": "s_m_Load_SITE_INST"  // Required for options 1, 2, 4
+        "session_name": "s_m_Load_SITE_INST"  // Required for options 1 and 2
     }
     """
     import json
+    import logging
     from portal.services.informatica_restart_service import InformaticaRestartService
     from django.conf import settings
+    
+    logger = logging.getLogger(__name__)
     
     try:
         body = json.loads(request.body)
@@ -594,6 +597,8 @@ def restart_workflow_with_options(request):
         restart_option = int(body.get('restart_option', 1))
         session_name = body.get('session_name')
         integration_service = body.get('integration_service', settings.INFORMATICA_INTEGRATION_SERVICE)
+        
+        logger.info(f"Restart request - Option: {restart_option}, Workflow: {workflow_name}, Folder: {folder_name}, Session: {session_name}")
         
         if not workflow_name or not folder_name:
             return JsonResponse({
@@ -606,6 +611,7 @@ def restart_workflow_with_options(request):
         
         # Check configuration
         if not service.is_configured():
+            logger.error("Informatica PowerCenter is not configured")
             return JsonResponse({
                 'success': False,
                 'message': 'Informatica PowerCenter is not configured.'
@@ -619,6 +625,11 @@ def restart_workflow_with_options(request):
             session_name=session_name,
             integration_service=integration_service
         )
+        
+        if result['success']:
+            logger.info(f"Restart successful - Option {restart_option}: {workflow_name}")
+        else:
+            logger.error(f"Restart failed - Option {restart_option}: {workflow_name} - Error: {result.get('error', 'Unknown')}")
         
         status_code = 200 if result['success'] else 500
         return JsonResponse(result, status=status_code)
@@ -1726,3 +1737,145 @@ def icsm_check_entry(request):
             'message': f'Failed to insert entry: {str(e)}'
         }, status=500)
 
+
+
+
+
+@require_http_methods(["GET"])
+def bi_report_comments(request):
+    """
+    API endpoint to get all BI report comments
+    """
+    from portal.models import BiReportComment
+    
+    try:
+        comments = BiReportComment.objects.all()
+        comments_list = []
+        for comment in comments:
+            comments_list.append({
+                'id': comment.id,
+                'sla_application': comment.sla_application,
+                'report_date': comment.report_date.strftime('%Y-%m-%d'),
+                'comment_text': comment.comment_text,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': comment.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_by': comment.created_by
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'comments': comments_list
+        })
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching comments: {str(e)}'
+        }, status=500)
+
+
+@require_http_methods(["POST"])
+def save_bi_report_comment(request):
+    """
+    API endpoint to create or update a BI report comment
+    """
+    import json
+    from portal.models import BiReportComment
+    from datetime import datetime
+    
+    try:
+        data = json.loads(request.body)
+        sla_application = data.get('sla_application', '').strip()
+        report_date_str = data.get('report_date', '').strip()
+        comment_text = data.get('comment_text', '').strip()
+        created_by = data.get('created_by', '').strip()
+        
+        if not sla_application or not report_date_str:
+            return JsonResponse({
+                'success': False,
+                'message': 'SLA Application and Report Date are required'
+            }, status=400)
+        
+        # Parse date
+        try:
+            report_date = datetime.strptime(report_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid date format. Use YYYY-MM-DD'
+            }, status=400)
+        
+        # Create or update comment
+        comment, created = BiReportComment.objects.update_or_create(
+            sla_application=sla_application,
+            report_date=report_date,
+            defaults={
+                'comment_text': comment_text,
+                'created_by': created_by
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Comment saved successfully' if created else 'Comment updated successfully',
+            'comment': {
+                'id': comment.id,
+                'sla_application': comment.sla_application,
+                'report_date': comment.report_date.strftime('%Y-%m-%d'),
+                'comment_text': comment.comment_text,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': comment.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_by': comment.created_by
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error saving comment: {str(e)}'
+        }, status=500)
+
+
+@require_http_methods(["POST"])
+def delete_bi_report_comment(request):
+    """
+    API endpoint to delete a BI report comment
+    """
+    import json
+    from portal.models import BiReportComment
+    
+    try:
+        data = json.loads(request.body)
+        comment_id = data.get('id')
+        
+        if not comment_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Comment ID is required'
+            }, status=400)
+        
+        try:
+            comment = BiReportComment.objects.get(id=comment_id)
+            comment.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Comment deleted successfully'
+            })
+        except BiReportComment.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Comment not found'
+            }, status=404)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': f'Error deleting comment: {str(e)}'
+        }, status=500)

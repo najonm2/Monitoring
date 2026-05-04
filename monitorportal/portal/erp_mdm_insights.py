@@ -138,10 +138,21 @@ def get_erp_run_history():
             # Calculate SLA status
             effective_status = display_status if is_recovered else original_status
             
+            # For SUSPENDED runs, check if they have a completion time (meaning they finished before suspension)
             if effective_status == 'SUSPENDED':
-                # Suspended runs - SLA not applicable
-                sla_status = 'UNKNOWN'
-                sla_met_by = None
+                if duration_mins and duration_mins > 0:
+                    # Run completed before being suspended - calculate SLA
+                    sla_diff = sla_minutes - duration_mins
+                    if sla_diff >= 0:
+                        sla_status = 'MET'
+                        sla_met_by = sla_diff
+                    else:
+                        sla_status = 'MISSED'
+                        sla_met_by = abs(sla_diff)
+                else:
+                    # No completion time - SLA not applicable
+                    sla_status = 'UNKNOWN'
+                    sla_met_by = None
             elif effective_status == 'RUNNING' and not is_recovered:
                 sla_status = 'IN PROGRESS'
                 sla_met_by = None
@@ -243,15 +254,17 @@ def get_erp_run_history():
         # Get long-running sessions
         long_running_sessions = get_erp_long_running_sessions()
         
-        # Success rate logic: if failed == 0, always 100%
-        current_success_rate = 100.0 if failed_current == 0 else (round((completed_current / total_current * 100), 1) if total_current > 0 else 0)
-        # Patch last_8_runs success_rate as well
+        # Success rate calculation: (succeeded / total) * 100
+        # Don't automatically set to 100% if failed == 0 (suspended jobs count too!)
+        current_success_rate = round((completed_current / total_current * 100), 1) if total_current > 0 else 0
+        
+        # Fix success_rate in last_8_runs as well (use actual calculation, not "failed==0" logic)
         patched_runs = []
         for run in runs_summary:
-            failed = run.get('failed', 0)
             succeeded = run.get('succeeded', 0)
             total_jobs = run.get('total_jobs', 0)
-            patched_rate = 100.0 if failed == 0 else (round((succeeded / total_jobs * 100), 1) if total_jobs > 0 else 0)
+            # Correct success rate: (succeeded / total) * 100
+            patched_rate = round((succeeded / total_jobs * 100), 1) if total_jobs > 0 else 0
             run = dict(run)
             run['success_rate'] = patched_rate
             patched_runs.append(run)
