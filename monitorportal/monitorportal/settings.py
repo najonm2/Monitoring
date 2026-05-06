@@ -24,16 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-in-prod")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# ✅ PRODUCTION-READY: Reads from environment variable, defaults to False
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
-# Local dev hosts + internal network sharing
-ALLOWED_HOSTS = [
-    "127.0.0.1", 
-    "localhost",
-    "10.161.206.34",  # Your corporate IP - for internal Lumen network sharing
-    "192.168.0.100",  # Your local IP
-    "*",  # Allow all (temporary - for demo/testing only)
-]
+# ✅ PRODUCTION-READY: Allowed hosts from environment variable
+# Set DJANGO_ALLOWED_HOSTS="host1,host2,host3" in production
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if not DEBUG else ["*"]
 
 # -----------------------------------------------------------------------------
 # APPLICATIONS
@@ -56,6 +52,7 @@ INSTALLED_APPS = [
 # -----------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ PRODUCTION: Serve static files efficiently
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -155,9 +152,15 @@ USE_TZ = True
 # -----------------------------------------------------------------------------
 # STATIC FILES (CSS/JS/Images)
 # -----------------------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
-# For dev, this is optional, but good practice if you keep static outside apps:
+# ✅ PRODUCTION: Collect static files to this directory
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# ✅ PRODUCTION: WhiteNoise configuration for efficient static file serving
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Additional static file directories (if needed)
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",
 # ]
@@ -236,8 +239,9 @@ INFORMATICA_REPOSITORY = os.getenv('INFORMATICA_REPOSITORY', 'PCREPO_PRD1_01')
 INFORMATICA_INTEGRATION_SERVICE = os.getenv('INFORMATICA_INTEGRATION_SERVICE', 'IS_GRID_BI')
 
 # Credentials for pmcmd authentication
-INFORMATICA_USERNAME = os.getenv('INFORMATICA_USERNAME', 'ab64033')
-INFORMATICA_PASSWORD = os.getenv('INFORMATICA_PASSWORD', 'Samsungs26@123')
+# ✅ PRODUCTION-READY: No hardcoded passwords in production
+INFORMATICA_USERNAME = os.getenv('INFORMATICA_USERNAME', 'ab64033')  # Dev default only
+INFORMATICA_PASSWORD = os.getenv('INFORMATICA_PASSWORD')  # ⚠️ MUST be set via environment variable in production!
 
 # User Security Domain (required for CTL/Lumen users)
 INFORMATICA_USER_SECURITY_DOMAIN = os.getenv('INFORMATICA_USER_SECURITY_DOMAIN', 'CTL')

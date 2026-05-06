@@ -1,0 +1,35 @@
+# Production Requirements for Informatica Monitor Portal
+# Python 3.10+ required for production deployment
+
+# Django LTS (Long Term Support)
+Django>=4.2,<5.0
+
+# WSGI HTTP Server for production
+gunicorn>=21.2.0
+
+# Static file serving for production
+whitenoise>=6.6.0
+
+# Oracle Database connectivity (Python 3.7+)
+python-oracledb>=2.0.0
+
+# Alternative Oracle driver (for compatibility)
+cx_Oracle>=8.3.0
+
+# ODBC support for Databricks
+pyodbc>=5.0.0
+
+# Timezone support
+pytz>=2024.1
+
+# Environment variable management (optional but recommended)
+python-dotenv>=1.0.0
+
+# Security and monitoring (recommended for production)
+django-cors-headers>=4.3.0
+
+# Health check endpoint
+django-health-check>=3.18.0
+
+# Performance monitoring (optional)
+django-prometheus>=2.3.1

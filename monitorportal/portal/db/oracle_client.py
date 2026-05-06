@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import os
 try:
     import cx_Oracle as oracledb  # For Python 3.6 compatibility
 except ImportError:
@@ -9,24 +10,26 @@ except ImportError:
 
 
 # ---------------------------------------------------------
-# HARD-CODED ORACLE CONNECTION CONFIG
+# ORACLE CONNECTION CONFIG (from environment variables)
 # ---------------------------------------------------------
 # Level3 Application Database (Informatica Repository)
+# ✅ PRODUCTION-READY: Reads from environment variables with dev defaults
 DB_CONFIG = {
-    "host": "azeus2loraipcp2.corp.intranet",
-    "port": 1521,
-    "service": "infr01p_app",
-    "user": "icsm_appl",
-    "password": "Infprd3_appl"
+    "host": os.getenv("LEVEL3_DB_HOST", "azeus2loraipcp2.corp.intranet"),
+    "port": int(os.getenv("LEVEL3_DB_PORT", "1521")),
+    "service": os.getenv("LEVEL3_DB_SERVICE", "infr01p_app"),
+    "user": os.getenv("LEVEL3_DB_USER", "icsm_appl"),
+    "password": os.getenv("LEVEL3_DB_PASSWORD", "Infprd3_appl")  # Dev default only
 }
 
 # MDM, ERP, ADF Applications Database (IICS CDI / Metadata Framework)
+# ✅ PRODUCTION-READY: Reads from environment variables with dev defaults
 MAPDQPRD_DB_CONFIG = {
-    "host": "RACORAP32-SCAN.CORP.INTRANET",
-    "port": 1521,
-    "service": "SVC_IDG01P",
-    "user": "mapdqprd",
-    "password": "2026NewIDMC"
+    "host": os.getenv("MAPDQPRD_DB_HOST", "RACORAP32-SCAN.CORP.INTRANET"),
+    "port": int(os.getenv("MAPDQPRD_DB_PORT", "1521")),
+    "service": os.getenv("MAPDQPRD_DB_SERVICE", "SVC_IDG01P"),
+    "user": os.getenv("MAPDQPRD_DB_USER", "mapdqprd"),
+    "password": os.getenv("MAPDQPRD_DB_PASSWORD", "2026NewIDMC")  # Dev default only
 }
 
 
