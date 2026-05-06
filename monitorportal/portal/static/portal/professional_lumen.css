@@ -1,31 +1,31 @@
 /* ===========================================================
    PROFESSIONAL LUMEN DESIGN SYSTEM
-   Modern, Clean, User-Friendly Enterprise Portal
+   Modern Corporate Theme — Dark Teal & Orange
    =========================================================== */
 
 :root {
-    /* Premium Orange + Teal Color Palette */
-    --primary-orange: #FF6A13; /* Bright Orange - Primary actions */
-    --primary-orange-dark: #E65A0C; /* Darker Orange - Hover states */
-    --primary-orange-light: #FF8C3D; /* Light Orange - Backgrounds */
-    --primary-orange-subtle: #FED7AA; /* Very light orange */
-    
-    --primary-teal: #133D3C; /* Dark Teal - Headers */
-    --primary-teal-dark: #0D2928; /* Darker Teal - Hover states */
-    --primary-teal-light: #1A5250; /* Lighter Teal - Backgrounds */
-    --primary-teal-subtle: #E0F2F1; /* Very light teal */
-    
-    --accent-teal: #14B8A6; /* Bright Teal accent */
-    --accent-purple: #8B5CF6; /* Purple accent */
-    
-    /* Lumen Primary Colors - Orange and Teal Theme */
-    --lumen-primary: #FF6A13; /* Bright Orange */
-    --lumen-primary-dark: #E65A0C; /* Darker Orange */
-    --lumen-primary-light: #FF8C3D; /* Light Orange */
-    --lumen-accent: #133D3C; /* Dark Teal */
-    --lumen-accent-light: #1A5250; /* Light Teal */
-    
-    /* Neutrals - Professional Gray Scale */
+    /* Premium Orange + Teal Color Palette — Exact Lumen Brand */
+    --primary-orange: #fb8429;
+    --primary-orange-dark: #e06f10;
+    --primary-orange-light: #fc9d50;
+    --primary-orange-subtle: #fef0e2;
+
+    --primary-teal: #0f3133;
+    --primary-teal-dark: #0a2223;
+    --primary-teal-light: #1a4a4d;
+    --primary-teal-subtle: #dceced;
+
+    --accent-teal: #14B8A6;
+    --accent-purple: #8B5CF6;
+
+    /* Lumen Primary Colors */
+    --lumen-primary: #fb8429;
+    --lumen-primary-dark: #e06f10;
+    --lumen-primary-light: #fc9d50;
+    --lumen-accent: #0f3133;
+    --lumen-accent-light: #1a4a4d;
+
+    /* Neutrals */
     --gray-50: #F9FAFB;
     --gray-100: #F3F4F6;
     --gray-200: #E5E7EB;
@@ -36,7 +36,7 @@
     --gray-700: #374151;
     --gray-800: #1F2937;
     --gray-900: #111827;
-    
+
     /* Status Colors */
     --success: #10B981;
     --success-bg: #D1FAE5;
@@ -47,36 +47,34 @@
     --error: #EF4444;
     --error-bg: #FEE2E2;
     --error-text: #991B1B;
-    --info: #133D3C;
-    
-    /* Professional Font Stack */
-    --font-family: 'Segoe UI', 'Trebuchet MS', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --info: #0f3133;
     --info-bg: #DBEAFE;
-    --info-text: #1E40AF;
+    --info-text: #0f3133;
     --running: #8B5CF6;
     --running-bg: #EDE9FE;
     --running-text: #5B21B6;
-    
-    /* Enhanced Shadows */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 8px 0 rgba(0, 0, 0, 0.12);
-    --shadow-lg: 0 8px 16px 0 rgba(0, 0, 0, 0.15);
-    --shadow-xl: 0 12px 24px 0 rgba(0, 0, 0, 0.18);
-    --shadow-2xl: 0 20px 40px 0 rgba(0, 0, 0, 0.22);
-    
-    /* Colored Shadows */
-    --shadow-orange: 0 4px 12px 0 rgba(255, 106, 19, 0.25);
-    --shadow-blue: 0 4px 12px 0 rgba(59, 130, 246, 0.25);
-    
-    /* Border Radius */
+
+    /* Font Stack */
+    --font-family: 'Segoe UI', 'Trebuchet MS', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+    /* Shadows */
+    --shadow-xs: 0 1px 2px 0 rgba(0,0,0,.05);
+    --shadow-sm: 0 2px 4px 0 rgba(0,0,0,.08);
+    --shadow-md: 0 4px 8px 0 rgba(0,0,0,.12);
+    --shadow-lg: 0 8px 16px 0 rgba(0,0,0,.15);
+    --shadow-xl: 0 12px 24px 0 rgba(0,0,0,.18);
+    --shadow-2xl: 0 20px 40px 0 rgba(0,0,0,.22);
+    --shadow-orange: 0 4px 12px 0 rgba(251,132,41,.25);
+    --shadow-blue: 0 4px 12px 0 rgba(59,130,246,.25);
+
+    /* Radius */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-2xl: 20px;
     --radius-full: 9999px;
-    
+
     /* Spacing */
     --space-xs: 4px;
     --space-sm: 8px;
@@ -96,8 +94,8 @@
 }
 
 body {
-    font-family: 'Segoe UI', 'Trebuchet MS', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 50%, #E5E7EB 100%);
+    font-family: var(--font-family);
+    background: #ffffff;
     color: var(--gray-900);
     line-height: 1.6;
     min-height: 100vh;
@@ -108,7 +106,7 @@ body {
 a {
     color: inherit;
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color .2s ease;
 }
 
 a:hover {
@@ -116,26 +114,41 @@ a:hover {
 }
 
 /* ===========================================================
-   HEADER & NAVIGATION
+   HEADER — Dark Teal with Orange Accent Circle
    =========================================================== */
 .top-header {
-    background: linear-gradient(135deg, #133D3C 0%, #0D2928 100%); /* Dark Teal Gradient */
+    background: var(--primary-teal);
     color: white;
-    box-shadow: var(--shadow-xl);
     position: sticky;
     top: 0;
     z-index: 1000;
-    border-bottom: 3px solid #0D2928;
+    overflow: hidden;
+}
+
+/* Orange decorative circle in top-right */
+.top-header::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: var(--primary-orange);
+    border-radius: 50%;
+    opacity: .95;
+    pointer-events: none;
 }
 
 .top-inner {
     max-width: 1400px;
     margin: 0 auto;
-    padding: var(--space-md) var(--space-lg);
+    padding: 14px var(--space-lg);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-lg);
+    position: relative;
+    z-index: 1;
 }
 
 .brand {
@@ -145,70 +158,51 @@ a:hover {
 }
 
 .brand-logo {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     background: white;
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 900;
-    font-size: 24px;
-    color: #FF6A13; /* Bright Orange for logo */
-    box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
-    letter-spacing: -1px;
-    font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    font-size: 22px;
+    color: var(--primary-orange);
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    font-family: 'Arial Black', Arial, sans-serif;
+    transition: transform .3s ease;
 }
 
 .brand-logo:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 106, 19, 0.4), 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.brand-logo::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent; /* No gradient overlay */
-    pointer-events: none;
 }
 
 .brand-info {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: 2px;
 }
 
 .brand-title {
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    font-family: var(--font-family);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.3px;
 }
 
 .brand-subtitle {
     font-size: 11px;
-    opacity: 0.85;
+    opacity: .8;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    font-family: var(--font-family);
 }
 
 .header-title {
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: .3px;
     text-align: center;
     flex: 1;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-    font-family: var(--font-family);
 }
 
 .header-right {
@@ -221,13 +215,13 @@ a:hover {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
-    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    background: rgba(255,255,255,.12);
     border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255,255,255,.2);
     font-weight: 600;
-    font-size: 14px;
-    backdrop-filter: blur(10px);
+    font-size: 13px;
+    backdrop-filter: blur(8px);
 }
 
 .user-chip .dot {
@@ -235,143 +229,288 @@ a:hover {
     height: 8px;
     background: #10B981;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 0 3px rgba(16,185,129,.3);
 }
 
 .header-badge {
-    padding: var(--space-sm) var(--space-md);
+    padding: 6px 14px;
     background: white;
-    color: #FF6A13;
+    color: var(--primary-orange);
     border-radius: var(--radius-full);
     font-weight: 700;
     font-size: 12px;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4pxrgba(255, 106, 19, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-}
-
-.header-badge:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(255, 106, 19, 0.3);
 }
 
 /* Logo styling */
 .logo {
-    height: 40px;
+    height: 38px;
     width: auto;
     object-fit: contain;
-    border-radius: 0;
-    box-shadow: none;
-    transition: all 0.3s ease;
-    filter: brightness(1);
+    transition: transform .3s ease;
 }
 
 .logo:hover {
-    transform: scale(1.02);
-    box-shadow: none;
-    filter: brightness(1.05);
+    transform: scale(1.04);
 }
 
 /* ===========================================================
-   NAVIGATION BAR
+   NAVIGATION BAR — Teal Sub-Header
    =========================================================== */
 .nav-bar {
-    background: #FF6A13; /* Solid Orange */
-    border-bottom: 2px solid #E65A0C;
-    box-shadow: 0 4px 12px rgba(255, 106, 19, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--primary-teal-light);
     position: sticky;
-    top: 73px;
+    top: 62px;
     z-index: 999;
+    box-shadow: 0 2px 8px rgba(15,49,51,.30);
 }
 
 .nav-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: var(--space-sm) var(--space-lg);
+    padding: 8px var(--space-lg);
     display: flex;
-    gap: var(--space-sm);
+    gap: 8px;
     overflow-x: auto;
 }
 
 .nav-container::-webkit-scrollbar {
-    height: 4px;
+    height: 3px;
 }
 
 .nav-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255,255,255,.5);
     border-radius: var(--radius-full);
 }
 
 .nav-pill {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: 10px 18px;
-    border-radius: var(--radius-lg);
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
     font-weight: 600;
-    font-size: 14px;
-    color: white;
-    background: #133D3C !important; /* Solid Blue */
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13px;
+    color: rgba(255,255,255,.85);
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,.20);
+    transition: all .25s ease;
     white-space: nowrap;
-    position: relative;
-    overflow: hidden;
-}
-
-.nav-pill::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.nav-pill:hover::before {
-    left: 100%;
 }
 
 .nav-pill:hover {
-    background: #0D2928 !important; /* Darker Blue on hover */
+    background: rgba(255,255,255,.12) !important;
     color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
 .nav-pill.active {
-    background: white !important;
-    color: #FF6A13 !important; /* Modern Orange for active text */
-    border-color: white;
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.5), 0 2px 8px rgba(255, 106, 19, 0.2);
+    background: var(--primary-orange) !important;
+    color: white !important;
+    border-color: var(--primary-orange);
     font-weight: 700;
-}
-
-.nav-pill.active::before {
-    display: none;
+    box-shadow: 0 2px 8px rgba(251,132,41,.4);
 }
 
 .pill-icon {
-    font-size: 16px;
+    font-size: 15px;
 }
 
 /* ===========================================================
    MAIN CONTENT
    =========================================================== */
 .content {
-    padding: var(--space-xl) var(--space-lg);
+    padding: 0;
     min-height: calc(100vh - 200px);
 }
 
 .content-container {
     max-width: 1400px;
     margin: 0 auto;
+    padding: var(--space-xl) var(--space-lg);
+}
+
+/* ===========================================================
+   HERO SECTION — Orange Banner (per screenshot)
+   =========================================================== */
+.hero-banner {
+    background: var(--primary-orange);
+    color: white;
+    padding: 50px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 45%;
+    height: 100%;
+    background: var(--primary-teal);
+    clip-path: polygon(0 0, 85% 0, 70% 100%, 0 100%);
+    z-index: 0;
+}
+
+.hero-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xl);
+    position: relative;
+    z-index: 1;
+}
+
+.hero-text {
+    flex: 1;
+}
+
+.hero-text .kicker {
+    display: inline-block;
+    background: var(--primary-orange);
+    color: white;
+    padding: 4px 14px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.hero-text h1 {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 12px;
+}
+
+.hero-text p {
+    font-size: 16px;
+    opacity: .9;
+    line-height: 1.7;
+    max-width: 540px;
+}
+
+.hero-card-preview {
+    flex: 0 0 380px;
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-xl);
+    color: var(--gray-800);
+}
+
+.hero-card-preview .preview-line {
+    height: 10px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    margin-bottom: 10px;
+}
+
+.hero-card-preview .preview-line.short {
+    width: 60%;
+}
+
+.hero-card-preview .preview-image {
+    width: 100%;
+    height: 80px;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+}
+
+/* ===========================================================
+   CARDS CAROUSEL — Dark Teal BG (per screenshot)
+   =========================================================== */
+.cards-showcase {
+    background: var(--primary-teal);
+    padding: 48px 0;
+}
+
+.cards-showcase-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.cards-showcase .showcase-row {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-lg);
+}
+
+.cards-showcase .showcase-card {
+    flex: 1;
+    min-width: 180px;
+    max-width: 240px;
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.cards-showcase .showcase-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.cards-showcase .cta-btn {
+    display: inline-block;
+    background: var(--primary-orange);
+    color: white;
+    padding: 12px 32px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    transition: background .2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.cards-showcase .cta-btn:hover {
+    background: var(--primary-orange-dark);
+    color: white;
+}
+
+/* ===========================================================
+   SECTION BLOCKS — Content Sections
+   =========================================================== */
+.section-block {
+    padding: 48px 0;
+}
+
+.section-block .section-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+.section-block .section-bar {
+    background: var(--primary-teal);
+    color: white;
+    padding: 14px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: var(--space-lg);
+}
+
+.section-block .text-lines {
+    color: var(--gray-600);
+    font-size: 15px;
+    line-height: 1.8;
 }
 
 /* ===========================================================
@@ -380,30 +519,29 @@ a:hover {
 .card {
     background: white;
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid rgba(229, 231, 235, 0.8);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
     padding: var(--space-lg);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all .3s ease;
     overflow: hidden;
 }
 
 .card:hover {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(59, 130, 246, 0.15);
-    transform: translateY(-4px);
-    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    border-color: var(--primary-orange-subtle);
 }
 
 .card-header {
-    background: #FF6A13; /* Solid Orange */
-    padding: var(--space-lg);
-    border-bottom: 3px solid #E65A0C;
+    background: var(--primary-orange);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 2px solid var(--primary-orange-dark);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     color: white;
-    box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);
 }
 
 .card-header h5 {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     color: white;
     margin: 0;
@@ -442,53 +580,56 @@ a:hover {
     align-items: center;
     justify-content: center;
     gap: var(--space-sm);
-    padding: 12px 24px;
+    padding: 10px 22px;
     border-radius: var(--radius-md);
     font-weight: 600;
     font-size: 14px;
     border: none;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all .25s ease;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    position: relative;
-    overflow: hidden;
+    letter-spacing: .5px;
     font-family: var(--font-family);
 }
 
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
 .btn:active {
     transform: translateY(0);
-    transition: all 0.1s ease;
 }
 
 .btn-primary, .btn {
-    background: #133D3C;
+    background: var(--primary-teal);
     color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover, .btn:hover {
-    background: #0D2928;
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    background: var(--primary-teal-dark);
+    color: white;
+}
+
+.btn-orange {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.btn-orange:hover {
+    background: var(--primary-orange-dark);
+    color: white;
 }
 
 .btn-secondary, .btn.secondary {
     background: white;
-    color: #133D3C;
-    border: 2px solid #133D3C;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+    color: var(--primary-teal);
+    border: 2px solid var(--primary-teal);
 }
 
 .btn-secondary:hover, .btn.secondary:hover {
-    background: #133D3C;
+    background: var(--primary-teal);
     color: white;
-    border-color: #133D3C;
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 .btn-dark {
@@ -504,41 +645,66 @@ a:hover {
    APP HERO SECTION
    =========================================================== */
 .app-hero {
-    background: white;
+    background: var(--primary-orange);
     border-radius: var(--radius-xl);
     padding: var(--space-2xl);
     margin-bottom: var(--space-xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-md);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-xl);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.app-hero::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 140px;
+    height: 140px;
+    background: rgba(255,255,255,.1);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .app-kicker {
-    color: #FF6A13;
+    color: var(--primary-orange);
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin-bottom: var(--space-sm);
-    text-shadow: 0 2px 4px rgba(255, 106, 19, 0.2);
+}
+
+.app-hero .app-kicker {
+    color: rgba(255,255,255,.9);
 }
 
 .app-title {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--gray-900);
     margin: 0 0 var(--space-sm) 0;
-    letter-spacing: -0.5px;
+    letter-spacing: -.5px;
+}
+
+.app-hero .app-title {
+    color: white;
 }
 
 .app-subtitle {
     color: var(--gray-600);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.6;
-    max-width: 800px;
+    max-width: 700px;
+}
+
+.app-hero .app-subtitle {
+    color: rgba(255,255,255,.9);
 }
 
 .app-stats {
@@ -547,17 +713,18 @@ a:hover {
 }
 
 .stat {
-    background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+    background: rgba(255,255,255,.15);
+    backdrop-filter: blur(8px);
     padding: var(--space-lg);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--gray-200);
-    min-width: 150px;
+    border: 1px solid rgba(255,255,255,.2);
+    min-width: 140px;
     text-align: center;
 }
 
 .stat-label {
-    color: var(--gray-600);
-    font-size: 12px;
+    color: rgba(255,255,255,.85);
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -565,19 +732,22 @@ a:hover {
 }
 
 .stat-value {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
-    color: #FF6A13;
+    color: white;
     line-height: 1;
-    text-shadow: 0 2px 6px rgba(255, 106, 19, 0.2);
 }
+
+.stat-success { color: #A7F3D0; }
+.stat-warning { color: #FDE68A; }
+.stat-critical { color: #FCA5A5; }
 
 /* ===========================================================
    REPORT GRID
    =========================================================== */
 .cards, .report-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--space-lg);
     margin-top: var(--space-xl);
 }
@@ -586,17 +756,17 @@ a:hover {
     background: white;
     border-radius: var(--radius-xl);
     padding: var(--space-lg);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-200);
-    transition: all 0.3s ease;
+    transition: all .3s ease;
     display: flex;
     flex-direction: column;
 }
 
 .report-tile:hover {
-    box-shadow: var(--shadow-xl);
-    transform: translateY(-4px);
-    border-color: var(--lumen-primary);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+    border-color: var(--primary-orange-subtle);
 }
 
 .tile-head {
@@ -614,10 +784,10 @@ a:hover {
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    background: #FF6A13; /* Solid Orange */
+    background: var(--primary-orange);
     color: white;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);
+    box-shadow: var(--shadow-orange);
 }
 
 .tile-title {
@@ -660,19 +830,18 @@ a:hover {
 
 .table thead th,
 .table-header th {
-    background: #1E40AF;
+    background: var(--primary-teal);
     color: white;
-    padding: 16px 12px;
+    padding: 14px 12px;
     text-align: left;
     font-weight: 600;
     font-size: 13px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 3px solid #1E3A8A;
+    letter-spacing: .5px;
+    border-bottom: 2px solid var(--primary-teal-dark);
     position: sticky;
     top: 0;
     z-index: 10;
-    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
     font-family: var(--font-family);
 }
 
@@ -802,24 +971,38 @@ a:hover {
    HOME PAGE STYLES
    =========================================================== */
 .home-card {
-    background: white;
+    background: var(--primary-orange);
     border-radius: var(--radius-xl);
     padding: var(--space-2xl);
     margin-bottom: var(--space-xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-md);
     text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.home-card::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 160px;
+    height: 160px;
+    background: rgba(255,255,255,.1);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .home-card h3 {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 800;
-    color: var(--gray-900);
+    color: white;
     margin-bottom: var(--space-sm);
 }
 
 .home-card .desc {
-    color: var(--gray-600);
+    color: rgba(255,255,255,.9);
     font-size: 16px;
 }
 
@@ -831,8 +1014,9 @@ a:hover {
     border-radius: var(--radius-xl);
     padding: var(--space-xl);
     margin-bottom: var(--space-xl);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     border: 1px solid var(--gray-200);
+    border-left: 4px solid var(--primary-orange);
 }
 
 .header-actions {
@@ -849,7 +1033,7 @@ a:hover {
 }
 
 #recordCount {
-    background: var(--lumen-primary);
+    background: var(--primary-orange);
     color: white;
     padding: 4px 12px;
     border-radius: var(--radius-full);
@@ -863,12 +1047,12 @@ a:hover {
    =========================================================== */
 .info-guidelines {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-left: 4px solid #FF6A13;
+    border-left: 4px solid var(--primary-orange);
     border-radius: var(--radius-lg);
     padding: var(--space-xl);
     margin: var(--space-2xl) auto;
     max-width: 1400px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
 }
 
 .info-header {
@@ -878,7 +1062,7 @@ a:hover {
     margin-bottom: var(--space-md);
     font-size: 18px;
     font-weight: 700;
-    color: #133D3C;
+    color: var(--primary-teal);
 }
 
 .info-icon {
@@ -903,7 +1087,7 @@ a:hover {
 
 .info-label {
     font-weight: 600;
-    color: #FF6A13;
+    color: var(--primary-orange);
     min-width: 140px;
     flex-shrink: 0;
 }
@@ -914,15 +1098,77 @@ a:hover {
 }
 
 /* ===========================================================
-   FOOTER
+   FOOTER — Dark Teal with Orange Accent Circle
    =========================================================== */
 .footer {
-    background: var(--gray-900);
+    background: var(--primary-teal);
     color: white;
     text-align: center;
     padding: var(--space-xl);
     margin-top: var(--space-2xl);
     font-size: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.footer::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 180px;
+    height: 180px;
+    background: var(--primary-orange);
+    border-radius: 50%;
+    opacity: .9;
+    pointer-events: none;
+}
+
+/* ===========================================================
+   REFRESH CONTROLS BAR
+   =========================================================== */
+.refresh-controls {
+    background: var(--primary-teal);
+    color: white;
+    padding: 16px 24px;
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.refresh-controls .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: background .2s ease;
+}
+
+.refresh-controls .refresh-btn:hover {
+    background: rgba(255,255,255,.25);
+}
+
+.refresh-controls .refresh-info {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.refresh-controls .refresh-info span {
+    opacity: .85;
 }
 
 /* ===========================================================
@@ -933,55 +1179,82 @@ a:hover {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .header-title {
         order: -1;
         text-align: left;
-        font-size: 24px;
+        font-size: 20px;
     }
-    
+
     .app-hero {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
+    .hero-inner {
+        flex-direction: column;
+    }
+
+    .hero-banner::before {
+        width: 100%;
+        height: 40%;
+        clip-path: none;
+    }
+
+    .hero-card-preview {
+        flex: auto;
+        width: 100%;
+    }
+
     .cards, .report-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
+
+    .cards-showcase .showcase-row {
+        flex-wrap: wrap;
     }
 }
 
 @media (max-width: 768px) {
-    .content {
+    .content-container {
         padding: var(--space-md);
     }
-    
+
     .top-inner {
         padding: var(--space-md);
     }
-    
+
     .header-title {
-        font-size: 20px;
+        font-size: 18px;
     }
-    
+
     .app-title {
-        font-size: 28px;
+        font-size: 24px;
     }
-    
+
     .cards, .report-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .table {
         font-size: 12px;
     }
-    
+
     .table thead th {
         padding: 12px 8px;
         font-size: 11px;
     }
-    
+
     .table tbody td {
         padding: 10px 8px;
+    }
+
+    .hero-banner {
+        padding: 32px 0;
+    }
+
+    .cards-showcase {
+        padding: 32px 0;
     }
 }
 

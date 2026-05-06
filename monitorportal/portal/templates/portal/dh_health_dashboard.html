@@ -1,0 +1,14 @@
+{# portal/templates/portal/dh_health_dashboard.html #}
+{% extends "portal/layout.html" %}
+{% block title %}DH Health Monitoring Dashboard - PASE Portal{% endblock %}
+
+{% block content %}
+<div style="margin: -32px -24px 0 -24px; height: calc(100vh - 180px);">
+    <iframe 
+        src="https://datahub.aks-naas-data-mktpl-prod.azure.corp.intranet/health-monitor/dashboard"
+        style="width: 100%; height: 100%; border: none;"
+        title="DH Health Monitoring Dashboard"
+        allowfullscreen
+    ></iframe>
+</div>
+{% endblock %}

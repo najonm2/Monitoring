@@ -295,3 +295,47 @@ class InformaticaTaskStatus(models.Model):
                 is_erp_related=True
             ).count(),
         }
+
+
+
+class BiReportComment(models.Model):
+    """
+    Store user comments for BI Status Query report rows
+    
+    Purpose:
+    - Allow users to add manual comments to specific SLA applications
+    - Support edit, update, and delete operations
+    - Comments are linked by SLA Application name and report date
+    """
+    sla_application = models.CharField(
+        max_length=250,
+        help_text="SLA Application name (e.g., 'BI Feed - Bill Plus', 'SLV')"
+    )
+    report_date = models.DateField(
+        help_text="Report date for the row being commented on"
+    )
+    comment_text = models.TextField(
+        help_text="User's comment text"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the comment was first created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="When the comment was last updated"
+    )
+    created_by = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="User who created/updated the comment (optional)"
+    )
+
+    class Meta:
+        ordering = ["-updated_at"]
+        unique_together = ("sla_application", "report_date")
+        verbose_name = "BI Report Comment"
+        verbose_name_plural = "BI Report Comments"
+
+    def __str__(self):
+        return f"Comment on {self.sla_application} ({self.report_date})"

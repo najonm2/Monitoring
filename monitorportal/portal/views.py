@@ -5,15 +5,7 @@ from .ssrs_registry import APPS
 
 
 def home(request):
-    # Get CUID from REMOTE_USER header or fallback to username
-    cuid = request.META.get('REMOTE_USER', '').upper()
-    if not cuid and request.user.is_authenticated:
-        cuid = request.user.username.upper()
-    
-    ctx = {
-        "user_display": cuid if cuid else "Guest"
-    }
-    return render(request, "portal/home.html", ctx)
+    return render(request, "portal/home.html")
 
 
 def dashboards(request):
@@ -34,17 +26,30 @@ def app_dashboards(request, app_slug):
     if app_slug == "level3":
         try:
             from portal.services.level3_service import get_level3_jobs_today_only, get_level3_folders_with_metrics
+            from django.core.cache import cache
             
-            # Add only TODAY stats
-            today_stats = get_level3_jobs_today_only()
-            from datetime import datetime
-            today_stats['date'] = datetime.now()
-            today_stats['date_str'] = 'TODAY'
-            context["today_stats"] = today_stats
+            # Cache for 2 minutes to avoid slow repeated DB calls
+            cache_key = 'level3_dashboard_data'
+            cached = cache.get(cache_key)
             
-            # Add folders with 7-day metrics
-            folders = get_level3_folders_with_metrics()
-            context["folders"] = folders
+            if cached:
+                context["today_stats"] = cached["today_stats"]
+                context["folders"] = cached["folders"]
+            else:
+                # Add only TODAY stats
+                today_stats = get_level3_jobs_today_only()
+                from datetime import datetime
+                today_stats['date'] = datetime.now()
+                today_stats['date_str'] = 'TODAY'
+                
+                # Add folders with 7-day metrics
+                folders = get_level3_folders_with_metrics()
+                
+                context["today_stats"] = today_stats
+                context["folders"] = folders
+                
+                # Cache for 2 minutes
+                cache.set(cache_key, {"today_stats": today_stats, "folders": folders}, 120)
         except Exception as e:
             print(f"Error loading Level3 TODAY stats: {e}")
             context["today_stats"] = None
@@ -84,25 +89,41 @@ def report_view(request, app_slug, report_slug):
     # Level3 Failed Jobs Status - Summary + Failed Jobs List
     if view_type == "level3_failed_jobs_status":
         from portal.services.level3_service import get_level3_failed_jobs_status, get_level3_folders_with_metrics
+        from django.core.cache import cache
         from datetime import datetime
-        try:
-            summary, failed_jobs = get_level3_failed_jobs_status()
-            folders = get_level3_folders_with_metrics()  # Get folder metrics for 7-day navigation
-            ctx["summary"] = summary
-            ctx["failed_jobs"] = failed_jobs
-            ctx["folders"] = folders
-            ctx["current_date"] = datetime.now()  # Add current date for display
-        except Exception as e:
-            print(f"Error loading Level3 failed jobs status: {e}")
-            ctx["summary"] = {
-                'total_failed': 0,
-                'completed_after_restart': 0,
-                'pending_jobs': 0,
-                'restarted_running': 0
-            }
-            ctx["failed_jobs"] = []
-            ctx["folders"] = []
+        
+        # Cache for 2 minutes
+        cache_key = 'level3_failed_jobs_status_data'
+        cached = cache.get(cache_key)
+        
+        if cached:
+            ctx.update(cached)
             ctx["current_date"] = datetime.now()
+        else:
+            try:
+                summary, failed_jobs = get_level3_failed_jobs_status()
+                folders = get_level3_folders_with_metrics()
+                ctx["summary"] = summary
+                ctx["failed_jobs"] = failed_jobs
+                ctx["folders"] = folders
+                ctx["current_date"] = datetime.now()
+                
+                cache.set(cache_key, {
+                    "summary": summary,
+                    "failed_jobs": failed_jobs,
+                    "folders": folders,
+                }, 120)
+            except Exception as e:
+                print(f"Error loading Level3 failed jobs status: {e}")
+                ctx["summary"] = {
+                    'total_failed': 0,
+                    'completed_after_restart': 0,
+                    'pending_jobs': 0,
+                    'restarted_running': 0
+                }
+                ctx["failed_jobs"] = []
+                ctx["folders"] = []
+                ctx["current_date"] = datetime.now()
         
         return render(request, "portal/level3_failed_jobs_status.html", ctx)
     
@@ -149,6 +170,17 @@ def report_view(request, app_slug, report_slug):
         
         return render(request, "portal/level3_7day_insights.html", ctx)
     
+    # ADF Status Dashboard
+    elif view_type == "adf_status":
+        return adf_status(request)
+    
+    # Databricks Status Dashboard
+    elif view_type == "databricks_status":
+        return databricks_status(request)
+    
+    # Databricks & ADF Failed Jobs
+    elif view_type == "databricks_adf_failed":
+        return databricks_adf_failed(request)
     
     # Default: Generic report view with API data loading
     return render(request, "portal/report_view.html", ctx)
@@ -160,10 +192,10 @@ def level3_failed_job_status(request):
 
 def level3_bi_report(request):
     """
-    Level3 BI Report view showing BI Feed, CAPEX details, and ERP Status
+    Level3 BI Report view showing BI Feed, CAPEX details, BI Status Query, and ERP Status
     OPTIMIZED: Cached for 3 minutes to improve performance
     """
-    from portal.services.bi_service import get_level3_bi_feed, get_capex_details
+    from portal.services.bi_service import get_level3_bi_feed, get_capex_details, get_bi_status_query
     from portal.erp_mdm_insights import get_erp_run_history
     from django.core.cache import cache
     
@@ -179,6 +211,7 @@ def level3_bi_report(request):
         context = {
             "bi_feed_data": [],
             "capex_data": [],
+            "bi_status_data": [],
             "erp_data": {},
             "error": None,
         }
@@ -186,6 +219,7 @@ def level3_bi_report(request):
         try:
             context["bi_feed_data"] = get_level3_bi_feed()
             context["capex_data"] = get_capex_details()
+            context["bi_status_data"] = get_bi_status_query()
             context["erp_data"] = get_erp_run_history()
             
             # Cache the successful result for 3 minutes
@@ -457,3 +491,255 @@ def mdm_job_status(request):
         "mdm_insights": mdm_insights,
         "flash_messages": flash_messages,
     })
+
+
+def dh_health_dashboard(request):
+    """
+    DH Health Monitoring Dashboard - embedded view
+    """
+    return render(request, "portal/dh_health_dashboard.html")
+
+
+def manual_informatica_restart(request):
+    """
+    Manual Informatica Restart page for developer special requests
+    Allows submitting restart requests with Grid selection, Workflow, Task, and restart options
+    """
+    return render(request, "portal/manual_restart.html")
+
+
+def manual_informatica_stop(request):
+    """
+    Manual Informatica Stop/Kill page for stopping running workflows
+    Allows submitting stop/abort requests with Grid selection and Workflow
+    """
+    return render(request, "portal/manual_stop.html")
+
+
+def schedule_workflow_page(request):
+    """
+    Schedule/Unschedule Workflow page for managing workflow schedules
+    Allows enabling or disabling automatic execution schedules
+    """
+    return render(request, "portal/schedule_workflow.html")
+
+
+def workflow_status_checker(request):
+    """
+    Workflow Status Checker page - Check detailed status of all sessions in a workflow
+    Allows searching by workflow name and folder to view all task/session statuses
+    """
+    return render(request, "portal/workflow_status.html")
+
+
+def adf_status(request):
+    """
+    ADF Status Dashboard - Shows latest run status for all ADF jobs today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'adf_status_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        adf_jobs = cached_data['adf_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        adf_jobs = []
+        error = None
+        
+        try:
+            # Get ADF service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch ADF status for today
+            adf_jobs = service.get_adf_status_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'adf_jobs': adf_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] ADF status fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch ADF status: {e}")
+    
+    # Calculate statistics
+    total_jobs = len(adf_jobs)
+    succeeded = len([j for j in adf_jobs if j.get('Run_Status', '').lower() in ['succeeded', 'success']])
+    failed = len([j for j in adf_jobs if j.get('Run_Status', '').lower() == 'failed'])
+    running = len([j for j in adf_jobs if j.get('Run_Status', '').lower() in ['running', 'in progress', 'inprogress']])
+    
+    # Calculate success rate based on completed jobs only (succeeded + failed)
+    completed_jobs = succeeded + failed
+    
+    stats = {
+        'total': total_jobs,
+        'succeeded': succeeded,
+        'failed': failed,
+        'running': running,
+        'success_rate': round((succeeded / completed_jobs * 100), 1) if completed_jobs > 0 else 0
+    }
+    
+    return render(request, "portal/adf_status.html", {
+        "adf_jobs": adf_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })
+
+
+def databricks_status(request):
+    """
+    Databricks Status Dashboard - Shows latest run status for all Databricks jobs today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'databricks_status_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        databricks_jobs = cached_data['databricks_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        databricks_jobs = []
+        error = None
+        
+        try:
+            # Get Databricks service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch Databricks status for today
+            databricks_jobs = service.get_databricks_status_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'databricks_jobs': databricks_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] Databricks status fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch Databricks status: {e}")
+    
+    # Calculate statistics
+    total_jobs = len(databricks_jobs)
+    succeeded = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() in ['succeeded', 'success']])
+    failed = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() == 'failed'])
+    running = len([j for j in databricks_jobs if j.get('Run_Status', '').lower() in ['running', 'in progress', 'inprogress']])
+    
+    # Calculate success rate based on completed jobs only (succeeded + failed)
+    completed_jobs = succeeded + failed
+    
+    stats = {
+        'total': total_jobs,
+        'succeeded': succeeded,
+        'failed': failed,
+        'running': running,
+        'success_rate': round((succeeded / completed_jobs * 100), 1) if completed_jobs > 0 else 0
+    }
+    
+    return render(request, "portal/databricks_status.html", {
+        "databricks_jobs": databricks_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })
+
+
+def databricks_adf_failed(request):
+    """
+    Databricks & ADF Failed Jobs Dashboard
+    Shows all failed jobs (both Databricks and ADF) for today
+    Data fetched from Databricks via ODBC DSN
+    """
+    from django.core.cache import cache
+    from portal.services.databricks_odbc_service import get_adf_databricks_service
+    import time
+    
+    # Cache for 2 minutes
+    cache_key = 'databricks_adf_failed_data'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        failed_jobs = cached_data['failed_jobs']
+        data_source = cached_data['data_source']
+        error = None
+    else:
+        start_time = time.time()
+        failed_jobs = []
+        error = None
+        
+        try:
+            # Get ADF service
+            service = get_adf_databricks_service()
+            data_source = f"Databricks DSN: {service.dsn}"
+            
+            # Fetch failed jobs for today
+            failed_jobs = service.get_failed_jobs_today()
+            
+            # Cache for 2 minutes
+            cache.set(cache_key, {
+                'failed_jobs': failed_jobs,
+                'data_source': data_source,
+            }, 120)
+            
+            fetch_time = time.time() - start_time
+            print(f"[PERFORMANCE] Failed jobs fetched in {fetch_time:.2f} seconds")
+            
+        except Exception as e:
+            error = str(e)
+            data_source = "Databricks (connection failed)"
+            print(f"[ERROR] Failed to fetch failed jobs: {e}")
+    
+    # Calculate statistics
+    total_failed = len(failed_jobs)
+    adf_failed = len([j for j in failed_jobs if j.get('resource_type', '').upper() == 'ADF'])
+    databricks_failed = len([j for j in failed_jobs if j.get('resource_type', '').upper() in ['DATABRICKS', 'DBX']])
+    other_failed = total_failed - adf_failed - databricks_failed
+    
+    stats = {
+        'total_failed': total_failed,
+        'adf_failed': adf_failed,
+        'databricks_failed': databricks_failed,
+        'other_failed': other_failed,
+    }
+    
+    return render(request, "portal/databricks_adf_failed.html", {
+        "failed_jobs": failed_jobs,
+        "stats": stats,
+        "data_source": data_source,
+        "error": error,
+    })
+
+
+def application_monitoring(request):
+    """
+    Application-wise Monitoring Page
+    Shows Level3 workflows by application with dropdown selector
+    Ignores priority levels (P1, P2, P3) - only filters by application
+    """
+    return render(request, "portal/application_monitoring.html")

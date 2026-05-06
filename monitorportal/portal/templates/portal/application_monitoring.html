@@ -1,0 +1,403 @@
+{% extends "portal/layout.html" %}
+{% load static %}
+
+{% block title %}Application Monitoring - Level3{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<section class="app-hero">
+    <div>
+        <div class="app-kicker">LEVEL3 APPLICATION-WISE MONITORING</div>
+        <h1 class="app-title">Application Workflow Monitor</h1>
+        <div class="app-subtitle">
+            Monitor Level3 workflows and dependencies by application - All priorities included
+        </div>
+    </div>
+    <div class="app-stats" id="headerStats" style="display: none;">
+        <div class="stat">
+            <div class="stat-label">TOTAL JOBS</div>
+            <div class="stat-value" id="headerTotal">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">RUNNING</div>
+            <div class="stat-value stat-warning" id="headerRunning">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">SUCCEEDED</div>
+            <div class="stat-value stat-success" id="headerSucceeded">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">FAILED</div>
+            <div class="stat-value stat-critical" id="headerFailed">0</div>
+        </div>
+    </div>
+</section>
+
+<!-- APPLICATION SELECTOR -->
+<section class="report-section">
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h5>🔍 Select Application</h5>
+            <div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">
+                Choose an application to view today's workflow execution details
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                <select id="applicationSelect" 
+                    style="padding: 12px 16px; font-size: 14px; border: 2px solid var(--primary-teal); border-radius: 8px; background: white; cursor: pointer; font-weight: 600; color: var(--gray-900);">
+                    <option value="">-- Select an Application --</option>
+                    <option value="DSL_SD">DSL_SD</option>
+                    <option value="DSL_SALES_PERIOD">DSL_SALES_PERIOD</option>
+                    <option value="SMMART">SMMART</option>
+                    <option value="AML">AML</option>
+                    <option value="DSL_FINANCE">DSL_FINANCE</option>
+                    <option value="CAPEX">CAPEX</option>
+                    <option value="DATAMKTP">DATAMKTP</option>
+                    <option value="CODS_TN">CODS_TN</option>
+                    <option value="AIM">AIM</option>
+                    <option value="SOLAR_LUCENSE">SOLAR_LUCENSE</option>
+                    <option value="DSL_MARGIN">DSL_MARGIN</option>
+                    <option value="PLANNED_BILLED_COST">PLANNED_BILLED_COST</option>
+                    <option value="SLV">SLV</option>
+                    <option value="OTHERS">OTHERS</option>
+                </select>
+                <button onclick="loadApplicationData()" id="searchBtn" class="btn btn-primary" style="padding: 12px 24px;">
+                    🔍 Search
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LOADING SPINNER -->
+<div id="loadingSpinner" style="display: none;">
+    <div class="card" style="text-align: center; padding: 60px 24px;">
+        <div style="display: inline-block; width: 50px; height: 50px; border: 4px solid var(--gray-200); border-top-color: var(--primary-teal); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 20px; color: var(--primary-teal); font-weight: 600; font-size: 16px;">Loading application data...</p>
+    </div>
+</div>
+
+<!-- INITIAL MESSAGE -->
+<div id="noDataMessage">
+    <div class="card" style="text-align: center; padding: 60px 24px;">
+        <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;">📊</div>
+        <h3 style="color: var(--gray-700); font-size: 20px; font-weight: 600; margin-bottom: 8px;">No Application Selected</h3>
+        <p style="color: var(--gray-500); font-size: 14px;">Please select an application from the dropdown above to view workflow details and dependencies</p>
+    </div>
+</div>
+
+<!-- WORKFLOW DATA TABLE -->
+<section id="dataTableContainer" class="report-section" style="display: none;">
+    <h2 class="section-title">📋 WORKFLOW EXECUTION DETAILS</h2>
+    
+    <!-- STATUS FILTER TABS -->
+    <div class="card" style="margin-bottom: 16px;">
+        <div class="card-body" style="padding: 12px 16px;">
+            <div class="status-tabs">
+                <button class="status-tab active" onclick="filterByStatus('all')" id="tabAll">
+                    <span class="tab-label">All</span>
+                    <span class="tab-count" id="countAll">0</span>
+                </button>
+                <button class="status-tab" onclick="filterByStatus('Succeeded')" id="tabSucceeded">
+                    <span class="tab-label">✅ Succeeded</span>
+                    <span class="tab-count" id="countSucceeded">0</span>
+                </button>
+                <button class="status-tab" onclick="filterByStatus('Running')" id="tabRunning">
+                    <span class="tab-label">⏱️ Running</span>
+                    <span class="tab-count" id="countRunning">0</span>
+                </button>
+                <button class="status-tab" onclick="filterByStatus('Failed')" id="tabFailed">
+                    <span class="tab-label">❌ Failed</span>
+                    <span class="tab-count" id="countFailed">0</span>
+                </button>
+                <button class="status-tab" onclick="filterByStatus('Other')" id="tabOther">
+                    <span class="tab-label">⚙️ Other</span>
+                    <span class="tab-count" id="countOther">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body p-0">
+            <div style="overflow-x: auto;">
+                <table class="table compact-table" style="font-size: 11px; margin-bottom: 0; width: 100%;">
+                    <thead class="table-header">
+                        <tr>
+                            <th style="width: 90px; white-space: nowrap;">Grid</th>
+                            <th style="width: 120px;">Folder</th>
+                            <th style="min-width: 180px;">Workflow</th>
+                            <th style="min-width: 180px;">Session</th>
+                            <th style="width: 115px; white-space: nowrap;">Start Time</th>
+                            <th style="width: 115px; white-space: nowrap;">End Time</th>
+                            <th style="width: 85px; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="noResultsMessage" style="display: none; text-align: center; padding: 40px; color: var(--gray-500);">
+                <div style="font-size: 48px; opacity: 0.3; margin-bottom: 12px;">🔍</div>
+                <p style="font-weight: 600; font-size: 14px;">No workflows match the selected filter</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.status-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.status-tab {
+    padding: 8px 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--gray-700);
+}
+
+.status-tab:hover {
+    border-color: var(--primary-teal);
+    background: var(--surface-teal);
+}
+
+.status-tab.active {
+    border-color: var(--primary-teal);
+    background: var(--primary-teal);
+    color: white;
+}
+
+.status-tab .tab-count {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    min-width: 28px;
+    text-align: center;
+}
+
+.status-tab.active .tab-count {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.compact-table th {
+    padding: 10px 8px !important;
+    font-size: 10px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-table td {
+    padding: 8px !important;
+    vertical-align: middle;
+    word-break: break-word;
+}
+</style>
+
+<script>
+let allWorkflows = []; // Store all workflows for filtering
+let currentFilter = 'all';
+
+function loadApplicationData() {
+    const appSelect = document.getElementById('applicationSelect');
+    const selectedApp = appSelect.value;
+    
+    if (!selectedApp) {
+        alert('Please select an application first!');
+        return;
+    }
+    
+    // Show loading spinner
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('noDataMessage').style.display = 'none';
+    document.getElementById('headerStats').style.display = 'none';
+    document.getElementById('dataTableContainer').style.display = 'none';
+    document.getElementById('searchBtn').disabled = true;
+    document.getElementById('searchBtn').innerHTML = '⏳ Loading...';
+    
+    console.log('Fetching data for application:', selectedApp);
+    
+    // Fetch data from API
+    fetch(`/api/level3/application-monitoring/?application=${selectedApp}`)
+        .then(response => {
+            console.log('API Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('API Response data:', data);
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('searchBtn').innerHTML = '🔍 Search';
+            
+            if (data.workflows && data.workflows.length > 0) {
+                // Store all workflows
+                allWorkflows = data.workflows;
+                
+                // Update header stats
+                document.getElementById('headerTotal').textContent = data.total;
+                document.getElementById('headerRunning').textContent = data.running;
+                document.getElementById('headerSucceeded').textContent = data.succeeded;
+                document.getElementById('headerFailed').textContent = data.failed;
+                
+                // Update tab counts
+                updateTabCounts();
+                
+                // Show stats and table
+                document.getElementById('headerStats').style.display = 'flex';
+                document.getElementById('dataTableContainer').style.display = 'block';
+                
+                // Reset filter and display all
+                currentFilter = 'all';
+                setActiveTab('tabAll');
+                displayWorkflows(allWorkflows);
+            } else {
+                // Show no data message
+                allWorkflows = [];
+                document.getElementById('noDataMessage').style.display = 'block';
+                document.getElementById('noDataMessage').innerHTML = `
+                    <div class="card" style="text-align: center; padding: 60px 24px;">
+                        <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;">📭</div>
+                        <h3 style="color: var(--gray-700); font-size: 20px; font-weight: 600; margin-bottom: 8px;">No Workflows Found</h3>
+                        <p style="color: var(--gray-500); font-size: 14px;">No workflows found for <strong>${selectedApp}</strong> today</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching application data:', error);
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('searchBtn').innerHTML = '🔍 Search';
+            
+            // Show error message
+            document.getElementById('noDataMessage').style.display = 'block';
+            document.getElementById('noDataMessage').innerHTML = `
+                <div class="card" style="text-align: center; padding: 60px 24px;">
+                    <div style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;">❌</div>
+                    <h3 style="color: var(--danger); font-size: 20px; font-weight: 600; margin-bottom: 8px;">Error Loading Data</h3>
+                    <p style="color: var(--gray-500); font-size: 14px;">${error.message || 'Please try again later'}</p>
+                </div>
+            `;
+        });
+}
+
+function filterByStatus(status) {
+    currentFilter = status;
+    
+    // Update active tab
+    if (status === 'all') {
+        setActiveTab('tabAll');
+        displayWorkflows(allWorkflows);
+    } else if (status === 'Other') {
+        setActiveTab('tabOther');
+        const otherWorkflows = allWorkflows.filter(w => 
+            w.status !== 'Succeeded' && w.status !== 'Running' && w.status !== 'Failed'
+        );
+        displayWorkflows(otherWorkflows);
+    } else {
+        setActiveTab('tab' + status);
+        const filtered = allWorkflows.filter(w => w.status === status);
+        displayWorkflows(filtered);
+    }
+}
+
+function setActiveTab(tabId) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.status-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Add active class to selected tab
+    document.getElementById(tabId).classList.add('active');
+}
+
+function updateTabCounts() {
+    const succeededCount = allWorkflows.filter(w => w.status === 'Succeeded').length;
+    const runningCount = allWorkflows.filter(w => w.status === 'Running').length;
+    const failedCount = allWorkflows.filter(w => w.status === 'Failed').length;
+    const otherCount = allWorkflows.filter(w => 
+        w.status !== 'Succeeded' && w.status !== 'Running' && w.status !== 'Failed'
+    ).length;
+    
+    document.getElementById('countAll').textContent = allWorkflows.length;
+    document.getElementById('countSucceeded').textContent = succeededCount;
+    document.getElementById('countRunning').textContent = runningCount;
+    document.getElementById('countFailed').textContent = failedCount;
+    document.getElementById('countOther').textContent = otherCount;
+}
+
+function displayWorkflows(workflows) {
+    const tbody = document.getElementById('dataTableBody');
+    const noResultsMsg = document.getElementById('noResultsMessage');
+    tbody.innerHTML = '';
+    
+    if (workflows.length === 0) {
+        tbody.style.display = 'none';
+        noResultsMsg.style.display = 'block';
+        return;
+    }
+    
+    tbody.style.display = 'table-row-group';
+    noResultsMsg.style.display = 'none';
+    
+    workflows.forEach(workflow => {
+        const row = tbody.insertRow();
+        
+        // Determine status badge style
+        let statusBadge = '';
+        const status = workflow.status;
+        if (status === 'Succeeded') {
+            statusBadge = '<span style="background: #D1FAE5; color: #065F46; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">✅ OK</span>';
+        } else if (status === 'Running') {
+            statusBadge = '<span style="background: #FEF3C7; color: #92400E; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">⏱️ Run</span>';
+        } else if (status === 'Failed') {
+            statusBadge = '<span style="background: #FEE2E2; color: #991B1B; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">❌ Fail</span>';
+        } else if (status === 'Stopped') {
+            statusBadge = '<span style="background: #DBEAFE; color: #1E3A8A; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">⏹️ Stop</span>';
+        } else if (status === 'Aborted') {
+            statusBadge = '<span style="background: #FED7AA; color: #7C2D12; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">⚠️ Abort</span>';
+        } else {
+            statusBadge = `<span style="background: #F3F4F6; color: #6B7280; padding: 3px 10px; border-radius: 6px; font-weight: 600; font-size: 10px; white-space: nowrap;">${status}</span>`;
+        }
+        
+        row.innerHTML = `
+            <td><strong style="color: var(--gray-900); font-size: 11px;">${workflow.grid_name || 'N/A'}</strong></td>
+            <td style="color: var(--gray-700); font-size: 11px;">${workflow.subject_area || 'N/A'}</td>
+            <td><strong style="color: var(--primary-teal); font-size: 11px;">${workflow.workflow_name || 'N/A'}</strong></td>
+            <td style="color: var(--gray-700); font-size: 11px;">${workflow.session_name || 'N/A'}</td>
+            <td style="font-weight: 500; font-size: 10px; white-space: nowrap;">${formatDateTime(workflow.start_time)}</td>
+            <td style="font-weight: 500; font-size: 10px; white-space: nowrap;">${workflow.end_time ? formatDateTime(workflow.end_time) : '<span style="color: #D97706; font-style: italic;">--</span>'}</td>
+            <td style="text-align: center;">${statusBadge}</td>
+        `;
+    });
+}
+
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${month}/${day}/${year} ${hours}:${minutes}`;
+}
+</script>
+{% endblock %}

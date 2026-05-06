@@ -1,0 +1,342 @@
+{% extends "portal/layout.html" %}
+
+{% block title %}Manual Informatica Restart | PASE Monitoring Portal{% endblock %}
+
+{% block content %}
+<div style="padding:30px; max-width:900px; margin:0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom:30px;">
+        <h1 style="color:#1f2937; font-size:28px; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:32px;">🔧</span>
+            Manual Informatica Restart
+        </h1>
+        <p style="color:#6b7280; font-size:15px; margin:0;">
+            Submit restart requests for workflows or tasks on demand (for developer special requests)
+        </p>
+    </div>
+
+    <!-- Form Card -->
+    <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:30px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        
+        <form id="manualRestartForm" method="post">
+            {% csrf_token %}
+            
+            <!-- Grid/Integration Service Selection -->
+            <div style="margin-bottom:24px;">
+                <label for="integrationService" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Integration Service (Grid) <span style="color:#dc2626;">*</span>
+                </label>
+                <select id="integrationService" name="integration_service" required 
+                        style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                    <option value="">-- Select Integration Service --</option>
+                    <option value="IS_GRID_BI">IS_GRID_BI (BI Grid)</option>
+                    <option value="IS_GRID_UC">IS_GRID_UC (UC Grid)</option>
+                    <option value="IS_GRID_ERP">IS_GRID_ERP (ERP Grid)</option>
+                    <option value="IS_GRID_MDM">IS_GRID_MDM (MDM Grid)</option>
+                    <option value="IS_GRID_ORA11">IS_GRID_ORA11 (ORA11 Grid)</option>
+                    <option value="IS_GRID_ODBC">IS_GRID_ODBC (ODBC Grid)</option>
+                    <option value="IS_GRID_VSUM">IS_GRID_VSUM (VSUM Grid)</option>
+                </select>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Select the Informatica Integration Service where the workflow runs
+                </div>
+            </div>
+
+            <!-- Folder Name -->
+            <div style="margin-bottom:24px;">
+                <label for="folderName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Folder Name <span style="color:#dc2626;">*</span>
+                </label>
+                <input type="text" id="folderName" name="folder_name" required 
+                       list="folderList"
+                       placeholder="e.g., B_CDW_ASL_ICG_GRANITE"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadWorkflows()">
+                <datalist id="folderList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Enter or select the Informatica folder containing the workflow
+                </div>
+            </div>
+
+            <!-- Workflow Name -->
+            <div style="margin-bottom:24px;">
+                <label for="workflowName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Workflow Name <span style="color:#dc2626;">*</span>
+                </label>
+                <input type="text" id="workflowName" name="workflow_name" required 
+                       list="workflowList"
+                       placeholder="e.g., wkf_Load_CDW_ASL_ICG_GRANITE"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadTasks()">
+                <datalist id="workflowList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Enter or select the workflow name to restart
+                </div>
+            </div>
+
+            <!-- Task/Session Name -->
+            <div style="margin-bottom:24px;">
+                <label for="sessionName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Task/Session Name <span style="color:#9ca3af; font-weight:400;">(Optional for Option 3)</span>
+                </label>
+                <input type="text" id="sessionName" name="session_name" 
+                       list="taskList"
+                       placeholder="e.g., s_m_Load_SITE_INST"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                <datalist id="taskList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Required for Options 1, 2, and 4. Leave blank for Option 3.
+                </div>
+            </div>
+
+            <!-- Restart Option Selection -->
+            <div style="margin-bottom:30px;">
+                <label style="display:block; font-weight:600; color:#374151; margin-bottom:12px; font-size:14px;">
+                    Restart Option <span style="color:#dc2626;">*</span>
+                </label>
+                
+                <div style="display:grid; gap:12px;">
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="restart_option" value="1" required style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">1. Start Task Only</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Restarts only the specified task/session (requires Task/Session Name)
+                        </div>
+                    </label>
+
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="restart_option" value="2" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">2. Start Workflow from Task</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Restarts workflow starting from the specified task (requires Task/Session Name)
+                        </div>
+                    </label>
+
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="restart_option" value="3" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">3. Start Entire Workflow</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Restarts the complete workflow from the beginning (Task/Session Name not required)
+                        </div>
+                    </label>
+
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="restart_option" value="4" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">4. Recover Workflow from Task</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Recovers workflow from the specified task in recovery mode (requires Task/Session Name)
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="border-top:1px solid #e5e7eb; padding-top:24px; text-align:right;">
+                <button type="submit" 
+                        style="padding:12px 32px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:15px; box-shadow:0 2px 8px rgba(16,185,129,0.3); transition:all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(16,185,129,0.3)'">
+                    🚀 Execute Restart
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Info Box -->
+    <div style="margin-top:24px; padding:16px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+        <div style="display:flex; gap:10px;">
+            <span style="font-size:20px;">ℹ️</span>
+            <div style="font-size:13px; color:#0c4a6e;">
+                <strong>Note:</strong> This form is for manual restart requests from developers. 
+                For automated restarts of failed jobs, use the <a href="/dashboards/level3/lvl3-failed-jobs-status/" style="color:#0369a1; text-decoration:underline;">Failed Jobs Dashboard</a>.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Load folders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFolders();
+});
+
+// Load folders from API
+function loadFolders() {
+    fetch('/api/informatica/folders/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.folders) {
+                const datalist = document.getElementById('folderList');
+                datalist.innerHTML = '';
+                data.folders.forEach(folder => {
+                    const option = document.createElement('option');
+                    option.value = folder;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading folders:', error));
+}
+
+// Load workflows based on selected folder
+function loadWorkflows() {
+    const folderName = document.getElementById('folderName').value.trim();
+    if (!folderName) {
+        document.getElementById('workflowList').innerHTML = '';
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/workflows/?folder_name=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.workflows) {
+                const datalist = document.getElementById('workflowList');
+                datalist.innerHTML = '';
+                data.workflows.forEach(workflow => {
+                    const option = document.createElement('option');
+                    option.value = workflow;
+                    datalist.appendChild(option);
+                });
+            }
+            // Clear tasks when folder changes
+            document.getElementById('taskList').innerHTML = '';
+        })
+        .catch(error => console.error('Error loading workflows:', error));
+}
+
+// Load tasks based on selected folder and workflow
+function loadTasks() {
+    const folderName = document.getElementById('folderName').value.trim();
+    const workflowName = document.getElementById('workflowName').value.trim();
+    
+    if (!folderName || !workflowName) {
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/tasks/?folder_name=${encodeURIComponent(folderName)}&workflow_name=${encodeURIComponent(workflowName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tasks) {
+                const datalist = document.getElementById('taskList');
+                datalist.innerHTML = '';
+                data.tasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading tasks:', error));
+}
+
+// Form submission handler
+document.getElementById('manualRestartForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        integration_service: formData.get('integration_service'),
+        folder_name: formData.get('folder_name'),
+        workflow_name: formData.get('workflow_name'),
+        session_name: formData.get('session_name'),
+        restart_option: parseInt(formData.get('restart_option'))
+    };
+    
+    // Validate session_name for options 1, 2, 4
+    if ([1, 2, 4].includes(data.restart_option) && !data.session_name) {
+        alert('❌ Task/Session Name is required for this restart option!\n\nOptions 1, 2, and 4 require a task/session name.');
+        return;
+    }
+    
+    // Show loading message
+    const optionNames = {
+        1: 'Start Task Only',
+        2: 'Start Workflow from Task',
+        3: 'Start Entire Workflow',
+        4: 'Recover Workflow from Task'
+    };
+    
+    const confirmMsg = `🔄 Confirm Restart Request\n\n` +
+                      `Integration Service: ${data.integration_service}\n` +
+                      `Folder: ${data.folder_name}\n` +
+                      `Workflow: ${data.workflow_name}\n` +
+                      `Task/Session: ${data.session_name || 'N/A'}\n` +
+                      `Option: ${optionNames[data.restart_option]}\n\n` +
+                      `Proceed with restart?`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    // Show processing message
+    alert(`⏳ Processing restart request...\n\nPlease wait...`);
+    
+    // Submit to API
+    fetch('/api/informatica/restart-with-options/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(`✅ SUCCESS!\n\n${result.message}\n\n` +
+                  `Integration Service: ${data.integration_service}\n` +
+                  `Workflow: ${data.workflow_name}\n` +
+                  `Option: ${optionNames[data.restart_option]}`);
+            
+            // Reset form
+            document.getElementById('manualRestartForm').reset();
+        } else {
+            alert(`❌ FAILED!\n\n${result.message}\n\n` +
+                  `Workflow: ${data.workflow_name}\n` +
+                  `Please check the details and try again.`);
+        }
+    })
+    .catch(error => {
+        alert(`❌ ERROR!\n\nFailed to execute restart.\n\n${error.message}`);
+    });
+});
+
+// Get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}

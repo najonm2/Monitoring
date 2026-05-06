@@ -506,3 +506,219 @@ def get_capex_details():
     except Exception as e:
         print(f"Error fetching CAPEX details: {e}")
         return []
+
+def get_bi_status_query():
+    """
+    Fetch BI Status Query with complete SLA calculations
+    Returns: List of dicts with columns:
+    - Date, App#, Pri., SLA Application, Status, Start time (MT), 
+    - Actual Completion Time (MT), Target SLA (MT), SLA Met By (Minutes), Met or Miss?
+    """
+    try:
+        query = """
+        WITH
+        /* ============================================================
+           1) SLA MASTER
+           ============================================================ */
+        sla_def AS (
+            SELECT 1 app_no, 1 pri, 'CDW-ASR ODS' sla_application,
+                   '15:00' start_time_mt, '11:00' target_time_mt,
+                   'B_CDW_ODS_OFFNET' application_name, 'wkf_Load_ASR' dependency_name FROM dual UNION ALL
+            SELECT 2,1,'CDW-AML','11:00','09:00','B_CDW_DSL_AML','wkf_Load_AML_ALL' FROM dual UNION ALL
+            SELECT 3,1,'CDW-Orders ODS','12:00','07:00','B_CDW_ODS','wkf_LOAD_ODS_LEAD_TO_ORDER' FROM dual UNION ALL
+            SELECT 4,1,'CDW-Network Inventory ODS','21:00','11:00','B_CDW_ODS_NETINV','wkf_Load_CIRCUIT_ALL' FROM dual UNION ALL
+            SELECT 5,1,'SMMART','19:00','03:30','B_SMMART','wkf_SMMART_Controller' FROM dual UNION ALL
+            SELECT 6,1,'CDW-DSL-SALES-PERIOD','03:00','11:00','B_CDW_DSL_SALES_PERIOD','wkf_Load_DSL_SALES_PERIOD' FROM dual UNION ALL
+            SELECT 7,1,'DSL_SD','19:00','05:00','B_CDW_DSL_SD','wkf_Load_CDW_DSL_SD' FROM dual UNION ALL
+            SELECT 8,1,'DSL_CALL_CENTER','20:00','08:30','B_CDW_DSL_CALL_CENTER','wkf_Load_DSL_CALL_CENTER_CONVERSATION_HIST' FROM dual UNION ALL
+            SELECT 9,3,'DSL_AIM','09:30','12:00','B_CDW_DSL_AIM','wkf_Load_DSL_AIM' FROM dual UNION ALL
+            SELECT 10,2,'CODS_TN','02:00','11:00','B_CDW_ODS_TN','wkf_Load_CODS_TN' FROM dual UNION ALL
+            SELECT 11,2,'ASPEN','18:00','11:00','B_CDW_DSL_ASPEN','wkf_Rollup_Daily' FROM dual UNION ALL
+            SELECT 12,2,'CRFTPS-SMS files','07:00','08:00','B_CDW_DSL_PHONEBOOK','wkf_Generate_SMS' FROM dual UNION ALL
+            SELECT 13,2,'CRFTPS-Phonebook files','19:33','08:00','B_CDW_DSL_PHONEBOOK','wkf_Generate_PHBK' FROM dual UNION ALL
+            SELECT 14,2,'DataMarketplace-ALL','06:00','11:00','B_DATAMKTP','wkf_Load_DATAMKTP' FROM dual UNION ALL
+            SELECT 15,3,'SOLR_LUCENE(Daily)','06:20','12:00','B_IAC_SOLR_LUCENE','wkf_Refresh_Solr_Lucene_Index_TNLookup' FROM dual UNION ALL
+            SELECT 16,3,'DSL_MARGIN','09:00','12:00','B_CDW_DSL_MARGIN','wkf_Load_DSL_Margin' FROM dual UNION ALL
+            SELECT 17,3,'Planned Bill Cost','06:00','12:00','B_CDW_DSL_AML','wkf_Load_AML_PLANNED_COST' FROM dual UNION ALL
+            SELECT 18,3,'SDP/Sales Orders (fCTL Data Lake/ASL)','01:00','07:00',
+                   'B_CDW_ASL_SDP_ORDER','wkf_Load_CDW_ASL_SDP_ORDER' FROM dual UNION ALL
+            SELECT 19,3,'Service Lookup Refresh (SLV)','02:00','12:00',
+                   'B_CDW_ERM','wkf_Load_Service_Lookup_Refresh' FROM dual
+        ),
+        
+        /* ============================================================
+           2) TARGET SLA DATE LOGIC
+           ============================================================ */
+        targets AS (
+            SELECT
+                s.*,
+                TRUNC(SYSDATE) report_dt,
+                TO_DATE(
+                    TO_CHAR(
+                        CASE
+                            WHEN sla_application IN ('DSL_AIM','DataMarketplace-ALL')
+                            THEN TRUNC(SYSDATE) - 1
+                            ELSE TRUNC(SYSDATE)
+                        END,
+                    'YYYY-MM-DD') || ' ' || target_time_mt,
+                'YYYY-MM-DD HH24:MI') AS target_sla_dt_mt
+            FROM sla_def s
+        ),
+        
+        /* ============================================================
+           3) Latest run per app
+           ============================================================ */
+        latest_run AS (
+            SELECT application_name, dependency_name, status_cd, end_dt
+            FROM (
+                SELECT a.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY UPPER(application_name), UPPER(dependency_name)
+                           ORDER BY NVL(end_dt, SYSDATE) DESC
+                       ) rn
+                FROM icsm.app_control_status a
+            )
+            WHERE rn = 1
+        ),
+        
+        /* ============================================================
+           4) Yesterday completion ONLY for the 4 impacted apps (MT date)
+           ============================================================ */
+        yday_run_4apps AS (
+            SELECT application_name, dependency_name, status_cd, end_dt
+            FROM (
+                SELECT a.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY UPPER(a.application_name), UPPER(a.dependency_name)
+                           ORDER BY a.end_dt DESC
+                       ) rn
+                FROM icsm.app_control_status a
+                JOIN targets t
+                  ON UPPER(t.application_name) = UPPER(a.application_name)
+                 AND UPPER(t.dependency_name)  = UPPER(a.dependency_name)
+                WHERE t.sla_application IN (
+                      'DSL_AIM',
+                      'DataMarketplace-ALL',
+                      'Service Lookup Refresh (SLV)'
+                )
+                  AND a.end_dt IS NOT NULL
+                  AND TRUNC(a.end_dt - (6/24)) = TRUNC(SYSDATE) - 1
+            )
+            WHERE rn = 1
+        ),
+        
+        /* ============================================================
+           5) COMPLETION TIME LOGIC
+           ============================================================ */
+        calc AS (
+            SELECT
+                t.report_dt,
+                t.app_no,
+                t.pri,
+                t.sla_application,
+                t.start_time_mt,
+                t.target_sla_dt_mt,
+                lr.status_cd        AS latest_status_cd,
+                lr.end_dt           AS latest_end_dt,
+                CASE
+                    WHEN t.sla_application IN (
+                         'DSL_AIM','DataMarketplace-ALL','Service Lookup Refresh (SLV)'
+                    )
+                    THEN yd.status_cd
+                    ELSE lr.status_cd
+                END AS status_cd,
+                CASE
+                    WHEN t.sla_application IN (
+                         'DSL_AIM','DataMarketplace-ALL','Service Lookup Refresh (SLV)'
+                    )
+                    THEN (yd.end_dt - (6/24))
+                    WHEN t.sla_application IN ('CDW-DSL-SALES-PERIOD','DSL_CALL_CENTER')
+                         AND (lr.end_dt IS NULL OR TRUNC(lr.end_dt - (6/24)) < TRUNC(SYSDATE))
+                    THEN NULL
+                    ELSE (lr.end_dt - (6/24))
+                END AS actual_end_dt_mt
+            FROM targets t
+            LEFT JOIN latest_run lr
+              ON UPPER(lr.application_name) = UPPER(t.application_name)
+             AND UPPER(lr.dependency_name)  = UPPER(t.dependency_name)
+            LEFT JOIN yday_run_4apps yd
+              ON UPPER(yd.application_name) = UPPER(t.application_name)
+             AND UPPER(yd.dependency_name)  = UPPER(t.dependency_name)
+        )
+        
+        /* ============================================================
+           6) FINAL OUTPUT
+           ============================================================ */
+        SELECT
+            TO_CHAR(report_dt,'MM/DD/YYYY Dy') as "Date",
+            app_no as "App#",
+            pri as "Pri.",
+            sla_application as "SLA Application",
+            CASE
+                WHEN latest_status_cd IS NULL AND latest_end_dt IS NULL THEN 'No Run'
+                WHEN actual_end_dt_mt IS NULL THEN 'Running'
+                WHEN status_cd = 'Succeeded' THEN 'Complete'
+                WHEN status_cd IS NULL THEN 'Complete'
+                ELSE status_cd
+            END as "Status",
+            start_time_mt as "Start time (MT)",
+            CASE
+                WHEN actual_end_dt_mt IS NULL THEN NULL
+                ELSE TO_CHAR(actual_end_dt_mt,'YYYY/MM/DD HH24:MI')
+            END as "Actual Completion Time (MT)",
+            TO_CHAR(target_sla_dt_mt,'YYYY/MM/DD HH24:MI') as "Target SLA (MT)",
+            CASE
+                WHEN actual_end_dt_mt IS NULL THEN NULL
+                ELSE ROUND((target_sla_dt_mt - actual_end_dt_mt) * 1440)
+            END as "SLA Met By (Minutes)",
+            CASE
+                WHEN actual_end_dt_mt IS NULL THEN NULL
+                WHEN (target_sla_dt_mt - actual_end_dt_mt) >= 0 THEN 'Met'
+                ELSE 'Miss'
+            END as "Met or Miss?"
+        FROM calc
+        ORDER BY app_no
+        """
+        
+        # Execute the query and return results
+        import logging
+        logger = logging.getLogger('bi_service')
+        
+        results = fetch_all(query)
+        logger.info(f"BI Status Query returned {len(results) if results else 0} rows")
+        
+        if not results:
+            logger.warning("BI Status Query returned no results")
+            return []
+        
+        # Inspect first row to see available keys
+        if results:
+            logger.info(f"Available column keys: {list(results[0].keys())}")
+        
+        # Convert results to a more template-friendly format with normalized keys
+        # Note: fetch_all converts column names to lowercase
+        formatted_results = []
+        for row in results:
+            formatted_row = {
+                'date': row.get('date'),
+                'app_no': row.get('app#'),
+                'priority': row.get('pri.'),
+                'sla_application': row.get('sla application'),
+                'status': row.get('status'),
+                'start_time': row.get('start time (mt)'),
+                'actual_completion': row.get('actual completion time (mt)'),
+                'target_sla': row.get('target sla (mt)'),
+                'sla_met_by_minutes': row.get('sla met by (minutes)'),
+                'met_or_miss': row.get('met or miss?'),
+            }
+            formatted_results.append(formatted_row)
+        
+        logger.info(f"Formatted {len(formatted_results)} BI Status Query rows for template")
+        return formatted_results
+    except Exception as e:
+        import logging
+        logger = logging.getLogger('bi_service')
+        logger.error(f"Error fetching BI Status Query: {e}")
+        import traceback
+        traceback.print_exc()
+        return []

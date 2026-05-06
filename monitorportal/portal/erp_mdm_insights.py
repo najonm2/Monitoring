@@ -138,10 +138,21 @@ def get_erp_run_history():
             # Calculate SLA status
             effective_status = display_status if is_recovered else original_status
             
+            # For SUSPENDED runs, check if they have a completion time (meaning they finished before suspension)
             if effective_status == 'SUSPENDED':
-                # Suspended runs - SLA not applicable
-                sla_status = 'UNKNOWN'
-                sla_met_by = None
+                if duration_mins and duration_mins > 0:
+                    # Run completed before being suspended - calculate SLA
+                    sla_diff = sla_minutes - duration_mins
+                    if sla_diff >= 0:
+                        sla_status = 'MET'
+                        sla_met_by = sla_diff
+                    else:
+                        sla_status = 'MISSED'
+                        sla_met_by = abs(sla_diff)
+                else:
+                    # No completion time - SLA not applicable
+                    sla_status = 'UNKNOWN'
+                    sla_met_by = None
             elif effective_status == 'RUNNING' and not is_recovered:
                 sla_status = 'IN PROGRESS'
                 sla_met_by = None
@@ -243,16 +254,30 @@ def get_erp_run_history():
         # Get long-running sessions
         long_running_sessions = get_erp_long_running_sessions()
         
+        # Success rate calculation: (succeeded / total) * 100
+        # Don't automatically set to 100% if failed == 0 (suspended jobs count too!)
+        current_success_rate = round((completed_current / total_current * 100), 1) if total_current > 0 else 0
+        
+        # Fix success_rate in last_8_runs as well (use actual calculation, not "failed==0" logic)
+        patched_runs = []
+        for run in runs_summary:
+            succeeded = run.get('succeeded', 0)
+            total_jobs = run.get('total_jobs', 0)
+            # Correct success rate: (succeeded / total) * 100
+            patched_rate = round((succeeded / total_jobs * 100), 1) if total_jobs > 0 else 0
+            run = dict(run)
+            run['success_rate'] = patched_rate
+            patched_runs.append(run)
         return {
             'success': True,
-            'last_8_runs': runs_summary,
+            'last_8_runs': patched_runs,
             'current_run': {
                 'total_jobs': total_current,
                 'completed': completed_current,
                 'running': running_current,
                 'failed': failed_current,
                 'suspended': suspended_current,
-                'success_rate': round((completed_current / total_current * 100), 1) if total_current > 0 else 0,
+                'success_rate': current_success_rate,
                 'jobs': current_run_jobs,
                 'failed_jobs': failed_jobs,
                 'succeeded_jobs': succeeded_jobs,
@@ -352,8 +377,15 @@ def get_erp_insights() -> Dict[str, Any]:
         running_count = len(running_jobs)
         suspended_count = len(suspended_jobs)
         not_started_count = len(not_started_jobs)
-        fail_rate = round((failed_count / total_jobs * 100), 1) if total_jobs > 0 else 0
-        success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
+        # New logic: Only running + succeeded jobs are considered
+        running_and_succeeded = running_count + succeeded_count
+        denominator = running_and_succeeded if running_and_succeeded > 0 else 1
+        if failed_count == 0:
+            success_rate = 100.0
+            fail_rate = 0.0
+        else:
+            fail_rate = round((failed_count / denominator * 100), 1) if denominator > 0 else 0
+            success_rate = round((running_and_succeeded / denominator * 100), 1) if denominator > 0 else 0
         
         return {
             'success': True,
@@ -453,7 +485,10 @@ def get_mdm_insights() -> Dict[str, Any]:
         running_count = len(running_jobs)
         not_started_count = len(not_started_jobs)
         fail_rate = round((failed_count / total_jobs * 100), 1) if total_jobs > 0 else 0
-        success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
+        if failed_count == 0:
+            success_rate = 100.0
+        else:
+            success_rate = round((succeeded_count / total_jobs * 100), 1) if total_jobs > 0 else 0
         
         return {
             'success': True,

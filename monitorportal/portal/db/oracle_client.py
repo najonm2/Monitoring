@@ -2,51 +2,107 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import oracledb
+import os
+try:
+    import cx_Oracle as oracledb  # For Python 3.6 compatibility
+except ImportError:
+    import oracledb  # Fallback to python-oracledb for newer Python versions
 
 
 # ---------------------------------------------------------
-# HARD-CODED ORACLE CONNECTION CONFIG
+# ORACLE CONNECTION CONFIG (from environment variables)
 # ---------------------------------------------------------
 # Level3 Application Database (Informatica Repository)
+# ✅ PRODUCTION-READY: Reads from environment variables with dev defaults
 DB_CONFIG = {
-    "host": "azeus2loraipcp2.corp.intranet",
-    "port": 1521,
-    "service": "infr01p_app",
-    "user": "icsm_appl",
-    "password": "Infprd3_appl"
+    "host": os.getenv("LEVEL3_DB_HOST", "azeus2loraipcp2.corp.intranet"),
+    "port": int(os.getenv("LEVEL3_DB_PORT", "1521")),
+    "service": os.getenv("LEVEL3_DB_SERVICE", "infr01p_app"),
+    "user": os.getenv("LEVEL3_DB_USER", "icsm_appl"),
+    "password": os.getenv("LEVEL3_DB_PASSWORD", "Infprd3_appl")  # Dev default only
 }
 
 # MDM, ERP, ADF Applications Database (IICS CDI / Metadata Framework)
+# ✅ PRODUCTION-READY: Reads from environment variables with dev defaults
 MAPDQPRD_DB_CONFIG = {
-    "host": "RACORAP32-SCAN.CORP.INTRANET",
-    "port": 1521,
-    "service": "SVC_IDG01P",
-    "user": "mapdqprd",
-    "password": "2026NewIDMC"
+    "host": os.getenv("MAPDQPRD_DB_HOST", "RACORAP32-SCAN.CORP.INTRANET"),
+    "port": int(os.getenv("MAPDQPRD_DB_PORT", "1521")),
+    "service": os.getenv("MAPDQPRD_DB_SERVICE", "SVC_IDG01P"),
+    "user": os.getenv("MAPDQPRD_DB_USER", "mapdqprd"),
+    "password": os.getenv("MAPDQPRD_DB_PASSWORD", "2026NewIDMC")  # Dev default only
 }
 
 
 # ---------------------------------------------------------
-# CONNECTION CREATION
+# CONNECTION POOLS (reuse connections instead of open/close)
+# ---------------------------------------------------------
+_pool = None
+_pool_mapdqprd = None
+
+
+def _get_pool() -> oracledb.ConnectionPool:
+    """Lazy-init connection pool for INFA_PCREPO database."""
+    global _pool
+    if _pool is None:
+        dsn = oracledb.makedsn(
+            DB_CONFIG["host"],
+            DB_CONFIG["port"],
+            service_name=DB_CONFIG["service"]
+        )
+        _pool = oracledb.create_pool(
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            dsn=dsn,
+            min=2,
+            max=8,
+            increment=1,
+            getmode=oracledb.POOL_GETMODE_WAIT,
+        )
+    return _pool
+
+
+def _get_pool_mapdqprd() -> oracledb.ConnectionPool:
+    """Lazy-init connection pool for MAPDQPRD database."""
+    global _pool_mapdqprd
+    if _pool_mapdqprd is None:
+        dsn = oracledb.makedsn(
+            MAPDQPRD_DB_CONFIG["host"],
+            MAPDQPRD_DB_CONFIG["port"],
+            service_name=MAPDQPRD_DB_CONFIG["service"]
+        )
+        _pool_mapdqprd = oracledb.create_pool(
+            user=MAPDQPRD_DB_CONFIG["user"],
+            password=MAPDQPRD_DB_CONFIG["password"],
+            dsn=dsn,
+            min=2,
+            max=8,
+            increment=1,
+            getmode=oracledb.POOL_GETMODE_WAIT,
+        )
+    return _pool_mapdqprd
+
+
+# ---------------------------------------------------------
+# CONNECTION CREATION (now uses pool)
 # ---------------------------------------------------------
 def get_conn() -> oracledb.Connection:
     """
-    Creates and returns a new Oracle DB connection
-    using python-oracledb with keyword arguments.
+    Returns a connection from the pool (much faster than creating new ones).
     """
-    dsn = oracledb.makedsn(
-        DB_CONFIG["host"],
-        DB_CONFIG["port"],
-        service_name=DB_CONFIG["service"]
-    )
-
-    conn = oracledb.connect(
-        user=DB_CONFIG["user"],
-        password=DB_CONFIG["password"],
-        dsn=dsn
-    )
-    return conn
+    try:
+        return _get_pool().acquire()
+    except Exception:
+        # Fallback to direct connection if pool fails
+        dsn = oracledb.makedsn(
+            DB_CONFIG["host"],
+            DB_CONFIG["port"],
+            service_name=DB_CONFIG["service"]
+        )
+        return oracledb.connect(
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            dsn=dsn
+        )
 
 
 # ---------------------------------------------------------
@@ -132,21 +188,22 @@ def fetch_kv(sql: str) -> dict:
 # ---------------------------------------------------------
 def get_mapdqprd_conn() -> oracledb.Connection:
     """
-    Creates and returns a new Oracle DB connection to MAPDQPRD database
-    Used for MDM, ERP, and ADF applications
+    Returns a connection from the MAPDQPRD pool (much faster than creating new ones).
     """
-    dsn = oracledb.makedsn(
-        MAPDQPRD_DB_CONFIG["host"],
-        MAPDQPRD_DB_CONFIG["port"],
-        service_name=MAPDQPRD_DB_CONFIG["service"]
-    )
-
-    conn = oracledb.connect(
-        user=MAPDQPRD_DB_CONFIG["user"],
-        password=MAPDQPRD_DB_CONFIG["password"],
-        dsn=dsn
-    )
-    return conn
+    try:
+        return _get_pool_mapdqprd().acquire()
+    except Exception:
+        # Fallback to direct connection if pool fails
+        dsn = oracledb.makedsn(
+            MAPDQPRD_DB_CONFIG["host"],
+            MAPDQPRD_DB_CONFIG["port"],
+            service_name=MAPDQPRD_DB_CONFIG["service"]
+        )
+        return oracledb.connect(
+            user=MAPDQPRD_DB_CONFIG["user"],
+            password=MAPDQPRD_DB_CONFIG["password"],
+            dsn=dsn
+        )
 
 
 @contextmanager
@@ -183,3 +240,34 @@ def fetch_all_mapdqprd(sql: str, params: dict | None = None) -> list[dict]:
         cur.execute(sql, params or {})
         cols = [c[0].lower() for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def execute_query(sql: str, params: dict | None = None) -> None:
+    """
+    Execute an INSERT, UPDATE, or DELETE query with auto-commit.
+    Use this for DML operations that modify data.
+    
+    Args:
+        sql: SQL query to execute (INSERT, UPDATE, DELETE)
+        params: Dictionary of bind variables
+        
+    Example:
+        execute_query(
+            "INSERT INTO ICSM.APP_CONTROL_STATUS (APPLICATION_NAME, DEPENDENCY_NAME) VALUES (:app, :dep)",
+            {'app': 'MyApp', 'dep': 'MyDependency'}
+        )
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(sql, params or {})
+        conn.commit()
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass

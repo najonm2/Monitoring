@@ -1,0 +1,265 @@
+# Kubernetes Deployment for Informatica Monitor Portal
+# Deploy this in Rancher UI or via kubectl
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infa-monitor
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: django-secrets
+  namespace: infa-monitor
+type: Opaque
+stringData:
+  secret-key: "CHANGE-ME-GENERATE-NEW-SECRET-KEY"  # Generate using: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: informatica-secrets
+  namespace: infa-monitor
+type: Opaque
+stringData:
+  username: "production_service_account"  # Replace with production username
+  password: "CHANGE-ME-PRODUCTION-PASSWORD"  # Replace with production password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oracle-level3-secrets
+  namespace: infa-monitor
+type: Opaque
+stringData:
+  username: "icsm_appl"
+  password: "CHANGE-ME-PRODUCTION-PASSWORD"  # Replace with production password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oracle-mapdqprd-secrets
+  namespace: infa-monitor
+type: Opaque
+stringData:
+  username: "mapdqprd"
+  password: "CHANGE-ME-PRODUCTION-PASSWORD"  # Replace with production password
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: infa-monitor-config
+  namespace: infa-monitor
+data:
+  # Django Configuration
+  DJANGO_DEBUG: "False"
+  DJANGO_ALLOWED_HOSTS: "your-rancher-domain.com,your-app.cluster.local"  # Update with your domains
+  
+  # Informatica Configuration
+  INFORMATICA_PMCMD_PATH: "/opt/informatica/server/bin/pmcmd"  # Update with actual path
+  INFORMATICA_HOST: "azeus2lipcp01"
+  INFORMATICA_PORT: "6005"
+  INFORMATICA_DOMAIN: "Domain_INFA_PRD1"
+  INFORMATICA_REPOSITORY: "PCREPO_PRD1_01"
+  INFORMATICA_INTEGRATION_SERVICE: "IS_GRID_BI"
+  INFORMATICA_USER_SECURITY_DOMAIN: "CTL"
+  INFORMATICA_DEFAULT_FOLDER: "Default"
+  
+  # Oracle Level3 Database
+  LEVEL3_DB_HOST: "azeus2loraipcp2.corp.intranet"
+  LEVEL3_DB_PORT: "1521"
+  LEVEL3_DB_SERVICE: "infr01p_app"
+  LEVEL3_DB_USER: "icsm_appl"
+  
+  # Oracle MAPDQPRD Database
+  MAPDQPRD_DB_HOST: "RACORAP32-SCAN.CORP.INTRANET"
+  MAPDQPRD_DB_PORT: "1521"
+  MAPDQPRD_DB_SERVICE: "SVC_IDG01P"
+  MAPDQPRD_DB_USER: "mapdqprd"
+  
+  # Email Configuration (optional)
+  EMAIL_BACKEND_TYPE: "smtp"
+  EMAIL_HOST: "mailrelay.corp.intranet"
+  EMAIL_PORT: "25"
+  DEFAULT_FROM_EMAIL: "monitoring@lumen.com"
+  SERVER_URL: "http://your-app.cluster.local"
+  
+  # Databricks Configuration
+  DATABRICKS_DSN: "Databricks_Conn"
+  DATABRICKS_ADF_TABLE: "asl.metadata_framework.ingestion_log"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infa-monitor-portal
+  namespace: infa-monitor
+  labels:
+    app: infa-monitor-portal
+spec:
+  replicas: 2  # Start with 2 replicas for high availability
+  selector:
+    matchLabels:
+      app: infa-monitor-portal
+  template:
+    metadata:
+      labels:
+        app: infa-monitor-portal
+    spec:
+      containers:
+      - name: infa-monitor-portal
+        image: your-registry/infa-monitor-portal:latest  # Update with your Docker registry
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        
+        env:
+        # Django Secret Key from secret
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: django-secrets
+              key: secret-key
+        
+        # Informatica credentials from secrets
+        - name: INFORMATICA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: informatica-secrets
+              key: username
+        - name: INFORMATICA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: informatica-secrets
+              key: password
+        
+        # Oracle Level3 credentials from secrets
+        - name: LEVEL3_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oracle-level3-secrets
+              key: password
+        
+        # Oracle MAPDQPRD credentials from secrets
+        - name: MAPDQPRD_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: oracle-mapdqprd-secrets
+              key: password
+        
+        # Configuration from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: infa-monitor-config
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Volume mounts (if needed for pmcmd or other tools)
+        # volumeMounts:
+        # - name: informatica-tools
+        #   mountPath: /opt/informatica
+        #   readOnly: true
+      
+      # Volumes (if needed)
+      # volumes:
+      # - name: informatica-tools
+      #   hostPath:
+      #     path: /opt/informatica
+      #     type: Directory
+      
+      # Image pull secrets (if using private registry)
+      # imagePullSecrets:
+      # - name: docker-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infa-monitor-portal
+  namespace: infa-monitor
+  labels:
+    app: infa-monitor-portal
+spec:
+  type: ClusterIP  # Use LoadBalancer or NodePort if you need external access
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: infa-monitor-portal
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: infa-monitor-portal
+  namespace: infa-monitor
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Update if using cert-manager
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: infa-monitor.your-domain.com  # Update with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: infa-monitor-portal
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - infa-monitor.your-domain.com
+    secretName: infa-monitor-tls
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: infa-monitor-portal-hpa
+  namespace: infa-monitor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: infa-monitor-portal
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

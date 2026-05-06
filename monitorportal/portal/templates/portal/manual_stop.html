@@ -1,0 +1,359 @@
+{% extends "portal/layout.html" %}
+
+{% block title %}Stop/Kill Informatica Workflow or Task | PASE Monitoring Portal{% endblock %}
+
+{% block content %}
+<div style="padding:30px; max-width:900px; margin:0 auto;">
+    
+    <!-- Header -->
+    <div style="margin-bottom:30px;">
+        <h1 style="color:#1f2937; font-size:28px; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:12px;">
+            <span style="font-size:32px;">🛑</span>
+            Stop / Kill Informatica Workflow or Task
+        </h1>
+        <p style="color:#6b7280; font-size:15px; margin:0;">
+            Stop or abort running workflows and individual tasks/sessions
+        </p>
+    </div>
+
+    <!-- Form Card -->
+    <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:30px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        
+        <form id="manualStopForm" method="post">
+            {% csrf_token %}
+            
+            <!-- Grid/Integration Service Selection -->
+            <div style="margin-bottom:24px;">
+                <label for="integrationService" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Integration Service (Grid) <span style="color:#dc2626;">*</span>
+                </label>
+                <select id="integrationService" name="integration_service" required 
+                        style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                        onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
+                        onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                    <option value="">-- Select Integration Service --</option>
+                    <option value="IS_GRID_BI">IS_GRID_BI (BI Grid)</option>
+                    <option value="IS_GRID_UC">IS_GRID_UC (UC Grid)</option>
+                    <option value="IS_GRID_ERP">IS_GRID_ERP (ERP Grid)</option>
+                    <option value="IS_GRID_MDM">IS_GRID_MDM (MDM Grid)</option>
+                    <option value="IS_GRID_ORA11">IS_GRID_ORA11 (ORA11 Grid)</option>
+                    <option value="IS_GRID_ODBC">IS_GRID_ODBC (ODBC Grid)</option>
+                    <option value="IS_GRID_VSUM">IS_GRID_VSUM (VSUM Grid)</option>
+                </select>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Select the Informatica Integration Service where the workflow is running
+                </div>
+            </div>
+
+            <!-- Folder Name -->
+            <div style="margin-bottom:24px;">
+                <label for="folderName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Folder Name <span style="color:#dc2626;">*</span>
+                </label>
+                <input type="text" id="folderName" name="folder_name" required 
+                       list="folderList"
+                       placeholder="e.g., B_CDW_ASL_ICG_GRANITE"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadWorkflows()">
+                <datalist id="folderList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Enter or select the Informatica folder containing the workflow
+                </div>
+            </div>
+
+            <!-- Workflow Name -->
+            <div style="margin-bottom:24px;">
+                <label for="workflowName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Workflow Name <span style="color:#dc2626;">*</span>
+                </label>
+                <input type="text" id="workflowName" name="workflow_name" required 
+                       list="workflowList"
+                       placeholder="e.g., wkf_Load_CDW_ASL_ICG_GRANITE"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'"
+                       onchange="loadTasks()">
+                <datalist id="workflowList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Enter or select the workflow name to stop
+                </div>
+            </div>
+
+            <!-- Level Selection (Workflow vs Task) -->
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-weight:600; color:#374151; margin-bottom:12px; font-size:14px;">
+                    Stop Level <span style="color:#dc2626;">*</span>
+                </label>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           id="workflowLevelLabel"
+                           onmouseover="this.style.borderColor='#dc2626'; this.style.background='#fef2f2'" 
+                           onmouseout="if(!document.getElementById('levelWorkflow').checked) { this.style.borderColor='#e5e7eb'; this.style.background='white' }">
+                        <input type="radio" id="levelWorkflow" name="stop_level" value="workflow" checked onchange="toggleSessionField()" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:14px;">🔄 Workflow Level</strong>
+                        <div style="font-size:12px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Stop entire workflow
+                        </div>
+                    </label>
+
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           id="taskLevelLabel"
+                           onmouseover="this.style.borderColor='#dc2626'; this.style.background='#fef2f2'" 
+                           onmouseout="if(!document.getElementById('levelTask').checked) { this.style.borderColor='#e5e7eb'; this.style.background='white' }">
+                        <input type="radio" id="levelTask" name="stop_level" value="task" onchange="toggleSessionField()" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:14px;">⚙️ Task Level</strong>
+                        <div style="font-size:12px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Stop specific task/session
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Session/Task Name (Conditional) -->
+            <div id="sessionNameField" style="margin-bottom:24px; display:none;">
+                <label for="sessionName" style="display:block; font-weight:600; color:#374151; margin-bottom:8px; font-size:14px;">
+                    Session/Task Name <span style="color:#dc2626;">*</span>
+                </label>
+                <input type="text" id="sessionName" name="session_name" 
+                       list="taskList"
+                       placeholder="e.g., m_Load_CDW_ASL_ICG_GRANITE"
+                       style="width:100%; padding:10px 14px; border:2px solid #d1d5db; border-radius:8px; font-size:14px; transition:all 0.2s;"
+                       onfocus="this.style.borderColor='#dc2626'; this.style.boxShadow='0 0 0 3px rgba(220,38,38,0.1)'"
+                       onblur="this.style.borderColor='#d1d5db'; this.style.boxShadow='none'">
+                <datalist id="taskList"></datalist>
+                <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+                    Enter or select the specific session/task name to stop (required for task-level operations)
+                </div>
+            </div>
+
+            <!-- Stop Option Selection -->
+            <div style="margin-bottom:30px;">
+                <label style="display:block; font-weight:600; color:#374151; margin-bottom:12px; font-size:14px;">
+                    Stop Action <span style="color:#dc2626;">*</span>
+                </label>
+                
+                <div style="display:grid; gap:12px;">
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#dc2626'; this.style.background='#fef2f2'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="stop_action" value="stop" required style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">🛑 Stop Workflow</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Gracefully stops the workflow (recommended)
+                        </div>
+                    </label>
+
+                    <label style="display:block; padding:14px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" 
+                           onmouseover="this.style.borderColor='#dc2626'; this.style.background='#fef2f2'" 
+                           onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                        <input type="radio" name="stop_action" value="abort" style="margin-right:10px;">
+                        <strong style="color:#1f2937; font-size:15px;">⚠️ Abort Workflow</strong>
+                        <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:26px;">
+                            Forcefully aborts the workflow immediately (use with caution)
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Warning Notice -->
+            <div style="background:#fef2f2; border-left:4px solid #dc2626; padding:16px; border-radius:8px; margin-bottom:24px;">
+                <div style="display:flex; align-items:start; gap:12px;">
+                    <span style="font-size:24px;">⚠️</span>
+                    <div>
+                        <div style="font-weight:600; color:#991b1b; margin-bottom:4px;">Caution Required</div>
+                        <div style="font-size:13px; color:#6b7280; line-height:1.6;">
+                            Stopping a workflow or task will interrupt its execution. Make sure you understand the impact before proceeding.
+                            Use "Stop" for graceful shutdown or "Abort" only when necessary.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="border-top:1px solid #e5e7eb; padding-top:24px; display:flex; gap:12px; justify-content:space-between;">
+                <a href="/dashboards/level3/lvl3-failed-jobs-status/" 
+                   style="padding:12px 24px; background:#f3f4f6; color:#374151; border:none; border-radius:8px; text-decoration:none; font-weight:600; font-size:15px; transition:all 0.2s; display:inline-block;"
+                   onmouseover="this.style.background='#e5e7eb'"
+                   onmouseout="this.style.background='#f3f4f6'">
+                    ← Back to Failed Jobs
+                </a>
+                <button type="submit" 
+                        style="padding:12px 32px; background:linear-gradient(135deg, #dc2626, #b91c1c); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:15px; box-shadow:0 2px 8px rgba(220,38,38,0.3); transition:all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220,38,38,0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(220,38,38,0.3)'">
+                    🛑 Execute Stop
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+// Load folders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFolders();
+});
+
+// Load folders from API
+function loadFolders() {
+    fetch('/api/informatica/folders/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.folders) {
+                const datalist = document.getElementById('folderList');
+                datalist.innerHTML = '';
+                data.folders.forEach(folder => {
+                    const option = document.createElement('option');
+                    option.value = folder;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading folders:', error));
+}
+
+// Load workflows based on selected folder
+function loadWorkflows() {
+    const folderName = document.getElementById('folderName').value.trim();
+    if (!folderName) {
+        document.getElementById('workflowList').innerHTML = '';
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/workflows/?folder_name=${encodeURIComponent(folderName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.workflows) {
+                const datalist = document.getElementById('workflowList');
+                datalist.innerHTML = '';
+                data.workflows.forEach(workflow => {
+                    const option = document.createElement('option');
+                    option.value = workflow;
+                    datalist.appendChild(option);
+                });
+            }
+            // Clear tasks when folder changes
+            document.getElementById('taskList').innerHTML = '';
+        })
+        .catch(error => console.error('Error loading workflows:', error));
+}
+
+// Load tasks based on selected folder and workflow
+function loadTasks() {
+    const folderName = document.getElementById('folderName').value.trim();
+    const workflowName = document.getElementById('workflowName').value.trim();
+    
+    if (!folderName || !workflowName) {
+        document.getElementById('taskList').innerHTML = '';
+        return;
+    }
+    
+    fetch(`/api/informatica/tasks/?folder_name=${encodeURIComponent(folderName)}&workflow_name=${encodeURIComponent(workflowName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.tasks) {
+                const datalist = document.getElementById('taskList');
+                datalist.innerHTML = '';
+                data.tasks.forEach(task => {
+                    const option = document.createElement('option');
+                    option.value = task;
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading tasks:', error));
+}
+
+function toggleSessionField() {
+    const levelTask = document.getElementById('levelTask').checked;
+    const sessionField = document.getElementById('sessionNameField');
+    const sessionInput = document.getElementById('sessionName');
+    
+    if (levelTask) {
+        sessionField.style.display = 'block';
+        sessionInput.required = true;
+        document.getElementById('taskLevelLabel').style.borderColor = '#dc2626';
+        document.getElementById('taskLevelLabel').style.background = '#fef2f2';
+        document.getElementById('workflowLevelLabel').style.borderColor = '#e5e7eb';
+        document.getElementById('workflowLevelLabel').style.background = 'white';
+    } else {
+        sessionField.style.display = 'none';
+        sessionInput.required = false;
+        document.getElementById('workflowLevelLabel').style.borderColor = '#dc2626';
+        document.getElementById('workflowLevelLabel').style.background = '#fef2f2';
+        document.getElementById('taskLevelLabel').style.borderColor = '#e5e7eb';
+        document.getElementById('taskLevelLabel').style.background = 'white';
+    }
+}
+
+// Initialize on page load
+toggleSessionField();
+
+document.getElementById('manualStopForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const level = formData.get('stop_level');
+    const data = {
+        integration_service: formData.get('integration_service'),
+        folder_name: formData.get('folder_name'),
+        workflow_name: formData.get('workflow_name'),
+        action: formData.get('stop_action'),
+        level: level
+    };
+    
+    if (level === 'task') {
+        data.session_name = formData.get('session_name');
+    }
+    
+    const actionName = data.action === 'stop' ? 'Stop' : 'Abort';
+    const levelName = level === 'task' ? 'Task' : 'Workflow';
+    const targetName = level === 'task' ? data.session_name : data.workflow_name;
+    
+    if (!confirm(`⚠️ Are you sure you want to ${actionName.toUpperCase()} this ${levelName.toLowerCase()}?\n\n${levelName}: ${targetName}\nWorkflow: ${data.workflow_name}\nFolder: ${data.folder_name}\nGrid: ${data.integration_service}\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Processing...';
+    submitBtn.style.opacity = '0.6';
+    
+    fetch('/api/informatica/stop-workflow/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.style.opacity = '1';
+        
+        if (result.success) {
+            alert(`✅ SUCCESS!\n\n${result.message}\n\n${levelName}: ${targetName}\nAction: ${actionName}`);
+            this.reset();
+            toggleSessionField(); // Reset field visibility
+        } else {
+            alert(`❌ FAILED!\n\n${result.message}\n\nError: ${result.error || 'Unknown error'}`);
+        }
+    })
+    .catch(error => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.style.opacity = '1';
+        alert(`❌ ERROR!\n\nFailed to communicate with server.\n\n${error.message}`);
+    });
+});
+</script>
+{% endblock %}

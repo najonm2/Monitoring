@@ -13,9 +13,10 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+import json
 import logging
 
-from .practical_insights import get_practical_insights, get_insights_for_team
+from .practical_insights import get_practical_insights, get_insights_for_team, analyze_error
 
 logger = logging.getLogger(__name__)
 
@@ -231,4 +232,56 @@ def get_agent_status(request):
 # Alias for backward compatibility
 agent_status = get_agent_status
 system_health = get_agent_status
+
+
+# ==================== AI Error Analysis Endpoint ====================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def analyze_error_api(request):
+    """
+    Analyze a failed job error message and return fix recommendations.
+    
+    POST body (JSON):
+        error_message: The error text from the failed job
+        session_name: (optional) Session name for context
+        workflow_name: (optional) Workflow name for context
+    
+    Returns:
+        JSON with error category, severity, team assignment, and fix steps
+    """
+    try:
+        body = json.loads(request.body)
+        error_message = body.get('error_message', '')
+        session_name = body.get('session_name', 'Unknown')
+        workflow_name = body.get('workflow_name', 'Unknown')
+        
+        # Use the existing pattern-based error analyzer
+        analysis = analyze_error(error_message)
+        
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'session_name': session_name,
+                'workflow_name': workflow_name,
+                'error_message': error_message[:500] if error_message else 'No error message available',
+                'category': analysis.get('category', 'Unknown'),
+                'severity': analysis.get('severity', 'MEDIUM'),
+                'assigned_to': analysis.get('assigned_to', 'DEV'),
+                'recommendations': analysis.get('recommendations', []),
+                'matched_pattern': analysis.get('matched_pattern'),
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON in request body',
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error analyzing error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+        }, status=500)
 

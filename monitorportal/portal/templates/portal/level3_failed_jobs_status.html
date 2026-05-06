@@ -7,7 +7,7 @@
 {% block content %}
 
 <!-- REFRESH CONTROLS -->
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+<div style="background: var(--primary-teal); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
         <div style="display: flex; gap: 12px; align-items: center;">
             <!-- Manual Refresh Button -->
@@ -15,11 +15,15 @@
                 <span id="manualRefreshIcon" style="font-size: 16px;">🔄</span> REFRESH
             </button>
             
-            <!-- Auto Refresh Toggle -->
-            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+            <!-- Auto Refresh Dropdown -->
+            <label style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                 <span style="font-size: 16px;">⏱️</span>
-                AUTO (30 MIN)
-                <input type="checkbox" id="autoRefreshToggle" checked style="margin-left: 8px; width: 16px; height: 16px; cursor: pointer;" onchange="toggleAutoRefresh(this.checked)">
+                AUTO
+                <select id="refreshIntervalSelect" onchange="changeRefreshInterval(this.value)" style="margin-left: 4px; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.15); color: white; font-weight: 600; font-size: 13px; cursor: pointer;">
+                    <option value="15" selected style="color: #333;">15 min</option>
+                    <option value="30" style="color: #333;">30 min</option>
+                    <option value="60" style="color: #333;">60 min</option>
+                </select>
             </label>
         </div>
         
@@ -31,14 +35,14 @@
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-start;">
                 <span style="opacity: 0.8; font-size: 12px;">Next refresh:</span>
-                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">30 mins</span>
+                <span id="nextRefreshTime" style="font-weight: 600; font-size: 14px; color: #fbbf24;">15 min</span>
             </div>
         </div>
     </div>
 </div>
 
 <!-- REPORT HEADER -->
-<div style="background: linear-gradient(135deg, #133D3C 0%, #0D2928 100%); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(19, 61, 60, 0.3);">
+<div style="background: var(--primary-teal); color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(19, 61, 60, 0.3);">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
         <div style="flex: 1; min-width: 300px;">
             <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8; margin-bottom: 10px;">{{ app.name|upper }}</div>
@@ -47,8 +51,10 @@
         </div>
         
         {% if report.ssrs_url %}
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <a href="{{ report.ssrs_url }}" target="_blank" rel="noopener" style="display: inline-block; background: #FF6A13; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);">
+        <div>
+            <a href="{{ report.ssrs_url }}" target="_blank" rel="noopener" style="display: inline-block; background: var(--primary-orange); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 106, 19, 0.3);"
+               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255, 106, 19, 0.4)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255, 106, 19, 0.3)'">
                 🔗 Open SSRS Report
             </a>
         </div>
@@ -80,7 +86,7 @@
         </div>
         
         <!-- Restarted and Completed -->
-        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+        <div style="background: var(--primary-teal); color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
              onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)';"
              onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)';"
              onclick="loadFailedJobsDetails('completed')">
@@ -126,6 +132,171 @@
     </div>
 </div>
 
+<!-- INFORMATICA ACTIONS SECTION -->
+<div style="margin-bottom: 40px;">
+    <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px; color: #1f2937; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 2rem;">⚙️</span>
+        <span>Informatica Actions</span>
+    </h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+        
+        <!-- Workflow Status Checker -->
+        <a href="/informatica/workflow-status/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(8, 145, 178, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(8, 145, 178, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(8, 145, 178, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">🔍</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Workflow Status</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Check detailed session status for any workflow. View all tasks, their statuses, start/end times, and error messages.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Status Checker →
+            </div>
+        </a>
+        
+        <!-- Manual Restart -->
+        <a href="/informatica/manual-restart/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(16, 185, 129, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(16, 185, 129, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">🔧</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Manual Restart</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Submit manual restart requests for workflows or tasks. Supports 4 restart options including recovery mode.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Restart Form →
+            </div>
+        </a>
+        
+        <!-- Stop Workflow -->
+        <a href="/informatica/manual-stop/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(220, 38, 38, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(220, 38, 38, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">🛑</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Stop Workflow</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Stop or abort running workflows and tasks. Choose between graceful stop or forceful abort operations.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Stop Form →
+            </div>
+        </a>
+        
+        <!-- Schedule/Unschedule Workflow -->
+        <a href="/informatica/schedule-workflow/" style="text-decoration: none; display: block; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); transition: all 0.3s ease;"
+           onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(245, 158, 11, 0.4)'"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(245, 158, 11, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">📅</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">Schedule Workflow</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Schedule or unschedule workflows for automatic execution. Manage workflow scheduling status easily.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Schedule Form →
+            </div>
+        </a>
+        
+        <!-- ICSM Check app Entry -->
+        <div onclick="openIcsmCheckModal()" style="cursor: pointer; display: block; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3); transition: all 0.3s ease;"
+             onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 8px 24px rgba(139, 92, 246, 0.4)'"
+             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(139, 92, 246, 0.3)'">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <span style="font-size: 2.5rem;">✅</span>
+                <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">ICSM Check Entry</h3>
+            </div>
+            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.5;">
+                Insert a success status entry into ICSM.APP_CONTROL_STATUS table for monitoring and tracking purposes.
+            </p>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 0.9rem;">
+                Open Entry Form →
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<!-- ICSM CHECK MODAL -->
+<div id="icsmCheckModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 16px; max-width: 550px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 0; animation: slideDown 0.3s ease;">
+        <!-- Modal Header -->
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 25px 30px; border-radius: 16px 16px 0 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700;">✅ ICSM Check Entry</h2>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 5px;">Insert success status into APP_CONTROL_STATUS</div>
+                </div>
+                <button onclick="closeIcsmCheckModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.3s ease;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)';"
+                        onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                    ✕
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div style="padding: 30px;">
+            <form id="icsmCheckForm">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px;">
+                        Application Name <span style="color: #dc2626;">*</span>
+                    </label>
+                    <input type="text" id="icsmAppName" required 
+                           placeholder="e.g., Legacy_BW" 
+                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: all 0.3s;"
+                           onfocus="this.style.borderColor='#8b5cf6';"
+                           onblur="this.style.borderColor='#e5e7eb';">
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151; font-size: 14px;">
+                        Dependency Name <span style="color: #dc2626;">*</span>
+                    </label>
+                    <input type="text" id="icsmDependencyName" required 
+                           placeholder="e.g., vw_service_lookup" 
+                           style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: all 0.3s;"
+                           onfocus="this.style.borderColor='#8b5cf6';"
+                           onblur="this.style.borderColor='#e5e7eb';">
+                </div>
+                
+                <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 25px;">
+                    <div style="font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Fixed Values:</div>
+                    <div style="display: grid; gap: 6px; font-size: 13px; color: #374151;">
+                        <div><strong>START_DT:</strong> SYSDATE</div>
+                        <div><strong>END_DT:</strong> SYSDATE</div>
+                        <div><strong>STATUS_CD:</strong> 'Succeeded'</div>
+                    </div>
+                </div>
+                
+                <div id="icsmCheckStatus" style="margin-bottom: 20px; padding: 12px; border-radius: 8px; display: none;"></div>
+                
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" onclick="closeIcsmCheckModal()" 
+                            style="padding: 12px 24px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s;"
+                            onmouseover="this.style.background='#d1d5db';"
+                            onmouseout="this.style.background='#e5e7eb';">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            style="padding: 12px 24px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(139, 92, 246, 0.4)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)';">
+                        ✅ Insert Entry
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- FAILED JOBS TABLE -->
 <div style="margin-top: 40px;">
     <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 25px; color: #1f2937; display: flex; align-items: center; gap: 12px;">
@@ -138,16 +309,18 @@
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
-                    <tr style="background: linear-gradient(135deg, #FF6A13 0%, #E85A0A 100%);">
+                    <tr style="background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-orange-dark) 100%);">
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Grid Name</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Folder Name</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Workflow Name</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Session Name</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Status</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706; background: rgba(16, 185, 129, 0.3);">🔄 Restart</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Start Time</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">End Time</th>
-                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Status</th>
                         <th style="padding: 14px 16px; text-align: left; font-weight: 700; color: white; border: 1px solid #d97706;">Last Comp Time</th>
                         <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">Failing Since (Days)</th>
+                        <th style="padding: 14px 16px; text-align: center; font-weight: 700; color: white; border: 1px solid #d97706;">AI Analysis</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -159,8 +332,6 @@
                         <td style="padding: 12px 16px; color: #374151; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.subject_area }}</td>
                         <td style="padding: 12px 16px; color: #374151; font-weight: 500; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.workflow_name }}</td>
                         <td style="padding: 12px 16px; color: #374151; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.session_name }}</td>
-                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.start_time|date:"m/d/Y H:i" }}</td>
-                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.end_time|date:"m/d/Y H:i" }}</td>
                         <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
                             {% if job.status == 'Failed' %}
                             <span style="display: inline-block; padding: 4px 10px; background: #fef2f2; color: #dc2626; border-radius: 4px; font-weight: 600; font-size: 11px;">Failed</span>
@@ -174,6 +345,17 @@
                             <span style="display: inline-block; padding: 4px 10px; background: #f3f4f6; color: #6b7280; border-radius: 4px; font-weight: 600; font-size: 11px;">{{ job.status }}</span>
                             {% endif %}
                         </td>
+                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb; background: #f0fdf4;">
+                            <button onclick="showRestartOptions('{{ job.workflow_name|escapejs }}', '{{ job.subject_area|escapejs }}', '{{ job.session_name|escapejs }}', '{{ job.grid_name|escapejs }}')" 
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(16,185,129,0.3);"
+                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.4)'"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16,185,129,0.3)'"
+                                    title="Restart with options">
+                                🔄 Restart
+                            </button>
+                        </td>
+                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.start_time|date:"m/d/Y H:i" }}</td>
+                        <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">{{ job.end_time|date:"m/d/Y H:i" }}</td>
                         <td style="padding: 12px 16px; color: #6b7280; border: 1px solid #e5e7eb; font-size: 12px;">
                             {% if job.last_comp_time %}
                             {{ job.last_comp_time|date:"m/d/Y H:i" }}
@@ -187,6 +369,14 @@
                             {% else %}
                             <span style="color: #9ca3af;">—</span>
                             {% endif %}
+                        </td>
+                        <td style="padding: 12px 16px; text-align: center; border: 1px solid #e5e7eb;">
+                            <button onclick="analyzeError('{{ job.session_name|escapejs }}', '{{ job.workflow_name|escapejs }}', '{{ job.error_message|default:""|escapejs }}')" 
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(124,58,237,0.3);"
+                                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(124,58,237,0.4)'"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(124,58,237,0.3)'">
+                                🤖 AI Fix
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -212,13 +402,13 @@
         </div>
         
         <!-- Data Info -->
-        <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #FF6A13;">
+        <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid var(--primary-orange);">
             <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px;">ℹ️ Data Information</div>
             <div style="font-size: 13px; color: #6b7280; line-height: 1.6;">
                 <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Source:</strong> INFA_PCREPO.REP_TASK_INST_RUN</p>
-                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Filter:</strong> Failed jobs <strong style="color: #FF6A13;">TODAY (TRUNC(SYSDATE))</strong></p>
-                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Count Method:</strong> <strong style="color: #FF6A13;">DISTINCT sessions</strong> (latest failure per session)</p>
-                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Report Date:</strong> <strong style="color: #FF6A13;">{{ current_date|date:"F j, Y - g:i A" }}</strong></p>
+                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Filter:</strong> Failed jobs <strong style="color: var(--primary-orange);">TODAY (TRUNC(SYSDATE))</strong></p>
+                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Count Method:</strong> <strong style="color: var(--primary-orange);">DISTINCT sessions</strong> (latest failure per session)</p>
+                <p style="margin: 0 0 6px 0;"><strong style="color: #374151;">Report Date:</strong> <strong style="color: var(--primary-orange);">{{ current_date|date:"F j, Y - g:i A" }}</strong></p>
                 <p style="margin: 0;"><strong style="color: #374151;">Total Records:</strong> {{ failed_jobs|length }} unique sessions</p>
             </div>
         </div>
@@ -245,7 +435,7 @@
 <div id="detailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 12px; width: 95%; max-width: 1400px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
         <!-- Modal Header -->
-        <div style="padding: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 24px; background: var(--primary-teal); color: white; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h2 id="modalTitle" style="margin: 0 0 4px 0; font-size: 1.8rem; font-weight: 700;">Failed Jobs Details</h2>
                 <p id="modalSubtitle" style="margin: 0; opacity: 0.9; font-size: 0.95rem;">Latest records</p>
@@ -264,7 +454,7 @@
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                         <thead>
-                            <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: sticky; top: 0;">
+                            <tr style="background: var(--primary-teal); color: white; position: sticky; top: 0;">
                                 <th style="padding: 14px 16px; text-align: left; font-weight: 700; border: 1px solid #d1d5db;">Grid</th>
                                 <th style="padding: 14px 16px; text-align: left; font-weight: 700; border: 1px solid #d1d5db;">Folder</th>
                                 <th style="padding: 14px 16px; text-align: left; font-weight: 700; border: 1px solid #d1d5db;">Workflow</th>
@@ -411,7 +601,9 @@ document.addEventListener('keydown', function(e) {
 
 <script>
 // Auto-refresh configuration
-const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes in milliseconds
+const REFRESH_INTERVAL_OPTIONS = { 15: 15 * 60 * 1000, 30: 30 * 60 * 1000, 60: 60 * 60 * 1000 };
+let refreshIntervalMinutes = 15;
+let REFRESH_INTERVAL = REFRESH_INTERVAL_OPTIONS[refreshIntervalMinutes];
 let autoRefreshEnabled = true;
 let autoRefreshTimer = null;
 let lastRefreshTimestamp = null;
@@ -465,23 +657,14 @@ function startCountdownTimer() {
     }, 1000);
 }
 
-function toggleAutoRefresh(enabled) {
-    autoRefreshEnabled = enabled;
-    const toggle = document.getElementById('autoRefreshToggle');
-    
-    if (enabled) {
-        startAutoRefresh();
-        updateLastRefreshTime();
-        startCountdownTimer();
-        toggle.checked = true;
-        console.log('✅ Auto-refresh enabled (30 mins)');
-    } else {
-        stopAutoRefresh();
-        toggle.checked = false;
-        document.getElementById('nextRefreshTime').textContent = 'Disabled';
-        document.getElementById('nextRefreshTime').style.color = '#9ca3af';
-        console.log('⏸️ Auto-refresh disabled');
-    }
+function changeRefreshInterval(minutes) {
+    refreshIntervalMinutes = parseInt(minutes);
+    REFRESH_INTERVAL = REFRESH_INTERVAL_OPTIONS[refreshIntervalMinutes];
+    autoRefreshEnabled = true;
+    startAutoRefresh();
+    updateLastRefreshTime();
+    startCountdownTimer();
+    console.log('✅ Auto-refresh set to ' + refreshIntervalMinutes + ' mins');
 }
 
 function startAutoRefresh() {
@@ -541,6 +724,498 @@ window.addEventListener('beforeunload', function() {
     if (countdownInterval) {
         clearInterval(countdownInterval);
     }
+});
+</script>
+
+<!-- AI ERROR ANALYSIS MODAL -->
+<div id="aiAnalysisModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 16px; width: 95%; max-width: 720px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column;">
+        <!-- Modal Header -->
+        <div style="padding: 20px 24px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 1.6rem;">🤖</span>
+                <div>
+                    <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700;">AI Error Analysis</h2>
+                    <p id="aiModalSubtitle" style="margin: 2px 0 0 0; opacity: 0.85; font-size: 0.85rem;">Analyzing error...</p>
+                </div>
+            </div>
+            <button onclick="closeAiModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.3rem; cursor: pointer; padding: 6px 10px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div style="flex: 1; overflow-y: auto; padding: 24px;">
+            <!-- Loading State -->
+            <div id="aiLoading" style="text-align: center; padding: 40px;">
+                <div style="font-size: 2.5rem; margin-bottom: 16px; animation: pulse 1.5s ease-in-out infinite;">🤖</div>
+                <div style="color: #6b7280; font-size: 15px; font-weight: 500;">Analyzing error pattern...</div>
+                <div style="color: #9ca3af; font-size: 13px; margin-top: 6px;">Matching against known error signatures</div>
+            </div>
+            
+            <!-- Analysis Result -->
+            <div id="aiResult" style="display: none;">
+                <!-- Severity + Category Badge Row -->
+                <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div id="aiSeverityBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px;"></div>
+                    <div id="aiCategoryBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #ede9fe; color: #6d28d9; border-radius: 8px; font-weight: 600; font-size: 13px;"></div>
+                    <div id="aiTeamBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px;"></div>
+                </div>
+                
+                <!-- Error Message -->
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 700; color: #1f2937; margin-bottom: 8px; font-size: 14px;">📝 Error Message</div>
+                    <div id="aiErrorText" style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; color: #991b1b; line-height: 1.6; word-break: break-word; max-height: 120px; overflow-y: auto;"></div>
+                </div>
+                
+                <!-- Session/Workflow Info -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Session</div>
+                        <div id="aiSessionName" style="font-size: 13px; color: #1f2937; font-weight: 600; margin-top: 4px; word-break: break-word;"></div>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 11px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Workflow</div>
+                        <div id="aiWorkflowName" style="font-size: 13px; color: #1f2937; font-weight: 600; margin-top: 4px; word-break: break-word;"></div>
+                    </div>
+                </div>
+                
+                <!-- Fix Recommendations -->
+                <div>
+                    <div style="font-weight: 700; color: #1f2937; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <span>💡</span> Recommended Fix Steps
+                    </div>
+                    <div id="aiRecommendations" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+            </div>
+            
+            <!-- Error State -->
+            <div id="aiError" style="display: none; text-align: center; padding: 30px; color: #ef4444;">
+                <div style="font-size: 2rem; margin-bottom: 12px;">❌</div>
+                <div id="aiErrorMessage" style="font-size: 14px;">Failed to analyze error</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
+</style>
+
+<script>
+// Grid name to Integration Service mapping
+function mapGridToIntegrationService(gridName) {
+    const gridMap = {
+        'BI': 'IS_GRID_BI',
+        'UC': 'IS_GRID_UC',
+        'ERP': 'IS_GRID_ERP',
+        'MDM': 'IS_GRID_MDM',
+        'ORA11': 'IS_GRID_ORA11',
+        'ODBC': 'IS_GRID_ODBC',
+        'VSUM': 'IS_GRID_VSUM',
+        // Add more mappings as needed
+    };
+    
+    // Try exact match first
+    if (gridMap[gridName]) {
+        return gridMap[gridName];
+    }
+    
+    // Try to find partial match (e.g., "BI_PROD" -> "IS_GRID_BI")
+    for (const [key, value] of Object.entries(gridMap)) {
+        if (gridName.includes(key)) {
+            return value;
+        }
+    }
+    
+    // Default fallback
+    return 'IS_GRID_BI';
+}
+
+// AI Error Analysis functions
+function analyzeError(sessionName, workflowName, errorMessage) {
+    const modal = document.getElementById('aiAnalysisModal');
+    const loading = document.getElementById('aiLoading');
+    const result = document.getElementById('aiResult');
+    const error = document.getElementById('aiError');
+    const subtitle = document.getElementById('aiModalSubtitle');
+    
+    // Show modal + loading
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    result.style.display = 'none';
+    error.style.display = 'none';
+    subtitle.textContent = sessionName;
+    
+    fetch('/ai/api/analyze-error/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            error_message: errorMessage,
+            session_name: sessionName,
+            workflow_name: workflowName
+        })
+    })
+    .then(r => r.json())
+    .then(resp => {
+        if (resp.success) {
+            const d = resp.data;
+            loading.style.display = 'none';
+            result.style.display = 'block';
+            
+            // Severity badge
+            const sevBadge = document.getElementById('aiSeverityBadge');
+            const sevColors = {
+                'CRITICAL': { bg: '#fef2f2', color: '#dc2626', icon: '🔴' },
+                'HIGH':     { bg: '#fff7ed', color: '#ea580c', icon: '🟠' },
+                'MEDIUM':   { bg: '#fefce8', color: '#ca8a04', icon: '🟡' },
+                'LOW':      { bg: '#f0fdf4', color: '#16a34a', icon: '🟢' }
+            };
+            const sev = sevColors[d.severity] || sevColors['MEDIUM'];
+            sevBadge.style.background = sev.bg;
+            sevBadge.style.color = sev.color;
+            sevBadge.innerHTML = `${sev.icon} ${d.severity}`;
+            
+            // Category
+            document.getElementById('aiCategoryBadge').innerHTML = `📁 ${d.category}`;
+            
+            // Team badge
+            const teamBadge = document.getElementById('aiTeamBadge');
+            if (d.assigned_to === 'DBA') {
+                teamBadge.style.background = '#dbeafe';
+                teamBadge.style.color = '#2563eb';
+                teamBadge.innerHTML = '🗄️ Assign to DBA Team';
+            } else {
+                teamBadge.style.background = '#dcfce7';
+                teamBadge.style.color = '#16a34a';
+                teamBadge.innerHTML = '💻 Assign to DEV Team';
+            }
+            
+            // Error text
+            document.getElementById('aiErrorText').textContent = d.error_message || 'No error message captured';
+            
+            // Session + Workflow
+            document.getElementById('aiSessionName').textContent = d.session_name;
+            document.getElementById('aiWorkflowName').textContent = d.workflow_name;
+            
+            // Recommendations
+            const recsDiv = document.getElementById('aiRecommendations');
+            recsDiv.innerHTML = '';
+            (d.recommendations || []).forEach((rec, i) => {
+                const step = document.createElement('div');
+                step.style.cssText = 'display: flex; gap: 12px; align-items: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;';
+                step.innerHTML = `
+                    <span style="flex-shrink: 0; width: 24px; height: 24px; background: #16a34a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">${i + 1}</span>
+                    <span style="font-size: 13px; color: #1f2937; line-height: 1.5;">${rec}</span>
+                `;
+                recsDiv.appendChild(step);
+            });
+        } else {
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            document.getElementById('aiErrorMessage').textContent = resp.error || 'Analysis failed';
+        }
+    })
+    .catch(err => {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        document.getElementById('aiErrorMessage').textContent = err.message;
+    });
+}
+
+function closeAiModal() {
+    document.getElementById('aiAnalysisModal').style.display = 'none';
+}
+
+// Close AI modal on backdrop click or Escape
+document.addEventListener('click', function(e) {
+    if (e.target === document.getElementById('aiAnalysisModal')) closeAiModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAiModal();
+});
+
+// Workflow/Session Restart Function
+function restartWorkflow(workflowName, folderName, sessionName) {
+    const target = sessionName || workflowName;
+    const type = sessionName ? 'session' : 'workflow';
+    
+    if (!confirm(`Are you sure you want to restart ${type} "${target}"?\n\nWorkflow: ${workflowName}\nFolder: ${folderName}`)) {
+        return;
+    }
+    
+    // Show loading indicator
+    const button = event.target;
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '⏳ Restarting...';
+    button.style.opacity = '0.7';
+    button.style.cursor = 'not-allowed';
+    
+    const requestBody = {
+        workflow_name: workflowName,
+        folder_name: folderName
+    };
+    
+    // Add session_name if provided
+    if (sessionName) {
+        requestBody.session_name = sessionName;
+    }
+    
+    fetch('/api/informatica/restart-workflow/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.innerHTML = originalHTML;
+        
+        if (data.success) {
+            alert(`✅ SUCCESS!\n\n${data.message}`);
+        } else {
+            alert(`❌ FAILED!\n\n${data.message}\n\n${data.error || ''}`);
+        }
+    })
+    .catch(error => {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.innerHTML = originalHTML;
+        alert(`❌ ERROR!\n\nFailed to communicate with server.\n\n${error.message}`);
+    });
+}
+</script>
+
+<!-- Restart Options Modal -->
+<div id="restartModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6);">
+    <div style="background:#fff; margin:8% auto; padding:30px; width:550px; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <h3 style="margin-top:0; color:#1f2937; font-size:20px; font-weight:700;">🔄 Select Restart Option</h3>
+        <div style="background:#f3f4f6; padding:15px; border-radius:8px; margin-bottom:20px;">
+            <p style="margin:5px 0;"><strong>Grid/IS:</strong> <span id="modalGrid" style="color:#059669;"></span></p>
+            <p style="margin:5px 0;"><strong>Folder:</strong> <span id="modalFolder" style="color:#059669;"></span></p>
+            <p style="margin:5px 0;"><strong>Workflow:</strong> <span id="modalWorkflow" style="color:#2563eb;"></span></p>
+            <p style="margin:5px 0;"><strong>Session:</strong> <span id="modalSession" style="color:#7c3aed;"></span></p>
+        </div>
+        
+        <div style="margin:20px 0;">
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="1" checked style="margin-right:8px;">
+                <strong style="color:#1f2937;">1. Restart Task Only</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts only this specific session/task</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="2" style="margin-right:8px;">
+                <strong style="color:#1f2937;">2. Restart Workflow from Task</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts workflow starting from this task onward</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="3" style="margin-right:8px;">
+                <strong style="color:#1f2937;">3. Restart Entire Workflow</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Restarts the complete workflow from the beginning</div>
+            </label>
+            <label style="display:block; margin:12px 0; padding:12px; border:2px solid #e5e7eb; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white'">
+                <input type="radio" name="restartOption" value="4" style="margin-right:8px;">
+                <strong style="color:#1f2937;">4. Recover Workflow</strong>
+                <div style="font-size:13px; color:#6b7280; margin-top:4px; margin-left:24px;">Recovers the entire workflow in recovery mode (resumes from last saved state)</div>
+            </label>
+        </div>
+        
+        <div style="text-align:right; margin-top:25px; border-top:1px solid #e5e7eb; padding-top:20px;">
+            <button onclick="closeRestartModal()" style="padding:10px 24px; margin-right:10px; background:#f3f4f6; color:#374151; border:none; border-radius:6px; cursor:pointer; font-weight:600; transition:all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">Cancel</button>
+            <button onclick="executeRestart()" style="padding:10px 24px; background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.4)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 2px 8px rgba(59,130,246,0.3)'">🚀 Execute Restart</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRestartData = {};
+
+function showRestartOptions(workflowName, folderName, sessionName, gridName) {
+    // Map grid name to integration service
+    const integrationService = mapGridToIntegrationService(gridName);
+    
+    currentRestartData = {
+        workflow_name: workflowName,
+        folder_name: folderName,
+        session_name: sessionName,
+        integration_service: integrationService
+    };
+    
+    document.getElementById('modalWorkflow').textContent = workflowName;
+    document.getElementById('modalSession').textContent = sessionName;
+    document.getElementById('modalFolder').textContent = folderName;
+    document.getElementById('modalGrid').textContent = gridName + ' → ' + integrationService;
+    document.getElementById('restartModal').style.display = 'block';
+}
+
+function closeRestartModal() {
+    document.getElementById('restartModal').style.display = 'none';
+}
+
+function executeRestart() {
+    const selectedOption = document.querySelector('input[name="restartOption"]:checked').value;
+    
+    const data = {
+        ...currentRestartData,
+        restart_option: parseInt(selectedOption)
+    };
+    
+    closeRestartModal();
+    
+    // Show loading message
+    const optionNames = {
+        1: 'Restart Task',
+        2: 'Restart from Task',
+        3: 'Restart Workflow',
+        4: 'Recover Workflow'
+    };
+    
+    alert(`⏳ Executing: ${optionNames[selectedOption]}\n\nWorkflow: ${data.workflow_name}\nSession: ${data.session_name}\n\nPlease wait...`);
+    
+    fetch('/api/informatica/restart-with-options/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(`✅ SUCCESS!\n\n${result.message}\n\nWorkflow: ${data.workflow_name}\nOption: ${optionNames[selectedOption]}`);
+            location.reload();
+        } else {
+            // Build detailed error message
+            let errorMsg = `❌ RESTART FAILED!\n\n`;
+            errorMsg += `Workflow: ${data.workflow_name}\n`;
+            errorMsg += `Folder: ${data.folder_name}\n`;
+            errorMsg += `Option: ${optionNames[selectedOption]}\n\n`;
+            errorMsg += `Error Message:\n${result.message}\n\n`;
+            
+            // Include detailed error output if available
+            if (result.error) {
+                errorMsg += `pmcmd Output:\n${result.error}\n\n`;
+            }
+            
+            // Include command if available (for debugging)
+            if (result.command) {
+                errorMsg += `Command: ${result.command}\n\n`;
+            }
+            
+            if (result.error_details) {
+                errorMsg += `Details: ${result.error_details}`;
+            }
+            
+            alert(errorMsg);
+            
+            // Also log to console for easier debugging
+            console.error('Restart failed:', result);
+        }
+    })
+    .catch(error => {
+        alert(`❌ NETWORK ERROR!\n\nFailed to communicate with server.\n\nError: ${error.message}`);
+        console.error('Restart request failed:', error);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// ICSM Check Modal Functions
+function openIcsmCheckModal() {
+    document.getElementById('icsmCheckModal').style.display = 'flex';
+    document.getElementById('icsmAppName').value = '';
+    document.getElementById('icsmDependencyName').value = '';
+    document.getElementById('icsmCheckStatus').style.display = 'none';
+}
+
+function closeIcsmCheckModal() {
+    document.getElementById('icsmCheckModal').style.display = 'none';
+}
+
+document.getElementById('icsmCheckForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const appName = document.getElementById('icsmAppName').value.trim();
+    const dependencyName = document.getElementById('icsmDependencyName').value.trim();
+    const statusDiv = document.getElementById('icsmCheckStatus');
+    
+    if (!appName || !dependencyName) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#fee2e2';
+        statusDiv.style.color = '#991b1b';
+        statusDiv.innerHTML = '❌ Please fill in all required fields.';
+        return;
+    }
+    
+    // Show loading
+    statusDiv.style.display = 'block';
+    statusDiv.style.background = '#dbeafe';
+    statusDiv.style.color = '#1e3a8a';
+    statusDiv.innerHTML = '⏳ Inserting entry into ICSM.APP_CONTROL_STATUS...';
+    
+    // Disable submit button
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    
+    fetch('/api/icsm/check-entry/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            application_name: appName,
+            dependency_name: dependencyName
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            statusDiv.style.background = '#d1fae5';
+            statusDiv.style.color = '#065f46';
+            statusDiv.innerHTML = `✅ ${result.message}`;
+            
+            // Close modal after 2 seconds
+            setTimeout(() => {
+                closeIcsmCheckModal();
+            }, 2000);
+        } else {
+            statusDiv.style.background = '#fee2e2';
+            statusDiv.style.color = '#991b1b';
+            statusDiv.innerHTML = `❌ ${result.message}`;
+        }
+    })
+    .catch(error => {
+        statusDiv.style.background = '#fee2e2';
+        statusDiv.style.color = '#991b1b';
+        statusDiv.innerHTML = `❌ Error: ${error.message}`;
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+    });
 });
 </script>
 

@@ -34,7 +34,19 @@ def get_level3_failed_with_error():
     
     try:
         # Get currently failed sessions - exclude those that have recovered/completed
+        # OPTIMIZED: replaced correlated EXISTS with a LEFT JOIN for index usage
         query = """
+        WITH /*+ MATERIALIZE */ today_success AS (
+            SELECT /*+ PARALLEL(2) */
+                INSTANCE_NAME,
+                MAX(START_TIME) AS max_success_start
+            FROM INFA_PCREPO.REP_TASK_INST_RUN
+            WHERE RUN_STATUS_CODE = 1
+              AND TASK_TYPE_NAME = 'Session'
+              AND START_TIME >= TRUNC(SYSDATE)
+              AND START_TIME < TRUNC(SYSDATE) + 1
+            GROUP BY INSTANCE_NAME
+        )
         SELECT 
             grid_name,
             subject_area,
@@ -56,18 +68,12 @@ def get_level3_failed_with_error():
                 SUBSTR(TIR.RUN_ERR_MSG, 1, 500) AS error_message,
                 ROW_NUMBER() OVER (PARTITION BY TIR.INSTANCE_NAME ORDER BY TIR.START_TIME DESC) AS rn,
                 CASE 
-                    WHEN EXISTS (
-                        SELECT 1 FROM INFA_PCREPO.REP_TASK_INST_RUN T2
-                        WHERE T2.INSTANCE_NAME = TIR.INSTANCE_NAME
-                          AND T2.RUN_STATUS_CODE = 1
-                          AND T2.START_TIME >= TRUNC(SYSDATE)
-                          AND T2.START_TIME < TRUNC(SYSDATE) + 1
-                          AND T2.START_TIME > TIR.START_TIME
-                    )
+                    WHEN TS.max_success_start IS NOT NULL AND TS.max_success_start > TIR.START_TIME
                     THEN 1
                     ELSE 0
                 END AS has_recovery
             FROM INFA_PCREPO.REP_TASK_INST_RUN TIR
+            LEFT JOIN today_success TS ON TS.INSTANCE_NAME = TIR.INSTANCE_NAME
             WHERE TIR.RUN_STATUS_CODE IN (3, 4, 5, 15)
               AND TIR.TASK_TYPE_NAME = 'Session'
               AND TIR.START_TIME >= TRUNC(SYSDATE)
@@ -119,14 +125,15 @@ def get_level3_long_running():
             FROM 
                 INFA_PCREPO.REP_TASK_INST_RUN R
             INNER JOIN (
-                SELECT /*+ PARALLEL(2) */
+                SELECT /*+ PARALLEL(2) NO_MERGE */
                     INSTANCE_NAME,
                     ROUND(AVG((END_TIME - START_TIME) * 24 * 60)) AS AVG_RUN_DURATION_IN_MIN
                 FROM 
                     INFA_PCREPO.REP_TASK_INST_RUN
                 WHERE 
                     END_TIME IS NOT NULL
-                    AND START_TIME >= TRUNC(SYSDATE) - 7
+                    AND START_TIME >= SYSDATE - 7
+                    AND START_TIME < SYSDATE
                     AND INSTANCE_NAME IS NOT NULL
                     AND END_TIME > START_TIME
                     AND TASK_TYPE_NAME = 'Session'
@@ -136,7 +143,7 @@ def get_level3_long_running():
             WHERE 
                 R.RUN_STATUS_CODE = 6
                 AND R.TASK_TYPE_NAME = 'Session'
-                AND R.START_TIME >= TRUNC(SYSDATE) - 2
+                AND R.START_TIME >= SYSDATE - 2
                 AND ROUND((SYSDATE - R.START_TIME) * 24 * 60) > AVG_DATA.AVG_RUN_DURATION_IN_MIN
             ORDER BY 
                 current_duration_min DESC
@@ -600,9 +607,9 @@ def get_level3_all_jobs_status():
     
     try:
         # Fast query - get all records from today, sorted by start_time DESC
-        # No expensive calculations or window functions
+        # OPTIMIZED: added FIRST_ROWS hint, range filter on START_TIME
         query = """
-        SELECT
+        SELECT /*+ FIRST_ROWS(500) */
             TIR.SUBJECT_AREA AS folder,
             TIR.WORKFLOW_NAME AS workflow_name,
             TIR.INSTANCE_NAME AS session_name,
@@ -685,8 +692,7 @@ def get_level3_jobs_summary():
                    15, 'Terminated') AS status,
             COUNT(*) AS count
         FROM INFA_PCREPO.REP_SESS_LOG
-        WHERE ACTUAL_START >= TRUNC(SYSDATE)
-          AND ACTUAL_START < TRUNC(SYSDATE) + 1
+        WHERE TRUNC(ACTUAL_START) = TRUNC(SYSDATE)
         GROUP BY RUN_STATUS_CODE
         ORDER BY DECODE(RUN_STATUS_CODE,
                         3, 1,  -- Failed first
@@ -887,7 +893,7 @@ def get_level3_jobs_last_7_days_optimized():
     start = time.time()
     
     try:
-        # SINGLE QUERY for all 7 days - MUCH faster than 7 separate queries!
+        # SINGLE QUERY for all 7 days - range filter avoids TRUNC on column for index usage
         query = """
         SELECT /*+ PARALLEL(4) */
             TRUNC(start_time) AS job_date,
@@ -899,8 +905,8 @@ def get_level3_jobs_last_7_days_optimized():
             SUM(CASE WHEN run_status_code = 8 THEN 1 ELSE 0 END) AS disabled
         FROM INFA_PCREPO.REP_TASK_INST_RUN
         WHERE task_type_name = 'Session'
-          AND TRUNC(start_time) >= TRUNC(SYSDATE) - 6
-          AND TRUNC(start_time) <= TRUNC(SYSDATE)
+          AND start_time >= TRUNC(SYSDATE) - 6
+          AND start_time < TRUNC(SYSDATE) + 1
         GROUP BY TRUNC(start_time)
         ORDER BY TRUNC(start_time) DESC
         """
@@ -984,8 +990,9 @@ def get_level3_jobs_by_date(target_date):
     Returns: List of job details
     """
     try:
+        # OPTIMIZED: range filter instead of TRUNC(column) = date for index usage
         query = """
-        SELECT 
+        SELECT /*+ FIRST_ROWS(500) */
             grid_name,
             subject_area,
             workflow_name,
@@ -1014,7 +1021,8 @@ def get_level3_jobs_by_date(target_date):
                 RUN_STATUS_CODE
             FROM INFA_PCREPO.REP_TASK_INST_RUN
             WHERE TASK_TYPE_NAME = 'Session'
-              AND TRUNC(START_TIME) = TO_DATE(:target_date, 'YYYY-MM-DD')
+              AND START_TIME >= TO_DATE(:target_date, 'YYYY-MM-DD')
+              AND START_TIME < TO_DATE(:target_date, 'YYYY-MM-DD') + 1
         )
         ORDER BY 
             CASE WHEN RUN_STATUS_CODE IN (3, 4, 15) THEN 1 ELSE 2 END,
@@ -1072,6 +1080,7 @@ def get_level3_failed_jobs_status():
                     WHEN TIR.RUN_STATUS_CODE = 15 THEN 'Terminated'
                     ELSE 'Unknown'
                 END AS status,
+                SUBSTR(TIR.RUN_ERR_MSG, 1, 500) AS error_message,
                 COMP.MAX_COMPLETED_TIME AS last_comp_time,
                 CASE 
                     WHEN COMP.MAX_COMPLETED_TIME IS NOT NULL 
@@ -1248,7 +1257,7 @@ def get_level3_folders_with_metrics():
     """
     try:
         query = """
-        SELECT 
+        SELECT /*+ PARALLEL(2) */
             SUBJECT_AREA,
             COUNT(*) AS job_count,
             SUM(CASE WHEN RUN_STATUS_CODE IN (3, 4, 5, 15) THEN 1 ELSE 0 END) AS failed_count,
@@ -1282,7 +1291,7 @@ def get_level3_jobs_by_folder_7_days(folder_name):
     """
     try:
         query = """
-        SELECT 
+        SELECT /*+ PARALLEL(2) */
             TRUNC(START_TIME) AS run_date,
             SUM(CASE WHEN RUN_STATUS_CODE = 1 THEN 1 ELSE 0 END) AS succeeded,
             SUM(CASE WHEN RUN_STATUS_CODE IN (3, 4, 5, 15) THEN 1 ELSE 0 END) AS failed,
