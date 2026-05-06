@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 # -----------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ PRODUCTION: Serve static files efficiently
+    # "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ PRODUCTION ONLY: Uncomment for production
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -157,8 +157,8 @@ STATIC_URL = "/static/"
 # ✅ PRODUCTION: Collect static files to this directory
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# ✅ PRODUCTION: WhiteNoise configuration for efficient static file serving
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# ✅ PRODUCTION ONLY: WhiteNoise configuration for efficient static file serving
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Additional static file directories (if needed)
 # STATICFILES_DIRS = [

@@ -135,6 +135,14 @@ def get_erp_run_history():
                 except Exception:
                     pass  # Keep original duration_mins
             
+            # Fix: If status is SUSPENDED but all jobs succeeded and run completed, show as SUCCEEDED
+            if display_status == 'SUSPENDED' and not is_recovered:
+                total_jobs = run.get('total_jobs', 0)
+                succeeded = run.get('succeeded', 0)
+                # If all jobs succeeded and run has completion time, it's actually a success
+                if total_jobs > 0 and succeeded == total_jobs and duration_mins and duration_mins > 0:
+                    display_status = 'SUCCESS'
+            
             # Calculate SLA status
             effective_status = display_status if is_recovered else original_status
             
