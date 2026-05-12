@@ -24,8 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-in-prod")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# ✅ PRODUCTION-READY: Reads from environment variable, defaults to False
-DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+# ✅ PRODUCTION-READY: Reads from environment variable
+# For local development, defaults to True. For production, set DJANGO_DEBUG=False
+DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
 # ✅ PRODUCTION-READY: Allowed hosts from environment variable
 # Set DJANGO_ALLOWED_HOSTS="host1,host2,host3" in production
@@ -52,12 +53,12 @@ INSTALLED_APPS = [
 # -----------------------------------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ PRODUCTION ONLY: Uncomment for production
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ PRODUCTION: Serves static files efficiently
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "portal.middleware.DevRemoteUserMiddleware",  # DEV ONLY: Simulates SSO for local testing
+    # "portal.middleware.DevRemoteUserMiddleware",  # DEV ONLY: Disabled for production - Simulates SSO for local testing
     "django.contrib.auth.middleware.RemoteUserMiddleware",  # SSO CUID capture
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -157,8 +158,8 @@ STATIC_URL = "/static/"
 # ✅ PRODUCTION: Collect static files to this directory
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# ✅ PRODUCTION ONLY: WhiteNoise configuration for efficient static file serving
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# ✅ PRODUCTION: WhiteNoise configuration for efficient static file serving
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Additional static file directories (if needed)
 # STATICFILES_DIRS = [
