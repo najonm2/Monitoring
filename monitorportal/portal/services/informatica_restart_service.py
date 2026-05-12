@@ -24,8 +24,14 @@ class InformaticaRestartService:
     Service to restart Informatica PowerCenter workflows using pmcmd
     """
     
-    def __init__(self):
-        """Initialize with credentials from settings"""
+    def __init__(self, username: Optional[str] = None, password: Optional[str] = None):
+        """
+        Initialize with credentials from settings or parameters.
+        
+        Args:
+            username: Optional username override (uses settings if not provided)
+            password: Optional password override (uses settings if not provided)
+        """
         self.pmcmd_path = getattr(settings, 'INFORMATICA_PMCMD_PATH', 'pmcmd')
         self.pmrep_path = self.pmcmd_path.replace('pmcmd.exe', 'pmrep.exe').replace('PmCmd.exe', 'pmrep.exe')
         # Set domains file path (same directory as pmrep)
@@ -37,8 +43,11 @@ class InformaticaRestartService:
         self.repository = getattr(settings, 'INFORMATICA_REPOSITORY', '')
         self.domain = getattr(settings, 'INFORMATICA_DOMAIN', '')
         self.integration_service = getattr(settings, 'INFORMATICA_INTEGRATION_SERVICE', '')
-        self.username = getattr(settings, 'INFORMATICA_USERNAME', '')
-        self.password = getattr(settings, 'INFORMATICA_PASSWORD', '')
+        
+        # Use provided credentials or fall back to settings
+        self.username = username if username else getattr(settings, 'INFORMATICA_USERNAME', '')
+        self.password = password if password else getattr(settings, 'INFORMATICA_PASSWORD', '')
+        
         self.user_security_domain = getattr(settings, 'INFORMATICA_USER_SECURITY_DOMAIN', '')
     
     def is_configured(self) -> bool:

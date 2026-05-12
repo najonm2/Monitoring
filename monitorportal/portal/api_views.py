@@ -6,6 +6,24 @@ from datetime import datetime, timedelta
 import random
 
 
+def get_informatica_credentials_from_session(request):
+    """
+    Helper function to get Informatica credentials from user session.
+    Also checks if user has Informatica access.
+    
+    Returns:
+        tuple: (username, password) or (None, None) if not available or no access
+    """
+    # Check if user has Informatica access (not just read-only)
+    has_access = request.session.get('has_informatica_access', False)
+    
+    if not has_access:
+        return (None, None)
+    
+    from portal.informatica_auth import get_informatica_credentials
+    return get_informatica_credentials(request)
+
+
 def generate_realistic_data(report_type):
     """
     Generate realistic Informatica monitoring data
@@ -484,15 +502,26 @@ def restart_workflow(request):
                 'message': 'workflow_name is required'
             }, status=400)
         
-        # Initialize restart service
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        # Initialize restart service with user's credentials
+        service = InformaticaRestartService(username=username, password=password)
         
         # Check configuration
         if not service.is_configured():
             return JsonResponse({
                 'success': False,
                 'message': 'Informatica PowerCenter is not configured. Please configure credentials in settings.',
-                'help': 'Set INFORMATICA_DOMAIN, INFORMATICA_REPOSITORY, INFORMATICA_INTEGRATION_SERVICE, INFORMATICA_USERNAME, INFORMATICA_PASSWORD in settings or environment variables.'
+                'help': 'Set INFORMATICA_DOMAIN, INFORMATICA_REPOSITORY, INFORMATICA_INTEGRATION_SERVICE in settings or environment variables.'
             }, status=503)
         
         # Restart session if session_name provided, otherwise restart workflow
@@ -556,7 +585,18 @@ def check_workflow_status(request):
                 'message': 'workflow_name is required'
             }, status=400)
         
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        service = InformaticaRestartService(username=username, password=password)
         result = service.get_workflow_status(workflow_name, folder_name)
         
         status_code = 200 if result['success'] else 500
@@ -606,8 +646,19 @@ def restart_workflow_with_options(request):
                 'message': 'workflow_name and folder_name are required'
             }, status=400)
         
-        # Initialize restart service
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        # Initialize restart service with user's credentials
+        service = InformaticaRestartService(username=username, password=password)
         
         # Check configuration
         if not service.is_configured():
@@ -694,8 +745,19 @@ def stop_workflow(request):
                 'message': 'session_name is required when level="task"'
             }, status=400)
         
-        # Initialize restart service
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        # Initialize restart service with user's credentials
+        service = InformaticaRestartService(username=username, password=password)
         
         # Check configuration
         if not service.is_configured():
@@ -804,8 +866,19 @@ def schedule_workflow(request):
                 'message': 'schedule_action must be "schedule" or "unschedule"'
             }, status=400)
         
-        # Initialize restart service
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        # Initialize restart service with user's credentials
+        service = InformaticaRestartService(username=username, password=password)
         
         # Check configuration
         if not service.is_configured():
@@ -854,7 +927,18 @@ def test_informatica_connection(request):
     from portal.services.informatica_restart_service import InformaticaRestartService
     
     try:
-        service = InformaticaRestartService()
+        # Get user's Informatica credentials from session
+        username, password = get_informatica_credentials_from_session(request)
+        
+        if not username or not password:
+            return JsonResponse({
+                'success': False,
+                'error': 'Informatica credentials required',
+                'message': 'Please configure your Informatica credentials first',
+                'redirect_url': '/informatica/credentials/'
+            }, status=401)
+        
+        service = InformaticaRestartService(username=username, password=password)
         
         # Check configuration
         if not service.is_configured():

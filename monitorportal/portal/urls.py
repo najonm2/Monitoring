@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 from . import api_views
 from . import ai_views
+from . import informatica_credentials_views
 
 urlpatterns = [
     # Home
@@ -44,10 +45,21 @@ urlpatterns = [
     path("api/informatica/workflow-status-any-folder/", api_views.get_workflow_session_status_any_folder, name="get_workflow_session_status_any_folder"),
     
     # Informatica Manual Restart and Stop Pages
+    # Informatica Login and Authentication
+    path("informatica/login/", informatica_credentials_views.informatica_login, name="informatica_login"),
+    path("informatica/logout/", informatica_credentials_views.informatica_logout, name="informatica_logout"),
+    path("informatica/guest-restricted/", informatica_credentials_views.guest_restricted, name="guest_restricted"),
+    
+    # Informatica Manual Operations (requires credentials)
     path("informatica/manual-restart/", views.manual_informatica_restart, name="manual_informatica_restart"),
     path("informatica/manual-stop/", views.manual_informatica_stop, name="manual_informatica_stop"),
     path("informatica/schedule-workflow/", views.schedule_workflow_page, name="schedule_workflow_page"),
     path("informatica/workflow-status/", views.workflow_status_checker, name="workflow_status_checker"),
+    
+    # Informatica Credentials Management
+    path("informatica/credentials/", informatica_credentials_views.informatica_credentials, name="informatica_credentials"),
+    path("api/informatica/credentials/clear/", informatica_credentials_views.clear_credentials, name="clear_informatica_credentials"),
+    path("api/informatica/credentials/check/", informatica_credentials_views.check_credentials, name="check_informatica_credentials"),
     
     # Level3 BI Report
     path("level3-bi/", views.level3_bi_report, name="level3_bi_report"),

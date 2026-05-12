@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Restricted - Monitoring Portal</title>
+    <link rel="stylesheet" href="{% static 'portal/portal.css' %}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .restricted-container {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin: 0 0 30px 0;
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            text-align: left;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .info-box li {
+            color: #666;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="restricted-container">
+        <div class="icon">🔒</div>
+        <h1>Informatica Access Required</h1>
+        <p>This feature requires full Informatica permissions. You are currently logged in with read-only access.</p>
+
+        <div class="info-box">
+            <h3>🎯 Features Requiring Full Access:</h3>
+            <ul>
+                <li>Restart Informatica workflows</li>
+                <li>Stop/abort running workflows</li>
+                <li>Schedule and unschedule workflows</li>
+                <li>Check workflow status</li>
+                <li>Test Informatica connections</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <h3>👁️ Available in Read-Only Mode:</h3>
+            <ul>
+                <li>View application dashboards</li>
+                <li>Access reports and metrics</li>
+                <li>Monitor system health</li>
+                <li>Browse historical data</li>
+            </ul>
+        </div>
+
+        <p style="margin: 30px 0 20px 0; color: #666; font-size: 14px;">
+            To access Informatica workflow management, you need to login with a CUID that has Informatica PowerCenter permissions.
+        </p>
+
+        <a href="/informatica/logout/" class="btn btn-primary">
+            🔐 Logout & Login with Different Credentials
+        </a>
+        <a href="/" class="btn btn-secondary">
+            ← Back to Home
+        </a>
+    </div>
+</body>
+</html>

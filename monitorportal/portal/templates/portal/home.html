@@ -3,6 +3,23 @@
 {% block title %}Home - PASE Job Monitoring Dashboard{% endblock %}
 
 {% block content %}
+<!-- LOGIN WARNING for Read-Only Users -->
+{% if login_warning %}
+<div style="margin: -32px -24px 24px -24px; padding: 20px 40px; background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%); border-left: 5px solid #FF8C00; border-bottom: 1px solid #FFD966;">
+    <div style="display: flex; align-items: flex-start; gap: 20px;">
+        <div style="font-size: 42px;">⚠️</div>
+        <div style="flex: 1;">
+            <h3 style="margin: 0 0 8px 0; color: #856404; font-size: 18px; font-weight: 700;">
+                Read-Only Access Mode
+            </h3>
+            <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                {{ login_warning }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- HERO BANNER — Orange with teal accent (per screenshot) -->
 <div class="hero-banner" style="margin: -32px -24px 0 -24px;">
     <div class="hero-inner">
@@ -18,6 +35,43 @@
         </div>
     </div>
 </div>
+
+<!-- INFORMATICA ACCESS STATUS -->
+{% if has_informatica_access %}
+<div style="margin: 24px -24px 0 -24px; padding: 16px 40px; background: linear-gradient(135deg, #D1F2EB 0%, #A9DFBF 100%); border-left: 5px solid #28A745; border-bottom: 1px solid #7DCEA0;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 32px;">✅</div>
+        <div style="flex: 1;">
+            <span style="color: #155724; font-size: 14px; font-weight: 600;">
+                Full Access — You can restart, stop, and schedule Informatica workflows
+            </span>
+        </div>
+        <a href="{% url 'informatica_logout' %}" 
+           style="color: #155724; font-size: 13px; text-decoration: underline; font-weight: 500;"
+           onmouseover="this.style.color='#0D3C1F'"
+           onmouseout="this.style.color='#155724'">
+            Logout
+        </a>
+    </div>
+</div>
+{% else %}
+<div style="margin: 24px -24px 0 -24px; padding: 16px 40px; background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%); border-left: 5px solid #6C757D; border-bottom: 1px solid #9FA8DA;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 32px;">👁️</div>
+        <div style="flex: 1;">
+            <span style="color: #495057; font-size: 14px; font-weight: 600;">
+                Read-Only Access — You can view reports and dashboards. Informatica workflow actions are disabled.
+            </span>
+        </div>
+        <a href="{% url 'informatica_logout' %}" 
+           style="color: #495057; font-size: 13px; text-decoration: underline; font-weight: 500;"
+           onmouseover="this.style.color='#212529'"
+           onmouseout="this.style.color='#495057'">
+            Logout & Retry
+        </a>
+    </div>
+</div>
+{% endif %}
 
 <!-- CARDS SHOWCASE — Dark Teal BG with white cards (per screenshot) -->
 <div class="cards-showcase" style="margin: 0 -24px;">

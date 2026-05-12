@@ -1,15 +1,57 @@
-﻿from django.shortcuts import render
+﻿from django.shortcuts import render, redirect
 from django.http import Http404
 from django.views.decorators.http import require_http_methods
 from .ssrs_registry import APPS
+from .informatica_auth import (
+    informatica_credentials_required, 
+    has_informatica_credentials,
+    is_guest_mode,
+    is_authenticated_mode,
+    get_user_mode
+)
 
 
 def home(request):
-    return render(request, "portal/home.html")
+    # Check if user needs to login first
+    if not request.session.get('portal_logged_in', False):
+        return redirect('/informatica/login/')
+    
+    # Get user's access information
+    has_informatica_access = request.session.get('has_informatica_access', False)
+    access_level = request.session.get('access_level', 'readonly')
+    display_username = request.session.get('display_username', request.user.username)
+    
+    # Get login warning if any (for read-only users on first login)
+    login_warning = request.session.pop('login_warning', None)
+    
+    return render(request, "portal/home.html", {
+        "has_informatica_credentials": has_informatica_access,
+        "has_informatica_access": has_informatica_access,
+        "access_level": access_level,
+        "display_username": display_username,
+        "user_display": display_username,  # For header display
+        "login_warning": login_warning,
+    })
 
 
 def dashboards(request):
-    return render(request, "portal/dashboards_home.html", {"apps": APPS})
+    # Check if user needs to login first
+    if not request.session.get('portal_logged_in', False):
+        return redirect('/informatica/login/')
+    
+    # Get user's access information
+    has_informatica_access = request.session.get('has_informatica_access', False)
+    access_level = request.session.get('access_level', 'readonly')
+    display_username = request.session.get('display_username', request.user.username)
+    
+    return render(request, "portal/dashboards_home.html", {
+        "apps": APPS,
+        "has_informatica_credentials": has_informatica_access,
+        "has_informatica_access": has_informatica_access,
+        "access_level": access_level,
+        "display_username": display_username,
+        "user_display": display_username,  # For header display
+    })
 
 
 def app_dashboards(request, app_slug):
@@ -500,6 +542,7 @@ def dh_health_dashboard(request):
     return render(request, "portal/dh_health_dashboard.html")
 
 
+@informatica_credentials_required
 def manual_informatica_restart(request):
     """
     Manual Informatica Restart page for developer special requests
@@ -508,6 +551,7 @@ def manual_informatica_restart(request):
     return render(request, "portal/manual_restart.html")
 
 
+@informatica_credentials_required
 def manual_informatica_stop(request):
     """
     Manual Informatica Stop/Kill page for stopping running workflows
@@ -516,6 +560,7 @@ def manual_informatica_stop(request):
     return render(request, "portal/manual_stop.html")
 
 
+@informatica_credentials_required
 def schedule_workflow_page(request):
     """
     Schedule/Unschedule Workflow page for managing workflow schedules
@@ -524,6 +569,7 @@ def schedule_workflow_page(request):
     return render(request, "portal/schedule_workflow.html")
 
 
+@informatica_credentials_required
 def workflow_status_checker(request):
     """
     Workflow Status Checker page - Check detailed status of all sessions in a workflow
