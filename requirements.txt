@@ -7,6 +7,9 @@ Django>=3.2.0,<3.3.0
 # Note: python-oracledb 2.x requires Python 3.7+, so using cx_Oracle instead
 cx_Oracle>=8.2.0,<9.0.0
 
+# Cryptography for password encryption (Informatica credentials)
+cryptography>=41.0.0
+
 # Email and screenshot functionality (optional)
 # Note: selenium 4.x requires Python 3.7+, downgraded to selenium 3.x
 selenium>=3.141.0,<4.0.0  # For capturing screenshots (optional - only needed if screenshot feature is used)

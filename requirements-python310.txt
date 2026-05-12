@@ -4,5 +4,8 @@
 Django>=6.0.0,<7.0.0
 python-oracledb>=2.0.0
 
+# Cryptography for password encryption (Informatica credentials)
+cryptography>=41.0.0
+
 # Email and screenshot functionality (optional)
 selenium>=4.0.0  # For capturing screenshots (optional - only needed if screenshot feature is used)
