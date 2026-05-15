@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome - Monitoring Portal</title>
+    <title>Login - PASE Job Monitoring Console</title>
     <link rel="stylesheet" href="{% static 'portal/portal.css' %}">
     <style>
         body {
@@ -206,8 +206,8 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🎯 Monitoring Portal</h1>
-            <p>Monitor workflows, manage applications, and control Informatica operations</p>
+            <h1>📊 PASE Job Monitoring Console</h1>
+            <p>Real-time monitoring and management of PASE workflows and data operations</p>
         </div>
 
         <div class="login-body">
@@ -229,8 +229,8 @@
                 {% csrf_token %}
                 
                 <div class="form-container">
-                    <h3 style="margin-top: 0; color: #333;">Enter Your Credentials</h3>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Login with your CUID and LDAP password to access the portal</p>
+                    <h3 style="margin-top: 0; color: #333;">PASE Console Login</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Authenticate with your CUID and LDAP credentials to access the monitoring console</p>
                     
                     <div class="form-group">
                         <label for="username">Username (CUID)</label>

@@ -139,6 +139,10 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Fallback to database users
 ]
 
+# Login URL configuration
+LOGIN_URL = '/informatica/login/'
+LOGIN_REDIRECT_URL = '/'
+
 # -----------------------------------------------------------------------------
 # INTERNATIONALIZATION
 # -----------------------------------------------------------------------------

@@ -271,8 +271,10 @@ a:hover {
     margin: 0 auto;
     padding: 8px var(--space-lg);
     display: flex;
-    gap: 8px;
+    gap: 10px;
     overflow-x: auto;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .nav-container::-webkit-scrollbar {

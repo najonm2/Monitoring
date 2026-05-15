@@ -17,7 +17,6 @@ from portal.services.informatica_restart_service import InformaticaRestartServic
 from django.conf import settings
 
 
-@login_required
 @require_http_methods(["GET", "POST"])
 def informatica_login(request):
     """

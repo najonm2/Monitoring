@@ -44,21 +44,22 @@ APPS = [
             },
         ],
     },
-    {
-        "name": "MDM Application",
-        "slug": "mdm",
-        "description": "MDM SSRS Monitoring Dashboard",
-        "reports": [
-            {
-                "name": "MDM Job Status",
-                "slug": "mdm-job-status",
-                "description": "MDM JOB STATUS",
-                "ssrs_url": "http://usidcvssrs0005/Reports/report/DWBIPASE/ADF/MDM%20JOB%20STATUS",
-                "view_type": "mdm_job_status",
-                "portal_url_name": "mdm_job_status",
-            }
-        ],
-    },
+    # MDM Application - DECOMMISSIONED
+    # {
+    #     "name": "MDM Application",
+    #     "slug": "mdm",
+    #     "description": "MDM SSRS Monitoring Dashboard",
+    #     "reports": [
+    #         {
+    #             "name": "MDM Job Status",
+    #             "slug": "mdm-job-status",
+    #             "description": "MDM JOB STATUS",
+    #             "ssrs_url": "http://usidcvssrs0005/Reports/report/DWBIPASE/ADF/MDM%20JOB%20STATUS",
+    #             "view_type": "mdm_job_status",
+    #             "portal_url_name": "mdm_job_status",
+    #         }
+    #     ],
+    # },
     {
         "name": "ERP Application",
         "slug": "erp",

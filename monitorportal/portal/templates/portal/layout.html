@@ -45,14 +45,19 @@
 
             {% for app in nav_apps %}
             {% with app_path='/dashboards/'|add:app.slug|add:'/' %}
-            {% if app.slug == 'mdm' %}
-            <a class="nav-pill {% if app_path in request.path or '/reports/mdm/' in request.path %}active{% endif %}" href="{% url 'app_dashboards_mdm' %}">
-                <span class="pill-icon">📊</span>
+            {% if app.slug == 'erp' %}
+            <a class="nav-pill {% if app_path in request.path or '/reports/erp/' in request.path %}active{% endif %}" href="{% url 'app_dashboards_erp' %}">
+                <span class="pill-icon">💼</span>
                 <span class="pill-text">{{ app.name|upper }}</span>
             </a>
-            {% elif app.slug == 'erp' %}
-            <a class="nav-pill {% if app_path in request.path or '/reports/erp/' in request.path %}active{% endif %}" href="{% url 'app_dashboards_erp' %}">
-                <span class="pill-icon">📊</span>
+            {% elif app.slug == 'level3' %}
+            <a class="nav-pill {% if app_path in request.path %}active{% endif %}" href="{% url 'app_dashboards' app.slug %}">
+                <span class="pill-icon">🔷</span>
+                <span class="pill-text">{{ app.name|upper }}</span>
+            </a>
+            {% elif app.slug == 'adf' %}
+            <a class="nav-pill {% if app_path in request.path %}active{% endif %}" href="{% url 'app_dashboards' app.slug %}">
+                <span class="pill-icon">☁️</span>
                 <span class="pill-text">{{ app.name|upper }}</span>
             </a>
             {% else %}

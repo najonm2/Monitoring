@@ -11,7 +11,7 @@ urlpatterns = [
     
     # Applications & Reports
     path("dashboards/", views.dashboards, name="dashboards"),
-    path("dashboards/mdm/", views.mdm_job_status, name="app_dashboards_mdm"),  # Direct access to MDM job status
+    # MDM dashboard decommissioned - removed path("dashboards/mdm/", ...)
     path("dashboards/erp/", views.erp_job_status, name="app_dashboards_erp"),  # Direct access to ERP job status
     path("dashboards/<slug:app_slug>/", views.app_dashboards, name="app_dashboards"),
     path("dashboards/<slug:app_slug>/<slug:report_slug>/", views.report_view, name="report_view"),
@@ -84,8 +84,8 @@ urlpatterns = [
     # Backward compatibility - Level3
     path("reports/level3/failed-job-status/", views.level3_failed_job_status, name="level3_failed_job_status"),
     
-    # ERP and MDM with AI insights
+    # ERP with AI insights
     path("reports/erp/job-status/", views.erp_job_status, name="erp_job_status"),
-    path("reports/mdm/job-status/", views.mdm_job_status, name="mdm_job_status"),
+    # MDM dashboard decommissioned - removed path("reports/mdm/job-status/", ...),
 ]
 
